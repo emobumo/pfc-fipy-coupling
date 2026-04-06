@@ -1,0 +1,32 @@
+new
+domain extent -1 5 -3. 5
+def parp
+lx = 2.5
+ly = 1.5
+
+radius1 = 6e-3
+radius2 = 10e-3
+end
+@parp
+
+wall create vertices  [-lx/3] [ly]  [lx+lx/3]  [ly] id 1 ;shang
+wall create vertices  [0-lx/3]  [0]  [lx+lx/3]  [0] id 2 ;xia
+wall create vertices  [0]  [ly+ly/4] [0]  [-ly/4] id 3 ;zuo
+wall create vertices  [lx]  [ly+ly/4] [lx]  [-ly/4] id 4;you
+set random 100001
+ball distribute porosity 0.14 radius @radius1 @radius2 box  [0] [lx] [0] [ly] 
+cmat default model linear  method deform emod  5e8 krat  0 ... 
+
+ball attribute density 2000 damp 0.1
+
+set timestep scale
+cycle 1000 calm 50
+ball delete range x 0 [lx] not
+ball delete range y 0 [ly] not
+set timestep auto
+cycle 1000
+solve
+ball attribute dis mul 0
+ball attribute vel mul 0
+save sample
+

@@ -1,0 +1,26 @@
+new
+restore sample
+
+define identify_floaters  ;;;删除浮动颗粒
+  loop foreach local ball ball.list
+    ball.group.remove(ball,'floaters')
+    local contactmap = ball.contactmap(ball)
+    local size = map.size(contactmap)
+    if size <= 1 then
+      ball.group(ball) = 'floaters'
+    endif
+  endloop
+end
+@identify_floaters
+;ball delete range group 'floaters'
+ball attribute vel mul 0
+ball attribute dis mul 0
+ball attribute  damp 0.4
+
+contact property lin_force 0 0 lin_mode 1
+contact property fric 0.5 
+wall delete range id 1 by wall
+set gravity 10
+cycle 1000 calm 100
+solve
+save balance

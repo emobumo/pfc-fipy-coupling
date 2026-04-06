@@ -1,0 +1,49 @@
+new
+restore mesh
+call set_up.py
+[dy = 0.1]
+[dx = 0.1]
+[numx = lx/dx]
+[numy = ly/dy]
+def create_geo
+loop j(1,numy)
+loop i(1,numx)
+id_  = i + (j-1)*numx
+xx1 = dx*(i-1)
+xx2 = xx1 + dx
+yy1 = dy*(j-1)  
+yy2 = yy1 + dy
+command
+geo set @id_ 
+geo generate box @xx1 @xx2 @yy1 @yy2 
+ball group @id_ range geo @id_ count odd
+endcommand
+endloop
+endloop
+end
+@create_geo
+
+
+
+
+def loop_cal
+table1 = table.create(1)
+loop j(1,10)
+loop k(1,5)
+    command
+        call solver.py
+    endcommand
+
+endloop
+
+
+        
+    command
+       call cal_value.py
+    endcommand
+        
+        table.value(table1,j) = vector(0.05*j,ball.extra(ball.near(0.5,1.2),2))
+endloop
+end
+@loop_cal
+save load
