@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import itasca.ball as balls
 from scipy.interpolate import Rbf
 
