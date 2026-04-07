@@ -21,6 +21,20 @@ The goal is to simulate:
 The rainfall infiltration 2D reference case is used only as a coupling-workflow reference.
 Its data-exchange logic is reused, but the physical meaning, constitutive model, material parameters, and boundary conditions will be changed for slurry transport in waste rock.
 
+## Modeling note
+The rainfall infiltration reference case uses a VG-model-based Richards-equation interpretation for unsaturated soil-water flow.
+That interpretation is not assumed to be directly valid for slurry transport in underground waste rock.
+
+In this project, the reference case is reused only for:
+- coupling workflow
+- data-exchange order
+- mesh-field-to-particle mapping logic
+
+It is not reused directly for:
+- constitutive law
+- hydraulic meaning of variables
+- rainfall boundary interpretation
+
 ## Planned changes relative to the reference case
 Compared with the rainfall infiltration reference case, the new project will gradually replace:
 - rainfall boundary with slurry pouring / inflow boundary

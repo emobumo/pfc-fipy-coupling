@@ -8,6 +8,21 @@ FiPy represents the engineering-scale continuum field used to describe slurry tr
 The rainfall infiltration 2D reference case is not reused for its rainfall physics.
 It is reused for its PFC2D-FiPy data-exchange workflow.
 
+## What is preserved vs. what is replaced
+
+### Preserved from the reference case
+- PFC2D -> FiPy -> PFC2D exchange order
+- continuum-field interpolation back to particles
+- explicit coupling-cycle structure
+- separation between reference workflow and new development
+
+### Replaced for the new project
+- VG-model interpretation
+- Richards-equation soil-water meaning
+- rainfall-infiltration boundary condition
+- soil-column physical setting
+- reference hydraulic parameters
+
 ## Coupling workflow
 One coupling cycle is defined as:
 
