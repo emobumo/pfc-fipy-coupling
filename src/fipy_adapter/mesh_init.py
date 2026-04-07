@@ -8,12 +8,4 @@ def build_mesh(nx=25, ny=15, dx=0.1, dy=0.1):
     y = mesh.cellCenters()[1].value
     fx, fy = mesh.faceCenters()
 
-    state = {
-        "mesh": mesh,
-        "x": x,
-        "y": y,
-        "fx": fx,
-        "fy": fy,
-    }
-
-    return state
+    return mesh, x, y, fx, fy
