@@ -1,4 +1,4 @@
-from fipy import CellVariable, Grid2D
+from fipy import Grid2D
 
 
 def build_mesh(nx=25, ny=15, dx=0.1, dy=0.1):
@@ -14,9 +14,6 @@ def build_mesh(nx=25, ny=15, dx=0.1, dy=0.1):
         "y": y,
         "fx": fx,
         "fy": fy,
-        "phi": CellVariable(name="phi", mesh=mesh, value=0.0),
-        "kk": CellVariable(name="kk", mesh=mesh, value=0.0),
-        "qq": CellVariable(name="qq", mesh=mesh, value=0.0),
     }
 
     return state
