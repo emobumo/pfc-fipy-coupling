@@ -2,6 +2,10 @@
 from fipy import TransientTerm, DiffusionTerm
 
 
+def get_slurry_parameters(state):
+    return state["slurry_parameters"]
+
+
 def update_effective_properties(state):
     """
     第一版占位函数：
@@ -14,9 +18,17 @@ def update_effective_properties(state):
     mobility = state["mobility"]
     storage = state["storage"]
     clogging = state["clogging"]
+    params = get_slurry_parameters(state)
 
-    mobility.setValue(1.0 / (1.0 + clogging.value))
-    storage.setValue(1.0)
+    # Placeholder assumption: clogging only reduces a reference mobility.
+    mobility_value = params["reference_mobility"] / (
+        1.0 + params["mobility_clogging_factor"] * clogging.value
+    )
+    mobility.setValue(mobility_value)
+    mobility.setValue(mobility.value.maximum(params["min_mobility"]))
+
+    # Placeholder assumption: storage stays constant for now.
+    storage.setValue(params["reference_storage"])
 
 
 def apply_boundary_conditions(state):
@@ -27,13 +39,16 @@ def apply_boundary_conditions(state):
     """
     pressure = state["pressure"]
     mesh = state["mesh"]
+    params = get_slurry_parameters(state)
     fx, fy = mesh.faceCenters()
 
     # 顶部中间一小段作为“浆液输入区”
-    inlet_faces = mesh.facesTop & (fx > 0.8) & (fx < 1.7)
+    inlet_faces = mesh.facesTop & (fx > params["inlet_x_min"]) & (
+        fx < params["inlet_x_max"]
+    )
 
     # 先用固定 pressure 边界做最简单近似
-    pressure.constrain(1.0, inlet_faces)
+    pressure.constrain(params["inlet_pressure"], inlet_faces)
 
     # 其余边界的最简处理
     pressure.grad.constrain(0.0, mesh.facesLeft)
@@ -55,16 +70,21 @@ def solve_slurry_step(state, dt=0.01):
     storage = state["storage"]
     filling = state["filling"]
     clogging = state["clogging"]
+    params = get_slurry_parameters(state)
 
     update_effective_properties(state)
     apply_boundary_conditions(state)
 
+    # Placeholder transport form for the current engineering stub only.
     eq = TransientTerm(coeff=storage) == DiffusionTerm(coeff=mobility)
     eq.solve(var=pressure, dt=dt)
 
     # 下面是第一版占位更新逻辑，不代表最终物理
-    filling.setValue(filling.value + 0.1 * pressure.value * dt)
-    clogging.setValue(clogging.value + 0.01 * filling.value * dt)
+    # Placeholder post-update rules, not a final constitutive model.
+    filling.setValue(filling.value + params["filling_rate"] * pressure.value * dt)
+    clogging.setValue(
+        clogging.value + params["clogging_rate"] * filling.value * dt
+    )
 
     result = {
         "scalar_pressure": pressure.value,

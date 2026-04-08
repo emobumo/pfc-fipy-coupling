@@ -65,6 +65,7 @@ def map_back_to_particles(state, result):
 
 
 def run_one_cycle(dt=0.01):
+    # Keep the verified PFC <-> FiPy exchange order unchanged.
     state = initialize_problem()
     result = solve_one_step(state, dt=dt)
     map_back_to_particles(state, result)
