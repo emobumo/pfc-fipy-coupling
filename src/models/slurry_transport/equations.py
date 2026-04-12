@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+import numpy as np
 from fipy import TransientTerm, DiffusionTerm
 
 
@@ -25,7 +27,7 @@ def update_effective_properties(state):
         1.0 + params["mobility_clogging_factor"] * clogging.value
     )
     mobility.setValue(mobility_value)
-    mobility.setValue(mobility.value.maximum(params["min_mobility"]))
+    mobility.setValue(np.maximum(mobility_value, params["min_mobility"]))
 
     # Placeholder assumption: storage stays constant for now.
     storage.setValue(params["reference_storage"])
