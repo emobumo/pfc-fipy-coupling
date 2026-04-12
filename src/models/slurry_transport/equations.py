@@ -43,14 +43,17 @@ def apply_boundary_conditions(state):
     mesh = state["mesh"]
     params = get_slurry_parameters(state)
     fx, fy = mesh.faceCenters()
+    # Placeholder engineering boundary: top pouring represented by
+    # a fixed-pressure inlet patch with tunable center and half-width.
+    inlet_x_min = params["inlet_center_x"] - params["inlet_half_width_x"]
+    inlet_x_max = params["inlet_center_x"] + params["inlet_half_width_x"]
 
     # 顶部中间一小段作为“浆液输入区”
-    inlet_faces = mesh.facesTop & (fx > params["inlet_x_min"]) & (
-        fx < params["inlet_x_max"]
-    )
+    inlet_faces = mesh.facesTop & (fx > inlet_x_min) & (fx < inlet_x_max)
 
     # 先用固定 pressure 边界做最简单近似
-    pressure.constrain(params["inlet_pressure"], inlet_faces)
+    # Still a placeholder boundary condition, not a full inflow model.
+    pressure.constrain(params["inlet_pressure_value"], inlet_faces)
 
     # 其余边界的最简处理
     pressure.grad.constrain(0.0, mesh.facesLeft)

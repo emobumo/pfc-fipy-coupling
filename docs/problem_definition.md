@@ -7,6 +7,14 @@ Engineering-scale simulation of slurry grouting / filling in underground mine wa
 Slurry is poured onto the top surface of a waste-rock pile in an underground mine.
 The slurry then migrates, infiltrates, and redistributes within the waste-rock mass.
 
+## Current inlet boundary (placeholder)
+At the current stage, FiPy uses a simple engineering placeholder for slurry pouring:
+- apply a fixed pressure value on a top-surface inlet patch
+- define the patch by `inlet_center_x` and `inlet_half_width_x`
+- tune inlet intensity by `inlet_pressure_value`
+
+This is intentionally a temporary boundary representation to keep coupling validation simple.
+
 ## Engineering meaning
 This model is intended to represent slurry transport behavior in a waste-rock filling process at engineering scale, rather than a small laboratory-scale soil-column rainfall test.
 

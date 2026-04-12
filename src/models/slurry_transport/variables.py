@@ -13,9 +13,12 @@ def build_placeholder_slurry_parameters():
         "reference_storage": 1.0,
         "mobility_clogging_factor": 1.0,
         "min_mobility": 1.0e-6,
-        "inlet_pressure": 1.0,
-        "inlet_x_min": 0.8,
-        "inlet_x_max": 1.7,
+        # Placeholder top pouring boundary (engineering-oriented, easy to tune).
+        # A fixed-pressure patch is applied on top faces within:
+        # [inlet_center_x - inlet_half_width_x, inlet_center_x + inlet_half_width_x]
+        "inlet_center_x": 1.25,
+        "inlet_half_width_x": 0.45,
+        "inlet_pressure_value": 1.0,
         "filling_rate": 0.1,
         "clogging_rate": 0.01,
     }

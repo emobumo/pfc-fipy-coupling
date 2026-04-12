@@ -51,6 +51,14 @@ Potential quantities exchanged from FiPy to PFC2D include:
 - local slurry occupancy / filling indicator
 - local deposition / clogging indicator if introduced later
 
+## Current placeholder pouring boundary
+For the current validated coupling stage, the FiPy inlet boundary is kept simple:
+- top boundary inlet patch centered at `inlet_center_x`
+- inlet half-width in x as `inlet_half_width_x`
+- fixed inlet pressure value as `inlet_pressure_value`
+
+This boundary is an engineering placeholder only and does not represent a final constitutive inflow model.
+
 ## Mapping rule
 Continuum field variables computed on the FiPy mesh are mapped back to particles in PFC2D by interpolation.
 The current reference implementation follows the rainfall infiltration case, where field values are interpolated and written back to particle extra variables.
