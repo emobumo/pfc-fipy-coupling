@@ -73,17 +73,35 @@ def _print_particle_extras(sample_count):
             )
 
 
-def _get_inlet_x_range(params):
-    if ("inlet_zone_center_x" in params) and ("inlet_zone_width_x" in params):
-        half_width = 0.5 * params["inlet_zone_width_x"]
-        return (
-            params["inlet_zone_center_x"] - half_width,
-            params["inlet_zone_center_x"] + half_width,
-        )
-    return (
-        params["inlet_center_x"] - params["inlet_half_width_x"],
-        params["inlet_center_x"] + params["inlet_half_width_x"],
-    )
+def _get_inlet_geometry(params):
+    center = params.get("inlet_zone_center_x", params.get("inlet_center_x", 0.0))
+    core_width = params.get("inlet_core_width_x", params.get("inlet_zone_width_x", 0.0))
+    spread_width = params.get("inlet_spread_width_x", params.get("inlet_zone_width_x", core_width))
+    if core_width <= 0.0:
+        core_width = 0.5 * spread_width if spread_width > 0.0 else 0.4
+    if spread_width <= 0.0:
+        spread_width = core_width
+    if spread_width <= core_width:
+        spread_width = core_width * 1.2 if core_width > 0.0 else 0.48
+
+    core_half = 0.5 * core_width
+    spread_half = 0.5 * spread_width
+    core_p = params.get("inlet_pressure_core_value", params.get("inlet_pressure_value", 1.0))
+    spread_factor = params.get("inlet_pressure_spread_factor", 0.6)
+    if spread_factor <= 0.0:
+        spread_factor = 0.6
+    if spread_factor >= 1.0:
+        spread_factor = 0.8
+    spread_p = core_p * spread_factor
+
+    return {
+        "core_x_min": center - core_half,
+        "core_x_max": center + core_half,
+        "spread_x_min": center - spread_half,
+        "spread_x_max": center + spread_half,
+        "core_pressure_value": core_p,
+        "spread_pressure_value": spread_p,
+    }
 
 
 def _safe_float(value):
@@ -131,27 +149,35 @@ def _report_group_stats(label, group):
     )
 
 
-def _print_near_far_comparison(inlet_x_min, inlet_x_max, sample_count):
+def _print_zone_comparison(geo, sample_count):
     plist = list(balls.list())
     if len(plist) == 0:
-        print("Near/far comparison skipped: no particles found.")
+        print("Zone comparison skipped: no particles found.")
         return
 
-    near_particles = []
+    core_particles = []
+    spread_only_particles = []
     far_particles = []
     for b in plist:
         bx = b.pos_x()
-        if (bx >= inlet_x_min) and (bx <= inlet_x_max):
-            near_particles.append(b)
+        in_core = (bx >= geo["core_x_min"]) and (bx <= geo["core_x_max"])
+        in_spread = (bx >= geo["spread_x_min"]) and (bx <= geo["spread_x_max"])
+        if in_core:
+            core_particles.append(b)
+        elif in_spread:
+            spread_only_particles.append(b)
         else:
             far_particles.append(b)
 
-    print("Near-vs-far comparison by inlet x-zone:")
-    _report_group_stats("near-inlet", near_particles)
+    print("Core/spread/far comparison by inlet x-zones:")
+    _report_group_stats("core-zone", core_particles)
+    _report_group_stats("spread-only-zone", spread_only_particles)
     _report_group_stats("far-from-inlet", far_particles)
 
-    print("Near-inlet sample extras:")
-    _print_sample_from_group(near_particles, sample_count)
+    print("Core-zone sample extras:")
+    _print_sample_from_group(core_particles, sample_count)
+    print("Spread-only-zone sample extras:")
+    _print_sample_from_group(spread_only_particles, sample_count)
     print("Far-from-inlet sample extras:")
     _print_sample_from_group(far_particles, sample_count)
 
@@ -191,12 +217,27 @@ def main(dt=0.01, sample_count=5):
     state, result = drv.run_one_cycle(dt=dt)
 
     params = state["slurry_parameters"]
-    inlet_x_min, inlet_x_max = _get_inlet_x_range(params)
+    geo = _get_inlet_geometry(params)
 
-    print("Inlet-zone x-range: [{0:.6f}, {1:.6f}]".format(inlet_x_min, inlet_x_max))
+    print(
+        "Inlet core x-range: [{0:.6f}, {1:.6f}] (P={2:.6f})".format(
+            geo["core_x_min"], geo["core_x_max"], geo["core_pressure_value"]
+        )
+    )
+    print(
+        "Inlet spread x-range: [{0:.6f}, {1:.6f}] (P={2:.6f})".format(
+            geo["spread_x_min"], geo["spread_x_max"], geo["spread_pressure_value"]
+        )
+    )
+    print(
+        "Inlet widths (core/spread): {0:.6f} / {1:.6f}".format(
+            geo["core_x_max"] - geo["core_x_min"],
+            geo["spread_x_max"] - geo["spread_x_min"],
+        )
+    )
     _print_field_min_max(result)
     _print_particle_extras(sample_count)
-    _print_near_far_comparison(inlet_x_min, inlet_x_max, sample_count)
+    _print_zone_comparison(geo, sample_count)
 
 
 if __name__ == "__main__":

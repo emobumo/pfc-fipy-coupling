@@ -25,6 +25,41 @@ def get_inlet_x_range(params):
     )
 
 
+def get_inlet_geometry(params):
+    """
+    Return placeholder top-pouring geometry and pressures.
+    Core = stronger pouring patch; spread = weaker surrounding patch.
+    """
+    center = params.get("inlet_zone_center_x", params.get("inlet_center_x", 0.0))
+    core_width = params.get("inlet_core_width_x", params.get("inlet_zone_width_x", 0.0))
+    spread_width = params.get("inlet_spread_width_x", params.get("inlet_zone_width_x", core_width))
+    if core_width <= 0.0:
+        core_width = 0.5 * spread_width if spread_width > 0.0 else 0.4
+    if spread_width <= 0.0:
+        spread_width = core_width
+    if spread_width <= core_width:
+        spread_width = core_width * 1.2 if core_width > 0.0 else 0.48
+
+    core_half = 0.5 * core_width
+    spread_half = 0.5 * spread_width
+    core_p = params.get("inlet_pressure_core_value", params.get("inlet_pressure_value", 1.0))
+    spread_factor = params.get("inlet_pressure_spread_factor", 0.6)
+    if spread_factor <= 0.0:
+        spread_factor = 0.6
+    if spread_factor >= 1.0:
+        spread_factor = 0.8
+    spread_p = core_p * spread_factor
+
+    return {
+        "core_x_min": center - core_half,
+        "core_x_max": center + core_half,
+        "spread_x_min": center - spread_half,
+        "spread_x_max": center + spread_half,
+        "core_pressure_value": core_p,
+        "spread_pressure_value": spread_p,
+    }
+
+
 def update_effective_properties(state):
     """
     第一版占位函数：
@@ -62,14 +97,16 @@ def apply_boundary_conditions(state):
     fx, fy = mesh.faceCenters()
     # Placeholder engineering boundary: top pouring represented by
     # a fixed-pressure inlet patch with tunable center and half-width.
-    inlet_x_min, inlet_x_max = get_inlet_x_range(params)
+    geo = get_inlet_geometry(params)
 
     # 顶部中间一小段作为“浆液输入区”
-    inlet_faces = mesh.facesTop & (fx > inlet_x_min) & (fx < inlet_x_max)
+    spread_faces = mesh.facesTop & (fx > geo["spread_x_min"]) & (fx < geo["spread_x_max"])
+    core_faces = mesh.facesTop & (fx > geo["core_x_min"]) & (fx < geo["core_x_max"])
 
     # 先用固定 pressure 边界做最简单近似
     # Still a placeholder boundary condition, not a full inflow model.
-    pressure.constrain(params["inlet_pressure_value"], inlet_faces)
+    pressure.constrain(geo["spread_pressure_value"], spread_faces)
+    pressure.constrain(geo["core_pressure_value"], core_faces)
 
     # 其余边界的最简处理
     pressure.grad.constrain(0.0, mesh.facesLeft)
