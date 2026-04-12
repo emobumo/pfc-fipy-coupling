@@ -13,9 +13,12 @@ def build_placeholder_slurry_parameters():
         "reference_storage": 1.0,
         "mobility_clogging_factor": 1.0,
         "min_mobility": 1.0e-6,
-        # Placeholder top pouring boundary (engineering-oriented, easy to tune).
-        # A fixed-pressure patch is applied on top faces within:
-        # [inlet_center_x - inlet_half_width_x, inlet_center_x + inlet_half_width_x]
+        # Placeholder top pouring boundary (localized on top surface).
+        # Preferred geometry keys:
+        #   center + full width in x (engineering-oriented and easy to tune).
+        "inlet_zone_center_x": 1.25,
+        "inlet_zone_width_x": 0.90,
+        # Legacy aliases retained for compatibility and easy rollback.
         "inlet_center_x": 1.25,
         "inlet_half_width_x": 0.45,
         "inlet_pressure_value": 1.0,

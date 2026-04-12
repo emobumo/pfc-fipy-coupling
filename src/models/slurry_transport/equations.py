@@ -8,6 +8,23 @@ def get_slurry_parameters(state):
     return state["slurry_parameters"]
 
 
+def get_inlet_x_range(params):
+    """
+    Return inlet x-range for placeholder top localized pouring.
+    Prefer center+width keys; fall back to legacy center+half-width keys.
+    """
+    if ("inlet_zone_center_x" in params) and ("inlet_zone_width_x" in params):
+        half_width = 0.5 * params["inlet_zone_width_x"]
+        return (
+            params["inlet_zone_center_x"] - half_width,
+            params["inlet_zone_center_x"] + half_width,
+        )
+    return (
+        params["inlet_center_x"] - params["inlet_half_width_x"],
+        params["inlet_center_x"] + params["inlet_half_width_x"],
+    )
+
+
 def update_effective_properties(state):
     """
     第一版占位函数：
@@ -45,8 +62,7 @@ def apply_boundary_conditions(state):
     fx, fy = mesh.faceCenters()
     # Placeholder engineering boundary: top pouring represented by
     # a fixed-pressure inlet patch with tunable center and half-width.
-    inlet_x_min = params["inlet_center_x"] - params["inlet_half_width_x"]
-    inlet_x_max = params["inlet_center_x"] + params["inlet_half_width_x"]
+    inlet_x_min, inlet_x_max = get_inlet_x_range(params)
 
     # 顶部中间一小段作为“浆液输入区”
     inlet_faces = mesh.facesTop & (fx > inlet_x_min) & (fx < inlet_x_max)
