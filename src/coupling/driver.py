@@ -3,6 +3,7 @@ from src.pfc_adapter.particle_writer import (
     write_field_to_particles,
     write_vector_field_to_particles,
 )
+from src.coupling.porosity_to_permeability import initialize_structure_mobility_once
 from src.models.slurry_transport.variables import initialize_slurry_variables
 from src.models.slurry_transport.equations import solve_slurry_step
 
@@ -18,6 +19,8 @@ def initialize_problem():
     }
     slurry_state = initialize_slurry_variables(state["mesh"])
     state.update(slurry_state)
+    # One-time structure transfer: PFC porosity -> FiPy permeability/mobility.
+    initialize_structure_mobility_once(state)
     return state
 
 

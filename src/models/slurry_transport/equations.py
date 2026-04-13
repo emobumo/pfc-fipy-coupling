@@ -70,12 +70,14 @@ def update_effective_properties(state):
     - storage 暂时保持常数
     """
     mobility = state["mobility"]
+    intrinsic_mobility = state["intrinsic_mobility"]
     storage = state["storage"]
     clogging = state["clogging"]
     params = get_slurry_parameters(state)
 
-    # Placeholder assumption: clogging only reduces a reference mobility.
-    mobility_value = params["reference_mobility"] / (
+    # Placeholder assumption: structural mobility is initialized once from
+    # porosity/permeability; later steps only apply clogging attenuation.
+    mobility_value = intrinsic_mobility.value / (
         1.0 + params["mobility_clogging_factor"] * clogging.value
     )
     mobility.setValue(mobility_value)

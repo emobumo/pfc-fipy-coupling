@@ -13,6 +13,14 @@ def build_placeholder_slurry_parameters():
         "reference_storage": 1.0,
         "mobility_clogging_factor": 1.0,
         "min_mobility": 1.0e-6,
+        # One-time porosity -> permeability placeholder mapping parameters.
+        "porosity_default": 0.35,
+        "porosity_min": 0.05,
+        "porosity_max": 0.95,
+        "fallback_particle_area_ratio": 0.15,
+        "permeability_min": 0.2,
+        "permeability_max": 1.0,
+        "porosity_to_permeability_exponent": 2.0,
         # Placeholder top pouring boundary (localized on top surface).
         # Preferred geometry keys:
         #   core footprint + spread footprint on the top boundary.
@@ -36,9 +44,13 @@ def initialize_slurry_variables(mesh):
     state = {
         "pressure": CellVariable(name="pressure", mesh=mesh, value=0.0),
         "mobility": CellVariable(name="mobility", mesh=mesh, value=1.0),
+        "intrinsic_mobility": CellVariable(name="intrinsic_mobility", mesh=mesh, value=1.0),
+        "permeability": CellVariable(name="permeability", mesh=mesh, value=1.0),
+        "porosity": CellVariable(name="porosity", mesh=mesh, value=0.35),
         "storage": CellVariable(name="storage", mesh=mesh, value=1.0),
         "filling": CellVariable(name="filling", mesh=mesh, value=0.0),
         "clogging": CellVariable(name="clogging", mesh=mesh, value=0.0),
         "slurry_parameters": build_placeholder_slurry_parameters(),
+        "structure_initialized_once": False,
     }
     return state
