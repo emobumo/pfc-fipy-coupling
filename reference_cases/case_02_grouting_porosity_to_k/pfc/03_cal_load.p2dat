@@ -1,0 +1,69 @@
+new
+restore mesh
+ball attribute damp 0.5
+ball attribute dis mul 0
+ball attribute vel mul 0
+;contact property lin_force 0 0 lin_mode 1
+
+define identify_floaters  ;;;删除浮动颗粒
+  loop foreach local ball ball.list
+    ball.group.remove(ball,'floaters')
+    local contactmap = ball.contactmap(ball)
+    local size = map.size(contactmap)
+    if size <= 1 then
+      ball.group(ball) = 'floaters'
+    endif
+  endloop
+end
+@identify_floaters
+ball delete range group 'floaters'
+
+
+def show_water_head
+loop foreach gs geom.set.list 
+gs_value = geom.set.find(gs)
+v = geom.poly.pos(geom.poly.find(geom.set.find(gs),1)) 
+geom.poly.extra(geom.poly.find(geom.set.find(gs),1) ,1) = ball.extra(ball.near(v),1)
+endloop
+end
+;@show_water_head
+
+
+def clear_extra
+loop  foreach bp ball.list
+ball.force.app(bp) = vector(0,0) 
+ball.group.remove(bp,ball.group(bp))
+ball.extra(bp,1) = None
+ball.extra(bp,2) = None
+ball.extra(bp,3) = None
+ball.extra(bp,4) = vector(0,0)
+ball.extra(bp,5) = vector(0,0)
+endloop
+end
+
+
+call fracture.p2fis
+@track_init
+
+call set_up.py 
+call solver.py
+
+history hist_rep 500
+history id 3 @crack_num
+
+def loop_load
+loop i(1,50)
+   show_water_head
+    command
+        cycle 500
+        ball delete range annulus center [0.85/2] [0.85/2] radius 0 [0.085/2]
+    endcommand     
+    clear_extra
+    command 
+        call group_information.txt
+        call solver.py
+    endcommand
+endloop
+end
+@loop_load
+save load

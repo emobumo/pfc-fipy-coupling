@@ -1,0 +1,19 @@
+new
+restore sample 
+
+
+contact model Linearpbond  range contact type ball-ball
+contact method deform emod 1e9 krat 1.5 range contact type ball-ball
+contact method  pb_deform emod 1e9 krat 1.5 range contact type ball-ball
+contact   property pb_rmul 1 lin_mode 1 range contact type ball-ball
+contact   property  pb_ten 2e7 pb_coh 5e7 pb_fa 30  range contact type ball-ball
+contact   property  fric 0.5 dp_nratio 0.2 range contact type ball-ball
+contact method bond gap 1e-4
+clean
+
+ball delete range annulus center [0.85/2] [0.85/2] radius 0 [0.085/2]
+
+contact property lin_force 0 0 lin_mode 1
+ cycle 1000 calm 100
+ solve
+ save bond

@@ -1,0 +1,19 @@
+new
+domain extent -1 1
+
+wall generate box 0 0.85 0 0.85
+
+
+ball distribute porosity 0.12 radius 3e-3 5e-3 box 0 0.85 0 0.85
+ball attribute density 1800
+ball attribute damp 0.1
+cmat default model linear property kn 1e9 ks 1e9 fric 0.1
+
+set timestep scale
+
+cycle 1000 calm 50
+
+set timestep auto
+cycle 1000
+solve aratio 1e-4
+save sample
