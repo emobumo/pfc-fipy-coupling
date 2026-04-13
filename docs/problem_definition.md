@@ -64,3 +64,20 @@ At the current stage, the priority is:
 2. reuse the coupling workflow
 3. gradually replace the physical model and engineering geometry
 4. avoid premature large-scale refactoring
+
+## Fixed structural assumptions
+
+For the current project stage, the following assumptions are fixed:
+
+1. The waste-rock particle skeleton is rigid and does not deform under fluid action.
+2. Porosity is transferred from PFC to FiPy only once at initialization.
+3. Porosity is not updated during later flow steps.
+4. The particle model is treated as fixed/specific, so no automatic particle-model adaptation is required.
+
+## Modeling interpretation
+
+Under these assumptions:
+- geometric porosity is treated as constant during the flow simulation
+- permeability / intrinsic mobility is initialized once from the initial structure
+- later flow evolution is represented on the FiPy side only
+- fluid results are written back to particle extra values for diagnostics / visualization only

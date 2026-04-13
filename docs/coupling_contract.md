@@ -80,3 +80,15 @@ At the current stage, priority is given to:
 - keeping execution order clear
 - separating reference cases from new development
 - replacing physics gradually rather than rewriting everything at once
+
+## Current fixed coupling assumptions
+
+The current coupling workflow uses the following fixed assumptions:
+
+- PFC provides structural information only at initialization.
+- Porosity is read once and used to initialize FiPy permeability / mobility.
+- No later coupling step updates porosity from PFC.
+- The particle skeleton is fixed during flow and does not respond mechanically to fluid action.
+- Flow-related results are mapped back to particle extra values only.
+- No fluid-force feedback is applied to the waste-rock skeleton.
+- The particle model is treated as fixed, so no automatic geometry adaptation is included.

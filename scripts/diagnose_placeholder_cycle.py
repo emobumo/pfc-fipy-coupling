@@ -83,6 +83,10 @@ def _get_inlet_geometry(params):
         spread_width = core_width
     if spread_width <= core_width:
         spread_width = core_width * 1.2 if core_width > 0.0 else 0.48
+    min_core_fraction = params.get("inlet_core_min_fraction_of_spread", 0.6)
+    if (min_core_fraction <= 0.0) or (min_core_fraction >= 1.0):
+        min_core_fraction = 0.6
+    core_width = max(core_width, min_core_fraction * spread_width)
 
     core_half = 0.5 * core_width
     spread_half = 0.5 * spread_width
@@ -102,6 +106,54 @@ def _get_inlet_geometry(params):
         "core_pressure_value": core_p,
         "spread_pressure_value": spread_p,
     }
+
+
+def _get_inlet_loading_factor(state, params):
+    start_factor = params.get("inlet_loading_start_factor", 1.0)
+    ramp_steps = int(params.get("inlet_loading_ramp_steps", 1))
+    step_idx_raw = state.get("flow_step_index", 0)
+    try:
+        step_idx = int(step_idx_raw)
+    except (TypeError, ValueError):
+        step_idx = 0
+    if start_factor < 0.0:
+        start_factor = 0.0
+    if start_factor > 1.0:
+        start_factor = 1.0
+    if ramp_steps <= 1:
+        return 1.0
+    alpha = float(step_idx) / float(ramp_steps - 1)
+    alpha = min(max(alpha, 0.0), 1.0)
+    return start_factor + (1.0 - start_factor) * alpha
+
+
+def _print_structure_init_report(state):
+    report = state.get("structure_init_report", {})
+    if len(report) == 0:
+        print("Structure init report: unavailable")
+        return
+    print("Structure init report:")
+    print(
+        "  porosity min/max: {0:.6e} / {1:.6e}".format(
+            report["porosity_min"], report["porosity_max"]
+        )
+    )
+    print(
+        "  permeability min/max: {0:.6e} / {1:.6e}".format(
+            report["permeability_min"], report["permeability_max"]
+        )
+    )
+    print(
+        "  intrinsic_mobility min/max: {0:.6e} / {1:.6e}".format(
+            report["intrinsic_mobility_min"], report["intrinsic_mobility_max"]
+        )
+    )
+    print(
+        "  mapping params: exponent={0:.3f}, reference_mobility={1:.3f}".format(
+            report["porosity_to_permeability_exponent"],
+            report["reference_mobility"],
+        )
+    )
 
 
 def _safe_float(value):
@@ -154,6 +206,8 @@ def _print_zone_comparison(geo, sample_count):
     if len(plist) == 0:
         print("Zone comparison skipped: no particles found.")
         return
+    xvals = [float(b.pos_x()) for b in plist]
+    print("Particle-cloud x-range: [{0:.6f}, {1:.6f}]".format(min(xvals), max(xvals)))
 
     core_particles = []
     spread_only_particles = []
@@ -218,6 +272,7 @@ def main(dt=0.01, sample_count=5):
 
     params = state["slurry_parameters"]
     geo = _get_inlet_geometry(params)
+    load_factor = _get_inlet_loading_factor(state, params)
 
     print(
         "Inlet core x-range: [{0:.6f}, {1:.6f}] (P={2:.6f})".format(
@@ -229,6 +284,7 @@ def main(dt=0.01, sample_count=5):
             geo["spread_x_min"], geo["spread_x_max"], geo["spread_pressure_value"]
         )
     )
+    print("Inlet loading factor (current step): {0:.6f}".format(load_factor))
     print(
         "Inlet widths (core/spread): {0:.6f} / {1:.6f}".format(
             geo["core_x_max"] - geo["core_x_min"],
@@ -236,6 +292,7 @@ def main(dt=0.01, sample_count=5):
         )
     )
     _print_field_min_max(result)
+    _print_structure_init_report(state)
     _print_particle_extras(sample_count)
     _print_zone_comparison(geo, sample_count)
 

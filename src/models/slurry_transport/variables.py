@@ -26,10 +26,14 @@ def build_placeholder_slurry_parameters():
         #   core footprint + spread footprint on the top boundary.
         # This remains an engineering placeholder, not a final inflow model.
         "inlet_zone_center_x": 1.25,
-        "inlet_core_width_x": 0.40,
+        "inlet_core_width_x": 0.70,
         "inlet_spread_width_x": 1.00,
+        "inlet_core_min_fraction_of_spread": 0.60,
         "inlet_pressure_core_value": 1.0,
         "inlet_pressure_spread_factor": 0.50,
+        # Placeholder top-pour loading process over steps.
+        "inlet_loading_start_factor": 0.30,
+        "inlet_loading_ramp_steps": 20,
         # Legacy aliases retained for compatibility and easy rollback.
         "inlet_zone_width_x": 0.90,
         "inlet_center_x": 1.25,
@@ -52,5 +56,7 @@ def initialize_slurry_variables(mesh):
         "clogging": CellVariable(name="clogging", mesh=mesh, value=0.0),
         "slurry_parameters": build_placeholder_slurry_parameters(),
         "structure_initialized_once": False,
+        "flow_step_index": 0,
+        "structure_init_report": {},
     }
     return state

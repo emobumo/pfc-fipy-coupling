@@ -56,6 +56,7 @@ def map_back_to_particles(state, result):
         y=y,
         values=result["scalar_filling"],
         extra_id=3,
+        clamp_min=0.0,
     )
 
     # extra(4): clogging indicator
@@ -64,6 +65,7 @@ def map_back_to_particles(state, result):
         y=y,
         values=result["scalar_clogging"],
         extra_id=4,
+        clamp_min=0.0,
     )
 
 

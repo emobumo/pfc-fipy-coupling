@@ -39,6 +39,10 @@ def get_inlet_geometry(params):
         spread_width = core_width
     if spread_width <= core_width:
         spread_width = core_width * 1.2 if core_width > 0.0 else 0.48
+    min_core_fraction = params.get("inlet_core_min_fraction_of_spread", 0.6)
+    if (min_core_fraction <= 0.0) or (min_core_fraction >= 1.0):
+        min_core_fraction = 0.6
+    core_width = max(core_width, min_core_fraction * spread_width)
 
     core_half = 0.5 * core_width
     spread_half = 0.5 * spread_width
@@ -58,6 +62,27 @@ def get_inlet_geometry(params):
         "core_pressure_value": core_p,
         "spread_pressure_value": spread_p,
     }
+
+
+def get_inlet_loading_factor(state, params):
+    start_factor = params.get("inlet_loading_start_factor", 1.0)
+    ramp_steps = int(params.get("inlet_loading_ramp_steps", 1))
+    step_idx_raw = state.get("flow_step_index", 0)
+    try:
+        step_idx = int(step_idx_raw)
+    except (TypeError, ValueError):
+        step_idx = 0
+
+    if start_factor < 0.0:
+        start_factor = 0.0
+    if start_factor > 1.0:
+        start_factor = 1.0
+    if ramp_steps <= 1:
+        return 1.0
+
+    alpha = float(step_idx) / float(ramp_steps - 1)
+    alpha = min(max(alpha, 0.0), 1.0)
+    return start_factor + (1.0 - start_factor) * alpha
 
 
 def update_effective_properties(state):
@@ -100,6 +125,7 @@ def apply_boundary_conditions(state):
     # Placeholder engineering boundary: top pouring represented by
     # a fixed-pressure inlet patch with tunable center and half-width.
     geo = get_inlet_geometry(params)
+    load_factor = get_inlet_loading_factor(state, params)
 
     # 顶部中间一小段作为“浆液输入区”
     spread_faces = mesh.facesTop & (fx > geo["spread_x_min"]) & (fx < geo["spread_x_max"])
@@ -107,8 +133,8 @@ def apply_boundary_conditions(state):
 
     # 先用固定 pressure 边界做最简单近似
     # Still a placeholder boundary condition, not a full inflow model.
-    pressure.constrain(geo["spread_pressure_value"], spread_faces)
-    pressure.constrain(geo["core_pressure_value"], core_faces)
+    pressure.constrain(geo["spread_pressure_value"] * load_factor, spread_faces)
+    pressure.constrain(geo["core_pressure_value"] * load_factor, core_faces)
 
     # 其余边界的最简处理
     pressure.grad.constrain(0.0, mesh.facesLeft)
@@ -145,6 +171,14 @@ def solve_slurry_step(state, dt=0.01):
     clogging.setValue(
         clogging.value + params["clogging_rate"] * filling.value * dt
     )
+    filling.setValue(np.maximum(filling.value, 0.0))
+    clogging.setValue(np.maximum(clogging.value, 0.0))
+    step_idx_raw = state.get("flow_step_index", 0)
+    try:
+        step_idx = int(step_idx_raw)
+    except (TypeError, ValueError):
+        step_idx = 0
+    state["flow_step_index"] = step_idx + 1
 
     result = {
         "scalar_pressure": pressure.value,

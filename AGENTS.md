@@ -33,3 +33,7 @@ Ask before changing:
 ## Notes for this repository
 - The rainfall infiltration 2D case is currently a faithful split from Word.
 - Python files in that case may share runtime context and should not be modularized prematurely.
+
+- The particle skeleton is rigid; do not add fluid-driven particle deformation.
+- Porosity is transferred only once at initialization; do not add later porosity updates.
+- The particle model is fixed; do not add automatic particle-model adaptation unless explicitly requested.

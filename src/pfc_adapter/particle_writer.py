@@ -3,7 +3,7 @@ import itasca.ball as balls
 from scipy.interpolate import Rbf
 
 
-def write_field_to_particles(x, y, values, extra_id):
+def write_field_to_particles(x, y, values, extra_id, clamp_min=None):
     """
     将 FiPy 网格上的标量场插值到 PFC 颗粒，并写入指定 extra 槽位。
     """
@@ -13,6 +13,8 @@ def write_field_to_particles(x, y, values, extra_id):
         bx = b.pos_x()
         by = b.pos_y()
         val = float(func(bx, by))
+        if (clamp_min is not None) and (val < clamp_min):
+            val = float(clamp_min)
         b.set_extra(extra_id, val)
 
 

@@ -16,12 +16,31 @@ def porosity_to_permeability(porosity, params):
     return k_min + (k_max - k_min) * k_rel
 
 
+def _build_structure_init_report(state, params):
+    porosity = np.asarray(state["porosity"].value, dtype=float)
+    permeability = np.asarray(state["permeability"].value, dtype=float)
+    intrinsic_mobility = np.asarray(state["intrinsic_mobility"].value, dtype=float)
+    return {
+        "porosity_min": float(np.min(porosity)),
+        "porosity_max": float(np.max(porosity)),
+        "permeability_min": float(np.min(permeability)),
+        "permeability_max": float(np.max(permeability)),
+        "intrinsic_mobility_min": float(np.min(intrinsic_mobility)),
+        "intrinsic_mobility_max": float(np.max(intrinsic_mobility)),
+        "porosity_to_permeability_exponent": float(params["porosity_to_permeability_exponent"]),
+        "reference_mobility": float(params["reference_mobility"]),
+    }
+
+
 def initialize_structure_mobility_once(state):
     """
     One-time initialization path:
     PFC local porosity/structure -> FiPy cell permeability/mobility.
     """
     if state.get("structure_initialized_once", False):
+        if not state.get("structure_init_report"):
+            params = state["slurry_parameters"]
+            state["structure_init_report"] = _build_structure_init_report(state, params)
         return
 
     params = state["slurry_parameters"]
@@ -41,4 +60,5 @@ def initialize_structure_mobility_once(state):
     state["permeability"].setValue(permeability)
     state["intrinsic_mobility"].setValue(intrinsic_mobility)
     state["mobility"].setValue(intrinsic_mobility)
+    state["structure_init_report"] = _build_structure_init_report(state, params)
     state["structure_initialized_once"] = True
