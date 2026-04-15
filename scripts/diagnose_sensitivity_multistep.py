@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import copy
+import sys
 
 import itasca.ball as balls
 
@@ -90,9 +91,16 @@ def _apply_overrides(params, overrides):
         params[key] = val
 
 
+def _log(message):
+    print(message)
+    sys.stdout.flush()
+
+
 def _run_case(case_name, group_name, overrides, num_steps, dt):
     state = drv.initialize_problem()
     params = state["slurry_parameters"]
+
+    _log("[case start] [{0}] {1}".format(group_name, case_name))
 
     # Apply case parameters.
     _apply_overrides(params, overrides)
@@ -104,9 +112,12 @@ def _run_case(case_name, group_name, overrides, num_steps, dt):
         initialize_structure_mobility_once(state)
 
     result = None
-    for _ in range(num_steps):
+    for step_i in range(num_steps):
+        _log("  step {0}/{1}".format(step_i + 1, num_steps))
         result = drv.solve_one_step(state, dt=dt)
-        drv.map_back_to_particles(state, result)
+        # Keep runtime cheaper: particle mapping is only needed for final zone stats.
+        if step_i == (num_steps - 1):
+            drv.map_back_to_particles(state, result)
 
     geo = _get_inlet_geometry(params)
     core, spread_only, far = _group_particle_sets(geo)
@@ -117,6 +128,8 @@ def _run_case(case_name, group_name, overrides, num_steps, dt):
         "final_pressure_max": float(result["scalar_pressure"].max()),
         "final_filling_max": float(result["scalar_filling"].max()),
         "final_clogging_max": float(result["scalar_clogging"].max()),
+        "final_mobility_min": float(state["mobility"].value.min()),
+        "final_mobility_max": float(state["mobility"].value.max()),
         "core_e3": _mean_extra(core, 3),
         "spread_e3": _mean_extra(spread_only, 3),
         "far_e3": _mean_extra(far, 3),
@@ -124,27 +137,34 @@ def _run_case(case_name, group_name, overrides, num_steps, dt):
         "spread_e4": _mean_extra(spread_only, 4),
         "far_e4": _mean_extra(far, 4),
     }
+    _log("[case end]   [{0}] {1}".format(group_name, case_name))
     return summary
 
 
 def _print_summary(summary):
-    print("")
-    print("[{0}] {1}".format(summary["group"], summary["case"]))
-    print(
+    _log("")
+    _log("[{0}] {1}".format(summary["group"], summary["case"]))
+    _log(
         "  final max p/f/c = {0:.4e}, {1:.4e}, {2:.4e}".format(
             summary["final_pressure_max"],
             summary["final_filling_max"],
             summary["final_clogging_max"],
         )
     )
-    print(
+    _log(
+        "  final mobility min/max = {0:.4e}, {1:.4e}".format(
+            summary["final_mobility_min"],
+            summary["final_mobility_max"],
+        )
+    )
+    _log(
         "  mean e3 core/spread/far = {0}, {1}, {2}".format(
             _fmt(summary["core_e3"]),
             _fmt(summary["spread_e3"]),
             _fmt(summary["far_e3"]),
         )
     )
-    print(
+    _log(
         "  mean e4 core/spread/far = {0}, {1}, {2}".format(
             _fmt(summary["core_e4"]),
             _fmt(summary["spread_e4"]),
@@ -154,7 +174,7 @@ def _print_summary(summary):
 
 
 def _build_cases(base_params):
-    # Small sets from three parameter groups.
+    # Focused mobility-feedback sensitivity check only.
     return [
         {
             "name": "baseline",
@@ -162,59 +182,22 @@ def _build_cases(base_params):
             "overrides": {},
         },
         {
-            "name": "mapping_higher_exponent",
-            "group": "mapping",
-            "overrides": {
-                "porosity_to_permeability_exponent": base_params["porosity_to_permeability_exponent"] * 1.5,
-            },
-        },
-        {
-            "name": "mapping_lower_perm_floor",
-            "group": "mapping",
-            "overrides": {
-                "permeability_min": max(1.0e-4, base_params["permeability_min"] * 0.5),
-                "permeability_clip_min": max(1.0e-4, base_params["permeability_clip_min"] * 0.5),
-            },
-        },
-        {
-            "name": "inlet_slower_ramp",
-            "group": "inlet",
-            "overrides": {
-                "inlet_loading_start_factor": max(0.05, base_params["inlet_loading_start_factor"] * 0.5),
-                "inlet_loading_ramp_steps": int(max(2, base_params["inlet_loading_ramp_steps"] * 2)),
-            },
-        },
-        {
-            "name": "inlet_stronger_spread",
-            "group": "inlet",
-            "overrides": {
-                "inlet_pressure_spread_factor": min(0.95, base_params["inlet_pressure_spread_factor"] * 1.3),
-            },
-        },
-        {
-            "name": "flow_faster_filling",
-            "group": "flow",
-            "overrides": {
-                "filling_rate": base_params["filling_rate"] * 1.5,
-            },
-        },
-        {
             "name": "flow_stronger_mobility_reduction",
             "group": "flow",
             "overrides": {
-                "mobility_clogging_factor": base_params["mobility_clogging_factor"] * 1.5,
-                "clogging_rate": base_params["clogging_rate"] * 1.2,
+                "mobility_blockage_exponent": base_params.get("mobility_blockage_exponent", 2.0) * 2.5,
             },
         },
     ]
 
 
-def main(num_steps=20, dt=0.01):
+def main(num_steps=30, dt=0.01):
     base_state = drv.initialize_problem()
     base_params = copy.deepcopy(base_state["slurry_parameters"])
     cases = _build_cases(base_params)
 
-    print("Run sensitivity over {0} cases, {1} steps each.".format(len(cases), num_steps))
+    _log("[script start] sensitivity multistep diagnostics")
+    _log("Run sensitivity over {0} cases, {1} steps each.".format(len(cases), num_steps))
     for case in cases:
         summary = _run_case(
             case_name=case["name"],
@@ -224,6 +207,7 @@ def main(num_steps=20, dt=0.01):
             dt=dt,
         )
         _print_summary(summary)
+    _log("[script end] completed all cases")
 
 
 if __name__ == "__main__":

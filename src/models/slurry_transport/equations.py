@@ -85,6 +85,19 @@ def get_inlet_loading_factor(state, params):
     return start_factor + (1.0 - start_factor) * alpha
 
 
+def get_initial_porosity_for_filling_limit(state):
+    """
+    Cache initial porosity once for filling upper-bound evaluation.
+    This keeps the placeholder meaning explicit even if porosity handling
+    is extended later.
+    """
+    initial_porosity = state.get("initial_porosity_for_filling_limit")
+    if initial_porosity is None:
+        initial_porosity = np.array(state["porosity"].value, copy=True)
+        state["initial_porosity_for_filling_limit"] = initial_porosity
+    return initial_porosity
+
+
 def update_effective_properties(state):
     """
     第一版占位函数：
@@ -100,10 +113,12 @@ def update_effective_properties(state):
     clogging = state["clogging"]
     params = get_slurry_parameters(state)
 
-    # Placeholder assumption: structural mobility is initialized once from
-    # porosity/permeability; later steps only apply clogging attenuation.
-    mobility_value = intrinsic_mobility.value / (
-        1.0 + params["mobility_clogging_factor"] * clogging.value
+    # Placeholder assumption: clogging is normalized blockage in [0, 1].
+    # Effective mobility decays smoothly with blockage.
+    clogging_value = np.clip(clogging.value, 0.0, 1.0)
+    mobility_value = intrinsic_mobility.value * np.power(
+        1.0 - clogging_value,
+        float(params.get("mobility_blockage_exponent", 2.0)),
     )
     mobility.setValue(mobility_value)
     mobility.setValue(np.maximum(mobility_value, params["min_mobility"]))
@@ -167,12 +182,20 @@ def solve_slurry_step(state, dt=0.01):
 
     # 下面是第一版占位更新逻辑，不代表最终物理
     # Placeholder post-update rules, not a final constitutive model.
-    filling.setValue(filling.value + params["filling_rate"] * pressure.value * dt)
-    clogging.setValue(
-        clogging.value + params["clogging_rate"] * filling.value * dt
+    initial_porosity = get_initial_porosity_for_filling_limit(state)
+    filling_limit = np.maximum(
+        float(params.get("filling_limit_fraction", 0.95)) * initial_porosity,
+        1.0e-12,
     )
-    filling.setValue(np.maximum(filling.value, 0.0))
-    clogging.setValue(np.maximum(clogging.value, 0.0))
+    filling_increment = (
+        float(params["filling_rate"]) * np.maximum(pressure.value, 0.0) * dt
+    )
+    filling_value = np.clip(filling.value + filling_increment, 0.0, filling_limit)
+    filling.setValue(filling_value)
+
+    # Placeholder meaning: normalized blockage level from current filling.
+    clogging_value = np.clip(filling_value / filling_limit, 0.0, 1.0)
+    clogging.setValue(clogging_value)
     step_idx_raw = state.get("flow_step_index", 0)
     try:
         step_idx = int(step_idx_raw)

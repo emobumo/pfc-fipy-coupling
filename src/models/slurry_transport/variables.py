@@ -44,6 +44,12 @@ def build_placeholder_slurry_parameters():
         "inlet_center_x": 1.25,
         "inlet_half_width_x": 0.45,
         "inlet_pressure_value": 1.0,
+        # Placeholder filling/clogging/mobility feedback (Step 1):
+        # filling is occupied pore-volume fraction, bounded by
+        # filling_limit_fraction * initial porosity.
+        "filling_limit_fraction": 0.95,
+        # Mobility attenuation: intrinsic_mobility * (1 - clogging)^n.
+        "mobility_blockage_exponent": 2.0,
         "filling_rate": 0.1,
         "clogging_rate": 0.01,
     }
