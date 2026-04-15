@@ -18,9 +18,14 @@ def build_placeholder_slurry_parameters():
         "porosity_min": 0.05,
         "porosity_max": 0.95,
         "fallback_particle_area_ratio": 0.15,
+        "porosity_clip_min": 0.05,
+        "porosity_clip_max": 0.95,
         "permeability_min": 0.2,
         "permeability_max": 1.0,
+        "permeability_clip_min": 0.2,
+        "permeability_clip_max": 1.0,
         "porosity_to_permeability_exponent": 2.0,
+        "porosity_to_permeability_formula": "power_normalized_linear_range",
         # Placeholder top pouring boundary (localized on top surface).
         # Preferred geometry keys:
         #   core footprint + spread footprint on the top boundary.

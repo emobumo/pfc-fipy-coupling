@@ -122,11 +122,42 @@ def _print_zone_means(step_idx, geo):
     )
 
 
+def _print_mapping_setup(state):
+    report = state.get("structure_init_report", {})
+    if len(report) == 0:
+        print("Mapping setup: unavailable")
+        return
+    print(
+        "Mapping formula: {0}, exponent={1:.3f}, reference_mobility={2:.3f}".format(
+            report.get("porosity_to_permeability_formula", "NA"),
+            report["porosity_to_permeability_exponent"],
+            report["reference_mobility"],
+        )
+    )
+    print(
+        "Porosity range/clipping: [{0:.3f}, {1:.3f}] / [{2:.3f}, {3:.3f}]".format(
+            report["porosity_range"][0],
+            report["porosity_range"][1],
+            report["porosity_clip_range"][0],
+            report["porosity_clip_range"][1],
+        )
+    )
+    print(
+        "Permeability range/clipping: [{0:.3f}, {1:.3f}] / [{2:.3f}, {3:.3f}]".format(
+            report["permeability_range"][0],
+            report["permeability_range"][1],
+            report["permeability_clip_range"][0],
+            report["permeability_clip_range"][1],
+        )
+    )
+
+
 def main(num_steps=10, dt=0.01, zone_report_interval=5):
     print("Initialize once, then advance same state for {0} steps.".format(num_steps))
     state = drv.initialize_problem()
     params = state["slurry_parameters"]
     geo = _get_inlet_geometry(params)
+    _print_mapping_setup(state)
 
     for i in range(num_steps):
         loading_factor = _calc_loading_factor(params, i)

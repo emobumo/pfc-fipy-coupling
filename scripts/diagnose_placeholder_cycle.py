@@ -134,6 +134,27 @@ def _print_structure_init_report(state):
         return
     print("Structure init report:")
     print(
+        "  formula: {0}".format(
+            report.get("porosity_to_permeability_formula", "NA")
+        )
+    )
+    print(
+        "  porosity range/clipping: [{0:.3f}, {1:.3f}] / [{2:.3f}, {3:.3f}]".format(
+            report["porosity_range"][0],
+            report["porosity_range"][1],
+            report["porosity_clip_range"][0],
+            report["porosity_clip_range"][1],
+        )
+    )
+    print(
+        "  permeability range/clipping: [{0:.3f}, {1:.3f}] / [{2:.3f}, {3:.3f}]".format(
+            report["permeability_range"][0],
+            report["permeability_range"][1],
+            report["permeability_clip_range"][0],
+            report["permeability_clip_range"][1],
+        )
+    )
+    print(
         "  porosity min/max: {0:.6e} / {1:.6e}".format(
             report["porosity_min"], report["porosity_max"]
         )
