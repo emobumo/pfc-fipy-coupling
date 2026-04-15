@@ -37,3 +37,17 @@ Ask before changing:
 - The particle skeleton is rigid; do not add fluid-driven particle deformation.
 - Porosity is transferred only once at initialization; do not add later porosity updates.
 - The particle model is fixed; do not add automatic particle-model adaptation unless explicitly requested.
+
+## Modeling constraints for code generation
+
+When modifying this repository, keep the following assumptions unless the user explicitly changes them:
+
+- Treat the waste-rock skeleton as fixed.
+- Do not introduce fluid-driven particle motion.
+- Do not update porosity dynamically after initialization.
+- Treat the slurry transport process as variable-saturation continuum transport.
+- Use a generalized nonlinear Darcy-type framework rather than a simple saturated linear Darcy law.
+- Do not automatically switch to a standard Richards–van Genuchten soil-water model.
+- Consider Bingham-type slurry behavior in the first-version baseline.
+- Keep clogging disabled in the first-version baseline unless explicitly requested.
+- Preserve clean extension points for future rheology, clogging, or dynamic porosity upgrades.
