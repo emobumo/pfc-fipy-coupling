@@ -81,3 +81,11 @@ Under these assumptions:
 - permeability / intrinsic mobility is initialized once from the initial structure
 - later flow evolution is represented on the FiPy side only
 - fluid results are written back to particle extra values for diagnostics / visualization only
+
+## Current first-version constitutive interpretation
+
+For the current baseline, slurry transport is interpreted as variable-saturation continuum transport in a generalized nonlinear Darcy-type framework.
+
+The first-version baseline should conceptually account for Bingham-type yield behavior rather than treating slurry as an ordinary Newtonian fluid.
+
+Clogging is not treated as a dominant mechanism in the current first-version baseline unless it is explicitly re-enabled later.

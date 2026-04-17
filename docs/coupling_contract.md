@@ -45,10 +45,15 @@ Potential quantities exchanged from PFC2D to FiPy include:
 
 ## FiPy -> PFC2D
 Potential quantities exchanged from FiPy to PFC2D include:
-- pressure-like field
-- hydraulic head-like field if that form is still used
+
+- pressure field (primary current-baseline variable)
+
+- hydraulic-head-like quantity only if a later formulation explicitly requires it
+
 - flux / velocity field
+
 - local slurry occupancy / filling indicator
+
 - local deposition / clogging indicator if introduced later
 
 ## Current placeholder pouring boundary
@@ -66,6 +71,12 @@ The current reference implementation follows the rainfall infiltration case, whe
 ## Execution rule
 The exchange sequence should remain consistent with the reference case until the new slurry-transport framework is stable.
 The physical interpretation of variables may change, but the data-exchange order should remain explicit and traceable.
+
+## Interpretation rule
+
+This document defines coupling order, exchanged quantities, and interface logic.
+
+The current physical interpretation of transported variables is governed by `docs/physical_model.md`.
 
 ## Development rule
 Reference-case code under `reference_cases/` is for workflow reference only.
