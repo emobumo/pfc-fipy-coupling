@@ -11,8 +11,11 @@ def build_placeholder_slurry_parameters():
     return {
         "reference_mobility": 1.0,
         "reference_storage": 1.0,
-        "mobility_clogging_factor": 1.0,
+        "mobility_clogging_factor": 1.0,  # Legacy placeholder key (currently unused).
         "min_mobility": 1.0e-6,
+        # Gate for first-version baseline behavior.
+        # Keep clogging feedback disabled unless explicitly enabled in a test/case.
+        "enable_clogging_feedback": False,
         # One-time porosity -> permeability placeholder mapping parameters.
         "porosity_default": 0.35,
         "porosity_min": 0.05,
@@ -51,7 +54,7 @@ def build_placeholder_slurry_parameters():
         # Mobility attenuation: intrinsic_mobility * (1 - clogging)^n.
         "mobility_blockage_exponent": 2.0,
         "filling_rate": 0.1,
-        "clogging_rate": 0.01,
+        "clogging_rate": 0.01,  # Legacy placeholder key (currently unused).
     }
 
 

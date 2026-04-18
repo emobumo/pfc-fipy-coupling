@@ -10,8 +10,8 @@ The slurry then migrates, infiltrates, and redistributes within the waste-rock m
 ## Current inlet boundary (placeholder)
 At the current stage, FiPy uses a simple engineering placeholder for slurry pouring:
 - apply a fixed pressure value on a top-surface inlet patch
-- define the patch by `inlet_center_x` and `inlet_half_width_x`
-- tune inlet intensity by `inlet_pressure_value`
+- define the inlet by `inlet_zone_center_x`, `inlet_core_width_x`, and `inlet_spread_width_x`
+- tune inlet intensity by `inlet_pressure_core_value` and `inlet_pressure_spread_factor`
 
 This is intentionally a temporary boundary representation to keep coupling validation simple.
 

@@ -185,6 +185,7 @@ def _build_cases(base_params):
             "name": "flow_stronger_mobility_reduction",
             "group": "flow",
             "overrides": {
+                "enable_clogging_feedback": True,
                 "mobility_blockage_exponent": base_params.get("mobility_blockage_exponent", 2.0) * 2.5,
             },
         },

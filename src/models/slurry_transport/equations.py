@@ -113,9 +113,13 @@ def update_effective_properties(state):
     clogging = state["clogging"]
     params = get_slurry_parameters(state)
 
-    # Placeholder assumption: clogging is normalized blockage in [0, 1].
-    # Effective mobility decays smoothly with blockage.
-    clogging_value = np.clip(clogging.value, 0.0, 1.0)
+    # First-version baseline: clogging feedback is optional and disabled by default.
+    if params.get("enable_clogging_feedback", False):
+        # Placeholder assumption: clogging is normalized blockage in [0, 1].
+        # Effective mobility decays smoothly with blockage.
+        clogging_value = np.clip(clogging.value, 0.0, 1.0)
+    else:
+        clogging_value = 0.0
     mobility_value = intrinsic_mobility.value * np.power(
         1.0 - clogging_value,
         float(params.get("mobility_blockage_exponent", 2.0)),
@@ -194,7 +198,11 @@ def solve_slurry_step(state, dt=0.01):
     filling.setValue(filling_value)
 
     # Placeholder meaning: normalized blockage level from current filling.
-    clogging_value = np.clip(filling_value / filling_limit, 0.0, 1.0)
+    # Keep disabled in baseline unless explicitly requested by a test/case.
+    if params.get("enable_clogging_feedback", False):
+        clogging_value = np.clip(filling_value / filling_limit, 0.0, 1.0)
+    else:
+        clogging_value = np.zeros_like(filling_value)
     clogging.setValue(clogging_value)
     step_idx_raw = state.get("flow_step_index", 0)
     try:

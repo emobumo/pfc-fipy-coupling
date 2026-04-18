@@ -58,9 +58,9 @@ Potential quantities exchanged from FiPy to PFC2D include:
 
 ## Current placeholder pouring boundary
 For the current validated coupling stage, the FiPy inlet boundary is kept simple:
-- top boundary inlet patch centered at `inlet_center_x`
-- inlet half-width in x as `inlet_half_width_x`
-- fixed inlet pressure value as `inlet_pressure_value`
+- top boundary inlet centered at `inlet_zone_center_x` with core/spread widths
+- inlet widths in x as `inlet_core_width_x` and `inlet_spread_width_x`
+- inlet pressure levels as `inlet_pressure_core_value` and `inlet_pressure_spread_factor`
 
 This boundary is an engineering placeholder only and does not represent a final constitutive inflow model.
 
