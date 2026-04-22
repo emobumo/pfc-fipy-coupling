@@ -4,17 +4,23 @@
 Engineering-scale simulation of slurry grouting / filling in underground mine waste rock using PFC2D + FiPy coupling.
 
 ## Physical scenario
-Slurry is poured onto the top surface of a waste-rock pile in an underground mine.
+
+A grouting borehole is arranged at the top of the waste-rock pile in an underground mine.
+
+Slurry is injected into the waste-rock mass through this borehole under a constant-pressure boundary condition.
+
 The slurry then migrates, infiltrates, and redistributes within the waste-rock mass.
 
 ## Current inlet boundary (placeholder)
-At the current stage, FiPy uses a simple engineering placeholder for slurry pouring:
-- apply a fixed pressure value on a top-surface inlet patch
-- define the inlet by `inlet_zone_center_x`, `inlet_core_width_x`, and `inlet_spread_width_x`
-- tune inlet intensity by `inlet_pressure_core_value` and `inlet_pressure_spread_factor`
 
-This is intentionally a temporary boundary representation to keep coupling validation simple.
+At the current stage, FiPy uses a simple engineering placeholder for borehole injection:
 
+- represent the grouting borehole by a localized inlet zone near the top of the waste-rock pile
+- define the inlet zone by `inlet_zone_center_x`, `inlet_core_width_x`, and `inlet_spread_width_x`
+- apply a constant-pressure injection boundary through `inlet_pressure_core_value`
+- use `inlet_pressure_spread_factor` to describe the spread-zone pressure level relative to the core injection pressure
+
+This is intentionally a temporary engineering representation of top-borehole constant-pressure injection, used to keep coupling validation and early model development simple.
 ## Engineering meaning
 This model is intended to represent slurry transport behavior in a waste-rock filling process at engineering scale, rather than a small laboratory-scale soil-column rainfall test.
 

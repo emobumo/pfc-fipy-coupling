@@ -305,7 +305,7 @@ def main(dt=0.01, sample_count=5):
             geo["spread_x_min"], geo["spread_x_max"], geo["spread_pressure_value"]
         )
     )
-    print("Inlet loading factor (current step): {0:.6f}".format(load_factor))
+    print("Inlet pressure scale (current step): {0:.6f}".format(load_factor))
     print(
         "Inlet widths (core/spread): {0:.6f} / {1:.6f}".format(
             geo["core_x_max"] - geo["core_x_min"],

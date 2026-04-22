@@ -2,7 +2,7 @@
 
 ## 1. Problem statement
 
-This project studies slurry pouring and migration through a waste-rock pile in an underground mine backfilling / grouting context.
+This project studies slurry injection and migration through a waste-rock pile in an underground mine backfilling / grouting context.
 
 The final objective is not to directly reproduce a rainfall infiltration case, but to build a dedicated slurry-transport model on a fixed waste-rock skeleton:
 
@@ -28,7 +28,7 @@ The slurry transport process is treated as a variable-saturation process rather 
 
 Reason:
 
-- slurry is poured locally from the top,
+- slurry is injected through a top borehole under a constant-pressure boundary,
 - the waste-rock void space is not fully occupied by slurry at the beginning,
 - slurry progressively occupies pore volume during migration.
 

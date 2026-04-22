@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from fipy import TransientTerm, DiffusionTerm
+from fipy import DiffusionTerm, TransientTerm
 
 
 def get_slurry_parameters(state):
@@ -10,7 +10,7 @@ def get_slurry_parameters(state):
 
 def get_inlet_x_range(params):
     """
-    Return inlet x-range for placeholder top localized pouring.
+    Return inlet x-range for placeholder localized borehole-injection region.
     Prefer center+width keys; fall back to legacy center+half-width keys.
     """
     if ("inlet_zone_center_x" in params) and ("inlet_zone_width_x" in params):
@@ -27,8 +27,8 @@ def get_inlet_x_range(params):
 
 def get_inlet_geometry(params):
     """
-    Return placeholder top-pouring geometry and pressures.
-    Core = stronger pouring patch; spread = weaker surrounding patch.
+    Return placeholder borehole-injection geometry and pressures.
+    Core = stronger borehole-influence patch; spread = weaker surrounding patch.
     """
     center = params.get("inlet_zone_center_x", params.get("inlet_center_x", 0.0))
     core_width = params.get("inlet_core_width_x", params.get("inlet_zone_width_x", 0.0))
@@ -88,8 +88,6 @@ def get_inlet_loading_factor(state, params):
 def get_initial_porosity_for_filling_limit(state):
     """
     Cache initial porosity once for filling upper-bound evaluation.
-    This keeps the placeholder meaning explicit even if porosity handling
-    is extended later.
     """
     initial_porosity = state.get("initial_porosity_for_filling_limit")
     if initial_porosity is None:
@@ -98,112 +96,207 @@ def get_initial_porosity_for_filling_limit(state):
     return initial_porosity
 
 
-def update_effective_properties(state):
-    """
-    第一版占位函数：
-    根据当前 filling / clogging 更新 mobility 和 storage。
+def _to_array(value_or_var):
+    if hasattr(value_or_var, "value"):
+        return np.asarray(value_or_var.value, dtype=float)
+    return np.asarray(value_or_var, dtype=float)
 
-    这里先不给复杂本构，只做一个最简单、可运行的逻辑：
-    - clogging 越大，mobility 越小
-    - storage 暂时保持常数
-    """
-    mobility = state["mobility"]
-    intrinsic_mobility = state["intrinsic_mobility"]
-    storage = state["storage"]
-    clogging = state["clogging"]
+
+def compute_pressure_gradient_magnitude(state):
+    pressure = state["pressure"]
+    grad_x = _to_array(pressure.grad()[0])
+    grad_y = _to_array(pressure.grad()[1])
+    return np.sqrt(np.maximum(grad_x * grad_x + grad_y * grad_y, 0.0))
+
+
+def compute_yield_factor(state, grad_mag):
     params = get_slurry_parameters(state)
+    if not params.get("enable_bingham_yield", False):
+        return np.ones_like(grad_mag)
 
-    # First-version baseline: clogging feedback is optional and disabled by default.
-    if params.get("enable_clogging_feedback", False):
-        # Placeholder assumption: clogging is normalized blockage in [0, 1].
-        # Effective mobility decays smoothly with blockage.
-        clogging_value = np.clip(clogging.value, 0.0, 1.0)
+    eps = max(float(params.get("yield_eps", 1.0e-12)), 1.0e-20)
+    smoothing = max(float(params.get("yield_gradient_smoothing", 0.05)), eps)
+    grad_crit = float(params.get("yield_gradient_crit", 0.25))
+    arg = np.clip((grad_mag - grad_crit) / smoothing, -60.0, 60.0)
+    grad_active = smoothing * np.log1p(np.exp(arg))
+    yield_factor = grad_active / (grad_mag + eps)
+    return np.clip(yield_factor, 0.0, 1.0)
+
+
+def update_effective_mobility(state, grad_mag=None, yield_factor=None):
+    params = get_slurry_parameters(state)
+    mobility_structural = state["mobility_structural"]
+    mobility_effective = state["mobility_effective"]
+    storage = state["storage"]
+
+    if params.get("enable_bingham_yield", False):
+        if grad_mag is None:
+            grad_mag = compute_pressure_gradient_magnitude(state)
+        if yield_factor is None:
+            yield_factor = compute_yield_factor(state, grad_mag)
+        floor_factor = float(params.get("yield_floor_factor", 0.0))
+        floor_factor = min(max(floor_factor, 0.0), 1.0)
+        yield_scale = np.maximum(yield_factor, floor_factor)
+        if params.get("enable_clogging_feedback", False):
+            clogging = state["clogging"]
+            clogging_value = np.clip(clogging.value, 0.0, 1.0)
+            clogging_scale = np.power(
+                1.0 - clogging_value,
+                float(params.get("mobility_blockage_exponent", 2.0)),
+            )
+        else:
+            clogging_scale = 1.0
     else:
-        clogging_value = 0.0
-    mobility_value = intrinsic_mobility.value * np.power(
-        1.0 - clogging_value,
-        float(params.get("mobility_blockage_exponent", 2.0)),
-    )
-    mobility.setValue(mobility_value)
-    mobility.setValue(np.maximum(mobility_value, params["min_mobility"]))
+        # Default linear baseline path: do not compute gradient/yield physics.
+        # Keep effective mobility equal to structural mobility.
+        yield_factor = np.ones_like(mobility_structural.value, dtype=float)
+        mobility_value = np.array(mobility_structural.value, copy=True)
+        mobility_effective.setValue(mobility_value)
+        state["mobility"].setValue(mobility_value)
+        state["yield_factor"].setValue(yield_factor)
+        storage.setValue(params["reference_storage"])
+        return
 
-    # Placeholder assumption: storage stays constant for now.
+    mobility_value = mobility_structural.value * yield_scale * clogging_scale
+    mobility_value = np.maximum(mobility_value, float(params["min_mobility"]))
+    mobility_effective.setValue(mobility_value)
+    # Legacy alias retained.
+    state["mobility"].setValue(mobility_value)
+
+    state["yield_factor"].setValue(yield_factor)
     storage.setValue(params["reference_storage"])
 
 
-def apply_boundary_conditions(state):
-    """
-    第一版边界条件占位：
-    暂时只模拟顶部局部入流/高压区的效果。
-    后面再替换成真正的浆液倾倒边界。
-    """
+def update_effective_properties(state):
+    # Legacy compatibility wrapper.
+    update_effective_mobility(state)
+
+
+def _compute_net_inflow_from_flux(state):
     pressure = state["pressure"]
-    mesh = state["mesh"]
-    params = get_slurry_parameters(state)
-    fx, fy = mesh.faceCenters()
-    # Placeholder engineering boundary: top pouring represented by
-    # a fixed-pressure inlet patch with tunable center and half-width.
-    geo = get_inlet_geometry(params)
-    load_factor = get_inlet_loading_factor(state, params)
-
-    # 顶部中间一小段作为“浆液输入区”
-    spread_faces = mesh.facesTop & (fx > geo["spread_x_min"]) & (fx < geo["spread_x_max"])
-    core_faces = mesh.facesTop & (fx > geo["core_x_min"]) & (fx < geo["core_x_max"])
-
-    # 先用固定 pressure 边界做最简单近似
-    # Still a placeholder boundary condition, not a full inflow model.
-    pressure.constrain(geo["spread_pressure_value"] * load_factor, spread_faces)
-    pressure.constrain(geo["core_pressure_value"] * load_factor, core_faces)
-
-    # 其余边界的最简处理
-    pressure.grad.constrain(0.0, mesh.facesLeft)
-    pressure.grad.constrain(0.0, mesh.facesRight)
-    pressure.grad.constrain(0.0, mesh.facesBottom)
+    mobility_effective = state["mobility_effective"]
+    try:
+        # q = -mobility_effective * grad(p), so net inflow = -div(q)
+        # = div(mobility_effective * grad(p)).
+        net_inflow = (mobility_effective * pressure.grad()).divergence.value
+        return np.asarray(net_inflow, dtype=float)
+    except Exception:
+        return np.zeros_like(pressure.value)
 
 
-def solve_slurry_step(state, dt=0.01):
-    """
-    第一版浆液连续场求解器骨架。
-
-    当前只是一个“压力样变量”的扩散-储集形式：
-        storage * dp/dt = div(mobility * grad(p))
-
-    这不是最终浆液模型，只是为了先把耦合框架跑通。
-    """
-    pressure = state["pressure"]
-    mobility = state["mobility"]
-    storage = state["storage"]
+def update_filling_from_flux(state, dt):
     filling = state["filling"]
     clogging = state["clogging"]
     params = get_slurry_parameters(state)
 
-    update_effective_properties(state)
-    apply_boundary_conditions(state)
-
-    # Placeholder transport form for the current engineering stub only.
-    eq = TransientTerm(coeff=storage) == DiffusionTerm(coeff=mobility)
-    eq.solve(var=pressure, dt=dt)
-
-    # 下面是第一版占位更新逻辑，不代表最终物理
-    # Placeholder post-update rules, not a final constitutive model.
     initial_porosity = get_initial_porosity_for_filling_limit(state)
     filling_limit = np.maximum(
         float(params.get("filling_limit_fraction", 0.95)) * initial_porosity,
         1.0e-12,
     )
-    filling_increment = (
-        float(params["filling_rate"]) * np.maximum(pressure.value, 0.0) * dt
+    filling_limit = np.minimum(filling_limit, float(params.get("filling_max", 1.0)))
+
+    net_inflow = _compute_net_inflow_from_flux(state)
+    fill_accumulation = max(float(params.get("fill_accumulation_factor", 0.1)), 0.0)
+    filling_increment = fill_accumulation * np.maximum(net_inflow, 0.0) * dt
+    filling_value = np.clip(
+        filling.value + filling_increment,
+        filling.value,
+        filling_limit,
     )
-    filling_value = np.clip(filling.value + filling_increment, 0.0, filling_limit)
     filling.setValue(filling_value)
 
-    # Placeholder meaning: normalized blockage level from current filling.
-    # Keep disabled in baseline unless explicitly requested by a test/case.
+    # Keep default baseline unclogged unless explicitly enabled.
     if params.get("enable_clogging_feedback", False):
         clogging_value = np.clip(filling_value / filling_limit, 0.0, 1.0)
     else:
         clogging_value = np.zeros_like(filling_value)
     clogging.setValue(clogging_value)
+    return net_inflow
+
+
+def apply_boundary_conditions(state):
+    """
+    Apply placeholder borehole-injection boundary conditions.
+    """
+    pressure = state["pressure"]
+    mesh = state["mesh"]
+    params = get_slurry_parameters(state)
+    fx, fy = mesh.faceCenters()
+    geo = get_inlet_geometry(params)
+    load_factor = get_inlet_loading_factor(state, params)
+
+    spread_faces = mesh.facesTop & (fx > geo["spread_x_min"]) & (fx < geo["spread_x_max"])
+    core_faces = mesh.facesTop & (fx > geo["core_x_min"]) & (fx < geo["core_x_max"])
+
+    pressure.constrain(geo["spread_pressure_value"] * load_factor, spread_faces)
+    pressure.constrain(geo["core_pressure_value"] * load_factor, core_faces)
+
+    pressure.grad.constrain(0.0, mesh.facesLeft)
+    pressure.grad.constrain(0.0, mesh.facesRight)
+    pressure.grad.constrain(0.0, mesh.facesBottom)
+
+
+def _solve_pressure_once(state, dt):
+    pressure = state["pressure"]
+    storage = state["storage"]
+    mobility_effective = state["mobility_effective"]
+    eq = TransientTerm(coeff=storage) == DiffusionTerm(coeff=mobility_effective)
+    eq.solve(var=pressure, dt=dt)
+
+
+def solve_slurry_step(state, dt=0.01):
+    """
+    Solve one slurry-transport step.
+
+    Default path stays compatible with the current linear baseline.
+    Bingham-like yield control is activated only when enable_bingham_yield=True.
+    """
+    pressure = state["pressure"]
+    params = get_slurry_parameters(state)
+
+    apply_boundary_conditions(state)
+
+    if params.get("enable_bingham_yield", False):
+        max_iters = int(params.get("picard_max_iters", 4))
+        if max_iters < 1:
+            max_iters = 1
+        tol = float(params.get("picard_tol", 1.0e-6))
+        if tol <= 0.0:
+            tol = 1.0e-6
+
+        previous_pressure = np.array(pressure.value, copy=True)
+        picard_residual = 0.0
+        it = 0
+        for it in range(max_iters):
+            grad_mag = compute_pressure_gradient_magnitude(state)
+            yield_factor = compute_yield_factor(state, grad_mag)
+            update_effective_mobility(state, grad_mag=grad_mag, yield_factor=yield_factor)
+            _solve_pressure_once(state, dt=dt)
+
+            picard_residual = float(np.max(np.abs(pressure.value - previous_pressure)))
+            previous_pressure = np.array(pressure.value, copy=True)
+            if picard_residual <= tol:
+                break
+        state["picard_iterations_last"] = it + 1
+        state["picard_residual_last"] = picard_residual
+    else:
+        # Linear baseline.
+        update_effective_mobility(state)
+        _solve_pressure_once(state, dt=dt)
+        state["picard_iterations_last"] = 1
+        state["picard_residual_last"] = 0.0
+
+    if params.get("enable_bingham_yield", False):
+        grad_mag = compute_pressure_gradient_magnitude(state)
+        yield_factor = compute_yield_factor(state, grad_mag)
+        update_effective_mobility(state, grad_mag=grad_mag, yield_factor=yield_factor)
+    else:
+        grad_mag = np.zeros_like(pressure.value, dtype=float)
+        yield_factor = np.ones_like(pressure.value, dtype=float)
+        update_effective_mobility(state, grad_mag=grad_mag, yield_factor=yield_factor)
+    net_inflow = update_filling_from_flux(state, dt)
+
     step_idx_raw = state.get("flow_step_index", 0)
     try:
         step_idx = int(step_idx_raw)
@@ -211,12 +304,17 @@ def solve_slurry_step(state, dt=0.01):
         step_idx = 0
     state["flow_step_index"] = step_idx + 1
 
+    mobility_effective = state["mobility_effective"]
     result = {
         "scalar_pressure": pressure.value,
-        "scalar_filling": filling.value,
-        "scalar_clogging": clogging.value,
-        "vector_flux_x": (-mobility * pressure.grad()[0]).value,
-        "vector_flux_y": (-mobility * pressure.grad()[1]).value,
+        "scalar_filling": state["filling"].value,
+        "scalar_clogging": state["clogging"].value,
+        "scalar_mobility_effective": mobility_effective.value,
+        "scalar_mobility_structural": state["mobility_structural"].value,
+        "scalar_yield_factor": state["yield_factor"].value,
+        "scalar_grad_mag": grad_mag,
+        "scalar_net_inflow": net_inflow,
+        "vector_flux_x": _to_array(-mobility_effective * pressure.grad()[0]),
+        "vector_flux_y": _to_array(-mobility_effective * pressure.grad()[1]),
     }
-
     return result

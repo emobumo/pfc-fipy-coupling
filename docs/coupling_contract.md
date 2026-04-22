@@ -56,13 +56,17 @@ Potential quantities exchanged from FiPy to PFC2D include:
 
 - local deposition / clogging indicator if introduced later
 
-## Current placeholder pouring boundary
-For the current validated coupling stage, the FiPy inlet boundary is kept simple:
-- top boundary inlet centered at `inlet_zone_center_x` with core/spread widths
-- inlet widths in x as `inlet_core_width_x` and `inlet_spread_width_x`
-- inlet pressure levels as `inlet_pressure_core_value` and `inlet_pressure_spread_factor`
+## Current placeholder borehole-injection boundary
+For the current validated coupling stage, the FiPy inlet boundary is kept as a simple engineering placeholder for borehole injection:
 
-This boundary is an engineering placeholder only and does not represent a final constitutive inflow model.
+- a localized inlet zone near the top of the waste-rock pile represents the grouting borehole influence region
+- inlet center in x is controlled by `inlet_zone_center_x`
+- inlet core width is controlled by `inlet_core_width_x`
+- inlet spread width is controlled by `inlet_spread_width_x`
+- constant injection pressure at the borehole core is prescribed by `inlet_pressure_core_value`
+- the surrounding spread-zone pressure level is controlled by `inlet_pressure_spread_factor`
+
+This boundary is an engineering placeholder only and does not yet represent a fully resolved borehole geometry or final injection-boundary constitutive model.
 
 ## Mapping rule
 Continuum field variables computed on the FiPy mesh are mapped back to particles in PFC2D by interpolation.

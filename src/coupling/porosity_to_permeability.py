@@ -31,14 +31,14 @@ def porosity_to_permeability(porosity, params):
 def _build_structure_init_report(state, params):
     porosity = np.asarray(state["porosity"].value, dtype=float)
     permeability = np.asarray(state["permeability"].value, dtype=float)
-    intrinsic_mobility = np.asarray(state["intrinsic_mobility"].value, dtype=float)
+    mobility_structural = np.asarray(state["mobility_structural"].value, dtype=float)
     return {
         "porosity_min": float(np.min(porosity)),
         "porosity_max": float(np.max(porosity)),
         "permeability_min": float(np.min(permeability)),
         "permeability_max": float(np.max(permeability)),
-        "intrinsic_mobility_min": float(np.min(intrinsic_mobility)),
-        "intrinsic_mobility_max": float(np.max(intrinsic_mobility)),
+        "intrinsic_mobility_min": float(np.min(mobility_structural)),
+        "intrinsic_mobility_max": float(np.max(mobility_structural)),
         "porosity_to_permeability_formula": params.get(
             "porosity_to_permeability_formula", "power_normalized_linear_range"
         ),
@@ -79,11 +79,13 @@ def initialize_structure_mobility_once(state):
     )
 
     permeability = porosity_to_permeability(porosity, params)
-    intrinsic_mobility = params["reference_mobility"] * permeability
+    mobility_structural = params["reference_mobility"] * permeability
 
     state["porosity"].setValue(porosity)
     state["permeability"].setValue(permeability)
-    state["intrinsic_mobility"].setValue(intrinsic_mobility)
-    state["mobility"].setValue(intrinsic_mobility)
+    state["mobility_structural"].setValue(mobility_structural)
+    state["mobility_effective"].setValue(mobility_structural)
+    state["intrinsic_mobility"].setValue(mobility_structural)
+    state["mobility"].setValue(mobility_structural)
     state["structure_init_report"] = _build_structure_init_report(state, params)
     state["structure_initialized_once"] = True

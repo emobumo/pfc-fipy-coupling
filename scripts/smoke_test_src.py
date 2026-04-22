@@ -18,8 +18,11 @@ def main():
     slurry_state = initialize_slurry_variables(state["mesh"])
     state.update(slurry_state)
 
-    required_keys = ["mesh", "x", "y", "fx", "fy",
-                     "pressure", "mobility", "storage", "filling", "clogging"]
+    required_keys = [
+        "mesh", "x", "y", "fx", "fy",
+        "pressure", "mobility", "storage", "filling", "clogging",
+        "mobility_structural", "mobility_effective", "yield_factor",
+    ]
 
     print("Step 3: check state keys")
     for key in required_keys:
@@ -34,8 +37,13 @@ def main():
         "scalar_pressure",
         "scalar_filling",
         "scalar_clogging",
+        "scalar_mobility_effective",
+        "scalar_mobility_structural",
+        "scalar_yield_factor",
+        "scalar_grad_mag",
+        "scalar_net_inflow",
         "vector_flux_x",
-        "vector_flux_y", 
+        "vector_flux_y",
     ]
 
     print("Step 5: check result keys")
@@ -48,6 +56,8 @@ def main():
     print("pressure min/max:", result["scalar_pressure"].min(), result["scalar_pressure"].max())
     print("filling min/max:", result["scalar_filling"].min(), result["scalar_filling"].max())
     print("clogging min/max:", result["scalar_clogging"].min(), result["scalar_clogging"].max())
+    print("mobility_effective min/max:", result["scalar_mobility_effective"].min(), result["scalar_mobility_effective"].max())
+    print("yield_factor min/max:", result["scalar_yield_factor"].min(), result["scalar_yield_factor"].max())
 
     print("Smoke test passed.")
 

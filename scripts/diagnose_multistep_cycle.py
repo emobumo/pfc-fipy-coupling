@@ -166,7 +166,7 @@ def main(num_steps=10, dt=0.01, zone_report_interval=5):
 
         flow_step_index = state.get("flow_step_index")
         print(
-            "[step {0}] flow_step_index={1}, inlet_loading_factor={2:.6f}".format(
+            "[step {0}] flow_step_index={1}, inlet_pressure_scale={2:.6f}".format(
                 i, flow_step_index, loading_factor
             )
         )

@@ -4,7 +4,7 @@ This repository develops a coupled PFC2D + FiPy workflow for engineering-scale s
 
 ## Project goal
 
-The target problem is local slurry pouring on the top of a waste-rock pile and the subsequent migration of slurry through the pile.
+The target problem is constant-pressure slurry injection through a grouting borehole located at the top of a waste-rock pile, and the subsequent migration of slurry through the pile.
 
 The final objective is **not** to directly copy a rainfall infiltration case. Instead, this project builds a dedicated slurry-transport model with the following role split:
 
