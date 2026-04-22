@@ -117,9 +117,10 @@ def compute_yield_factor(state, grad_mag):
     eps = max(float(params.get("yield_eps", 1.0e-12)), 1.0e-20)
     smoothing = max(float(params.get("yield_gradient_smoothing", 0.05)), eps)
     grad_crit = float(params.get("yield_gradient_crit", 0.25))
+    # Smooth monotonic threshold activation:
+    # ~0 below threshold, smooth transition around threshold, ~1 above threshold.
     arg = np.clip((grad_mag - grad_crit) / smoothing, -60.0, 60.0)
-    grad_active = smoothing * np.log1p(np.exp(arg))
-    yield_factor = grad_active / (grad_mag + eps)
+    yield_factor = 0.5 * (1.0 + np.tanh(arg))
     return np.clip(yield_factor, 0.0, 1.0)
 
 
@@ -227,24 +228,35 @@ def update_filling_from_flux(state, dt):
     params = get_slurry_parameters(state)
 
     porosity = _to_array(state["porosity"])
+    initial_porosity = get_initial_porosity_for_filling_limit(state)
     eps = max(float(params.get("yield_eps", 1.0e-12)), 1.0e-20)
     fill_accumulation = max(float(params.get("fill_accumulation_factor", 0.1)), 0.0)
     filling_max = max(float(params.get("filling_max", 1.0)), 0.0)
+    filling_limit_fraction = float(params.get("filling_limit_fraction", 0.95))
+    filling_limit_fraction = min(max(filling_limit_fraction, 0.0), 1.0)
+    local_filling_cap = np.clip(
+        filling_limit_fraction * initial_porosity,
+        0.0,
+        filling_max,
+    )
 
     net_inflow = _compute_net_inflow_from_flux(state)
     positive_inflow = np.maximum(net_inflow, 0.0)
     denom = np.maximum(porosity + eps, eps)
     filling_increment = dt * fill_accumulation * positive_inflow / denom
     filling_value = np.maximum(filling.value + filling_increment, filling.value)
-    filling_value = np.clip(filling_value, 0.0, filling_max)
+    filling_value = np.maximum(filling_value, 0.0)
+    filling_value = np.minimum(filling_value, local_filling_cap)
     filling.setValue(filling_value)
 
     # Keep default baseline unclogged unless explicitly enabled.
     if params.get("enable_clogging_feedback", False):
-        clogging_value = np.clip(filling_value / max(filling_max, eps), 0.0, 1.0)
+        clogging_denom = np.maximum(local_filling_cap, eps)
+        clogging_value = np.clip(filling_value / clogging_denom, 0.0, 1.0)
     else:
         clogging_value = np.zeros_like(filling_value)
     clogging.setValue(clogging_value)
+    state["filling_cap_last"] = local_filling_cap
     return net_inflow
 
 
@@ -341,6 +353,7 @@ def solve_slurry_step(state, dt=0.01):
     result = {
         "scalar_pressure": pressure.value,
         "scalar_filling": state["filling"].value,
+        "scalar_filling_cap": state.get("filling_cap_last", np.zeros_like(state["filling"].value)),
         "scalar_clogging": state["clogging"].value,
         "scalar_mobility_effective": mobility_effective.value,
         "scalar_mobility_structural": state["mobility_structural"].value,
