@@ -175,13 +175,50 @@ def update_effective_properties(state):
 def _compute_net_inflow_from_flux(state):
     pressure = state["pressure"]
     mobility_effective = state["mobility_effective"]
+    grad_x = _to_array(pressure.grad()[0])
+    grad_y = _to_array(pressure.grad()[1])
+    qx = -_to_array(mobility_effective.value) * grad_x
+    qy = -_to_array(mobility_effective.value) * grad_y
+
+    # Preferred path: true net inflow from FiPy divergence if supported.
     try:
         # q = -mobility_effective * grad(p), so net inflow = -div(q)
         # = div(mobility_effective * grad(p)).
-        net_inflow = (mobility_effective * pressure.grad()).divergence.value
-        return np.asarray(net_inflow, dtype=float)
+        net_inflow = _to_array((mobility_effective * pressure.grad()).divergence)
+        if net_inflow.shape == pressure.value.shape:
+            return net_inflow
     except Exception:
-        return np.zeros_like(pressure.value)
+        pass
+
+    # Robust legacy fallback: finite-difference net inflow proxy on the cell grid.
+    try:
+        x = _to_array(state["x"])
+        y = _to_array(state["y"])
+        n = x.size
+        ux = np.unique(np.round(x, 12))
+        uy = np.unique(np.round(y, 12))
+        nx = int(ux.size)
+        ny = int(uy.size)
+        if (nx > 1) and (ny > 1) and (nx * ny == n):
+            order = np.lexsort((x, y))
+            qx_grid = qx[order].reshape((ny, nx))
+            qy_grid = qy[order].reshape((ny, nx))
+            dx = float(np.median(np.diff(np.sort(ux))))
+            dy = float(np.median(np.diff(np.sort(uy))))
+            if dx <= 0.0:
+                dx = 1.0
+            if dy <= 0.0:
+                dy = 1.0
+            div_q = np.gradient(qx_grid, dx, axis=1) + np.gradient(qy_grid, dy, axis=0)
+            net_inflow = -div_q.reshape(-1)
+            out = np.zeros_like(net_inflow)
+            out[order] = net_inflow
+            return out
+    except Exception:
+        pass
+
+    # Final fallback: use local flux magnitude as positive inflow proxy.
+    return np.sqrt(np.maximum(qx * qx + qy * qy, 0.0))
 
 
 def update_filling_from_flux(state, dt):
@@ -189,26 +226,22 @@ def update_filling_from_flux(state, dt):
     clogging = state["clogging"]
     params = get_slurry_parameters(state)
 
-    initial_porosity = get_initial_porosity_for_filling_limit(state)
-    filling_limit = np.maximum(
-        float(params.get("filling_limit_fraction", 0.95)) * initial_porosity,
-        1.0e-12,
-    )
-    filling_limit = np.minimum(filling_limit, float(params.get("filling_max", 1.0)))
+    porosity = _to_array(state["porosity"])
+    eps = max(float(params.get("yield_eps", 1.0e-12)), 1.0e-20)
+    fill_accumulation = max(float(params.get("fill_accumulation_factor", 0.1)), 0.0)
+    filling_max = max(float(params.get("filling_max", 1.0)), 0.0)
 
     net_inflow = _compute_net_inflow_from_flux(state)
-    fill_accumulation = max(float(params.get("fill_accumulation_factor", 0.1)), 0.0)
-    filling_increment = fill_accumulation * np.maximum(net_inflow, 0.0) * dt
-    filling_value = np.clip(
-        filling.value + filling_increment,
-        filling.value,
-        filling_limit,
-    )
+    positive_inflow = np.maximum(net_inflow, 0.0)
+    denom = np.maximum(porosity + eps, eps)
+    filling_increment = dt * fill_accumulation * positive_inflow / denom
+    filling_value = np.maximum(filling.value + filling_increment, filling.value)
+    filling_value = np.clip(filling_value, 0.0, filling_max)
     filling.setValue(filling_value)
 
     # Keep default baseline unclogged unless explicitly enabled.
     if params.get("enable_clogging_feedback", False):
-        clogging_value = np.clip(filling_value / filling_limit, 0.0, 1.0)
+        clogging_value = np.clip(filling_value / max(filling_max, eps), 0.0, 1.0)
     else:
         clogging_value = np.zeros_like(filling_value)
     clogging.setValue(clogging_value)
