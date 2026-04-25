@@ -8,6 +8,16 @@ def get_slurry_parameters(state):
     return state["slurry_parameters"]
 
 
+def get_rheology_model(params):
+    model = params.get("rheology_model", "linear")
+    if model not in ("linear", "gated_bingham", "porous_bingham"):
+        model = "linear"
+    # Backward compatibility: older tests may only toggle enable_bingham_yield.
+    if (model == "linear") and params.get("enable_bingham_yield", False):
+        return "gated_bingham"
+    return model
+
+
 def get_inlet_x_range(params):
     """
     Return inlet x-range for placeholder localized borehole-injection region.
@@ -102,35 +112,112 @@ def _to_array(value_or_var):
     return np.asarray(value_or_var, dtype=float)
 
 
-def compute_pressure_gradient_magnitude(state):
+def compute_pressure_gradient_components(state):
     pressure = state["pressure"]
     grad_x = _to_array(pressure.grad()[0])
     grad_y = _to_array(pressure.grad()[1])
+    return grad_x, grad_y
+
+
+def compute_pressure_gradient_magnitude(state):
+    grad_x, grad_y = compute_pressure_gradient_components(state)
     return np.sqrt(np.maximum(grad_x * grad_x + grad_y * grad_y, 0.0))
 
 
 def compute_yield_factor(state, grad_mag):
     params = get_slurry_parameters(state)
-    if not params.get("enable_bingham_yield", False):
+    rheology_model = get_rheology_model(params)
+    if rheology_model == "linear":
         return np.ones_like(grad_mag)
 
-    eps = max(float(params.get("yield_eps", 1.0e-12)), 1.0e-20)
-    smoothing = max(float(params.get("yield_gradient_smoothing", 0.05)), eps)
-    grad_crit = float(params.get("yield_gradient_crit", 0.25))
-    # Smooth monotonic threshold activation:
-    # ~0 below threshold, smooth transition around threshold, ~1 above threshold.
-    arg = np.clip((grad_mag - grad_crit) / smoothing, -60.0, 60.0)
-    yield_factor = 0.5 * (1.0 + np.tanh(arg))
-    return np.clip(yield_factor, 0.0, 1.0)
+    if rheology_model == "gated_bingham":
+        eps = max(float(params.get("yield_eps", 1.0e-12)), 1.0e-20)
+        smoothing = max(float(params.get("yield_gradient_smoothing", 0.05)), eps)
+        grad_crit = float(params.get("yield_gradient_crit", 0.25))
+        # Smooth monotonic threshold activation:
+        # ~0 below threshold, smooth transition around threshold, ~1 above threshold.
+        arg = np.clip((grad_mag - grad_crit) / smoothing, -60.0, 60.0)
+        yield_factor = 0.5 * (1.0 + np.tanh(arg))
+        return np.clip(yield_factor, 0.0, 1.0)
+
+    # Porous-Bingham activation is computed from the physically corrected
+    # effective gradient, not the raw pressure-gradient magnitude.
+    return np.ones_like(grad_mag)
+
+
+def compute_porous_bingham_fields(state):
+    """
+    First-stage porous-medium Bingham approximation.
+
+    This uses a pore-scale threshold estimate for the pressure gradient:
+    grad_p_crit = yield_stress / characteristic_pore_size
+    It is an engineering closure, not a full constitutive derivation.
+    """
+    params = get_slurry_parameters(state)
+    grad_x, grad_y = compute_pressure_gradient_components(state)
+    rho = float(params.get("slurry_density", 1800.0))
+    gravity_y = float(params.get("gravity_y", -9.81))
+    reg_eps = max(float(params.get("regularization_eps", 1.0e-12)), 1.0e-20)
+    pore_size = max(float(params.get("characteristic_pore_size", 1.0e-2)), reg_eps)
+    yield_stress = float(params.get("yield_stress", 50.0))
+    plastic_viscosity = max(float(params.get("plastic_viscosity", 1.0)), reg_eps)
+    band_scale = max(float(params.get("yield_regularization_band", 0.10)), 0.0)
+
+    effective_grad_x = grad_x
+    effective_grad_y = grad_y - rho * gravity_y
+    effective_grad_mag = np.sqrt(
+        np.maximum(
+            effective_grad_x * effective_grad_x + effective_grad_y * effective_grad_y,
+            0.0,
+        )
+    )
+
+    grad_p_crit_scalar = yield_stress / pore_size
+    grad_p_crit = np.zeros_like(effective_grad_mag) + grad_p_crit_scalar
+    band = max(band_scale * grad_p_crit_scalar, reg_eps)
+    arg = np.clip((effective_grad_mag - grad_p_crit_scalar) / band, -60.0, 60.0)
+    activation = 0.5 * (1.0 + np.tanh(arg))
+    activation = np.clip(activation, 0.0, 1.0)
+
+    activation_floor = float(params.get("mobility_activation_floor", 1.0e-3))
+    activation_floor = min(max(activation_floor, reg_eps), 1.0)
+    activation_eff = np.maximum(activation, activation_floor)
+
+    mu_app = plastic_viscosity / activation_eff
+    mu_app = np.maximum(mu_app, float(params.get("min_apparent_viscosity", 1.0e-3)))
+    mu_app = np.minimum(mu_app, float(params.get("max_apparent_viscosity", 1.0e6)))
+
+    return {
+        "effective_grad_mag": effective_grad_mag,
+        "grad_p_crit": grad_p_crit,
+        "activation": activation,
+        "apparent_viscosity": mu_app,
+    }
 
 
 def update_effective_mobility(state, grad_mag=None, yield_factor=None):
     params = get_slurry_parameters(state)
+    rheology_model = get_rheology_model(params)
     mobility_structural = state["mobility_structural"]
     mobility_effective = state["mobility_effective"]
+    permeability = _to_array(state["permeability"])
     storage = state["storage"]
+    min_mobility = float(params["min_mobility"])
 
-    if params.get("enable_bingham_yield", False):
+    if rheology_model == "porous_bingham":
+        porous_fields = compute_porous_bingham_fields(state)
+        mobility_value = permeability / porous_fields["apparent_viscosity"]
+        mobility_value = np.maximum(mobility_value, min_mobility)
+        mobility_effective.setValue(mobility_value)
+        state["mobility"].setValue(mobility_value)
+        state["yield_factor"].setValue(porous_fields["activation"])
+        state["effective_grad_mag_last"] = porous_fields["effective_grad_mag"]
+        state["grad_p_crit_last"] = porous_fields["grad_p_crit"]
+        state["apparent_viscosity_last"] = porous_fields["apparent_viscosity"]
+        storage.setValue(params["reference_storage"])
+        return
+
+    if rheology_model == "gated_bingham":
         if grad_mag is None:
             grad_mag = compute_pressure_gradient_magnitude(state)
         if yield_factor is None:
@@ -155,16 +242,22 @@ def update_effective_mobility(state, grad_mag=None, yield_factor=None):
         mobility_effective.setValue(mobility_value)
         state["mobility"].setValue(mobility_value)
         state["yield_factor"].setValue(yield_factor)
+        state["effective_grad_mag_last"] = np.zeros_like(mobility_value)
+        state["grad_p_crit_last"] = np.zeros_like(mobility_value)
+        state["apparent_viscosity_last"] = np.zeros_like(mobility_value)
         storage.setValue(params["reference_storage"])
         return
 
     mobility_value = mobility_structural.value * yield_scale * clogging_scale
-    mobility_value = np.maximum(mobility_value, float(params["min_mobility"]))
+    mobility_value = np.maximum(mobility_value, min_mobility)
     mobility_effective.setValue(mobility_value)
     # Legacy alias retained.
     state["mobility"].setValue(mobility_value)
 
     state["yield_factor"].setValue(yield_factor)
+    state["effective_grad_mag_last"] = np.array(grad_mag, copy=True)
+    state["grad_p_crit_last"] = np.zeros_like(grad_mag) + float(params.get("yield_gradient_crit", 0.25))
+    state["apparent_viscosity_last"] = np.maximum(permeability, min_mobility) / np.maximum(mobility_value, min_mobility)
     storage.setValue(params["reference_storage"])
 
 
@@ -226,6 +319,7 @@ def update_filling_from_flux(state, dt):
     filling = state["filling"]
     clogging = state["clogging"]
     params = get_slurry_parameters(state)
+    rheology_model = get_rheology_model(params)
 
     porosity = _to_array(state["porosity"])
     initial_porosity = get_initial_porosity_for_filling_limit(state)
@@ -250,7 +344,7 @@ def update_filling_from_flux(state, dt):
     filling.setValue(filling_value)
 
     # Keep default baseline unclogged unless explicitly enabled.
-    if params.get("enable_clogging_feedback", False):
+    if (rheology_model != "porous_bingham") and params.get("enable_clogging_feedback", False):
         clogging_denom = np.maximum(local_filling_cap, eps)
         clogging_value = np.clip(filling_value / clogging_denom, 0.0, 1.0)
     else:
@@ -299,10 +393,11 @@ def solve_slurry_step(state, dt=0.01):
     """
     pressure = state["pressure"]
     params = get_slurry_parameters(state)
+    rheology_model = get_rheology_model(params)
 
     apply_boundary_conditions(state)
 
-    if params.get("enable_bingham_yield", False):
+    if rheology_model in ("gated_bingham", "porous_bingham"):
         max_iters = int(params.get("picard_max_iters", 4))
         if max_iters < 1:
             max_iters = 1
@@ -314,9 +409,12 @@ def solve_slurry_step(state, dt=0.01):
         picard_residual = 0.0
         it = 0
         for it in range(max_iters):
-            grad_mag = compute_pressure_gradient_magnitude(state)
-            yield_factor = compute_yield_factor(state, grad_mag)
-            update_effective_mobility(state, grad_mag=grad_mag, yield_factor=yield_factor)
+            if rheology_model == "gated_bingham":
+                grad_mag = compute_pressure_gradient_magnitude(state)
+                yield_factor = compute_yield_factor(state, grad_mag)
+                update_effective_mobility(state, grad_mag=grad_mag, yield_factor=yield_factor)
+            else:
+                update_effective_mobility(state)
             _solve_pressure_once(state, dt=dt)
 
             picard_residual = float(np.max(np.abs(pressure.value - previous_pressure)))
@@ -332,10 +430,14 @@ def solve_slurry_step(state, dt=0.01):
         state["picard_iterations_last"] = 1
         state["picard_residual_last"] = 0.0
 
-    if params.get("enable_bingham_yield", False):
+    if rheology_model == "gated_bingham":
         grad_mag = compute_pressure_gradient_magnitude(state)
         yield_factor = compute_yield_factor(state, grad_mag)
         update_effective_mobility(state, grad_mag=grad_mag, yield_factor=yield_factor)
+    elif rheology_model == "porous_bingham":
+        grad_mag = compute_pressure_gradient_magnitude(state)
+        update_effective_mobility(state)
+        yield_factor = _to_array(state["yield_factor"])
     else:
         grad_mag = np.zeros_like(pressure.value, dtype=float)
         yield_factor = np.ones_like(pressure.value, dtype=float)
@@ -359,6 +461,9 @@ def solve_slurry_step(state, dt=0.01):
         "scalar_mobility_structural": state["mobility_structural"].value,
         "scalar_yield_factor": state["yield_factor"].value,
         "scalar_grad_mag": grad_mag,
+        "scalar_effective_grad_mag": state.get("effective_grad_mag_last", np.zeros_like(grad_mag)),
+        "scalar_grad_p_crit": state.get("grad_p_crit_last", np.zeros_like(grad_mag)),
+        "scalar_apparent_viscosity": state.get("apparent_viscosity_last", np.zeros_like(grad_mag)),
         "scalar_net_inflow": net_inflow,
         "vector_flux_x": _to_array(-mobility_effective * pressure.grad()[0]),
         "vector_flux_y": _to_array(-mobility_effective * pressure.grad()[1]),

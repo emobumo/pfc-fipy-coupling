@@ -13,12 +13,29 @@ def build_placeholder_slurry_parameters():
         "reference_storage": 1.0,
         "mobility_clogging_factor": 1.0,  # Legacy placeholder key (currently unused).
         "min_mobility": 1.0e-6,
+        # Rheology switch:
+        # - linear: backward-compatible baseline
+        # - gated_bingham: legacy empirical gradient gate
+        # - porous_bingham: first-stage physics-based porous Bingham mode
+        "rheology_model": "linear",
         # First-version Bingham-like yield gate (disabled in default baseline).
         "enable_bingham_yield": False,
         "yield_gradient_crit": 0.25,
         "yield_gradient_smoothing": 0.05,
         "yield_eps": 1.0e-12,
         "yield_floor_factor": 0.05,
+        # First-stage porous Bingham slurry parameters.
+        # These are used only when rheology_model == "porous_bingham".
+        "slurry_density": 1800.0,
+        "plastic_viscosity": 1.0,
+        "yield_stress": 50.0,
+        "gravity_y": -9.81,
+        "regularization_eps": 1.0e-12,
+        "yield_regularization_band": 0.10,
+        "mobility_activation_floor": 1.0e-3,
+        "characteristic_pore_size": 1.0e-2,
+        "max_apparent_viscosity": 1.0e6,
+        "min_apparent_viscosity": 1.0e-3,
         "fill_accumulation_factor": 0.1,
         "filling_max": 1.0,
         "picard_max_iters": 4,
