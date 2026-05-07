@@ -112,6 +112,15 @@ def _to_array(value_or_var):
     return np.asarray(value_or_var, dtype=float)
 
 
+def get_porous_bingham_eps(params):
+    legacy_eps = max(float(params.get("regularization_eps", 1.0e-12)), 1.0e-20)
+    return {
+        "length_eps_m": max(float(params.get("length_eps_m", legacy_eps)), 1.0e-20),
+        "gradient_eps_pa_per_m": max(float(params.get("gradient_eps_pa_per_m", legacy_eps)), 1.0e-20),
+        "activation_eps": max(float(params.get("activation_eps", legacy_eps)), 1.0e-20),
+    }
+
+
 def compute_pressure_gradient_components(state):
     pressure = state["pressure"]
     grad_x = _to_array(pressure.grad()[0])
@@ -155,14 +164,15 @@ def compute_porous_bingham_fields(state):
     """
     params = get_slurry_parameters(state)
     grad_x, grad_y = compute_pressure_gradient_components(state)
+    eps = get_porous_bingham_eps(params)
     rho = float(params.get("slurry_density", 1800.0))
     gravity_y = float(params.get("gravity_y", -9.81))
-    reg_eps = max(float(params.get("regularization_eps", 1.0e-12)), 1.0e-20)
-    pore_size = max(float(params.get("characteristic_pore_size", 1.0e-2)), reg_eps)
+    pore_size = max(float(params.get("characteristic_pore_size", 1.0e-2)), eps["length_eps_m"])
     yield_stress = float(params.get("yield_stress", 50.0))
-    plastic_viscosity = max(float(params.get("plastic_viscosity", 1.0)), reg_eps)
+    plastic_viscosity = max(float(params.get("plastic_viscosity", 1.0)), eps["activation_eps"])
     band_scale = max(float(params.get("yield_regularization_band", 0.10)), 0.0)
 
+    # All gradients here are interpreted as pressure-gradient-like terms [Pa/m].
     effective_grad_x = grad_x
     effective_grad_y = grad_y - rho * gravity_y
     effective_grad_mag = np.sqrt(
@@ -172,17 +182,19 @@ def compute_porous_bingham_fields(state):
         )
     )
 
+    # Critical pressure gradient [Pa/m] from a pore-scale yield approximation.
     grad_p_crit_scalar = yield_stress / pore_size
     grad_p_crit = np.zeros_like(effective_grad_mag) + grad_p_crit_scalar
-    band = max(band_scale * grad_p_crit_scalar, reg_eps)
+    band = max(band_scale * grad_p_crit_scalar, eps["gradient_eps_pa_per_m"])
     arg = np.clip((effective_grad_mag - grad_p_crit_scalar) / band, -60.0, 60.0)
     activation = 0.5 * (1.0 + np.tanh(arg))
     activation = np.clip(activation, 0.0, 1.0)
 
     activation_floor = float(params.get("mobility_activation_floor", 1.0e-3))
-    activation_floor = min(max(activation_floor, reg_eps), 1.0)
+    activation_floor = min(max(activation_floor, eps["activation_eps"]), 1.0)
     activation_eff = np.maximum(activation, activation_floor)
 
+    # Apparent viscosity [Pa路s].
     mu_app = plastic_viscosity / activation_eff
     mu_app = np.maximum(mu_app, float(params.get("min_apparent_viscosity", 1.0e-3)))
     mu_app = np.minimum(mu_app, float(params.get("max_apparent_viscosity", 1.0e6)))
@@ -206,6 +218,8 @@ def update_effective_mobility(state, grad_mag=None, yield_factor=None):
 
     if rheology_model == "porous_bingham":
         porous_fields = compute_porous_bingham_fields(state)
+        # mobility_effective = permeability / apparent_viscosity
+        # with units [m^2 / (Pa路s)].
         mobility_value = permeability / porous_fields["apparent_viscosity"]
         mobility_value = np.maximum(mobility_value, min_mobility)
         mobility_effective.setValue(mobility_value)
@@ -214,6 +228,8 @@ def update_effective_mobility(state, grad_mag=None, yield_factor=None):
         state["effective_grad_mag_last"] = porous_fields["effective_grad_mag"]
         state["grad_p_crit_last"] = porous_fields["grad_p_crit"]
         state["apparent_viscosity_last"] = porous_fields["apparent_viscosity"]
+        # TODO: revisit full PDE / flux consistency so gravity-corrected
+        # driving gradients are propagated directly into the final flux form.
         storage.setValue(params["reference_storage"])
         return
 
@@ -271,6 +287,7 @@ def _compute_net_inflow_from_flux(state):
     mobility_effective = state["mobility_effective"]
     grad_x = _to_array(pressure.grad()[0])
     grad_y = _to_array(pressure.grad()[1])
+    # Flux components are interpreted as Darcy / seepage velocity [m/s].
     qx = -_to_array(mobility_effective.value) * grad_x
     qy = -_to_array(mobility_effective.value) * grad_y
 
@@ -390,6 +407,7 @@ def solve_slurry_step(state, dt=0.01):
 
     Default path stays compatible with the current linear baseline.
     Bingham-like yield control is activated only when enable_bingham_yield=True.
+    dt is interpreted in seconds [s].
     """
     pressure = state["pressure"]
     params = get_slurry_parameters(state)
@@ -452,6 +470,11 @@ def solve_slurry_step(state, dt=0.01):
     state["flow_step_index"] = step_idx + 1
 
     mobility_effective = state["mobility_effective"]
+    # Result-field unit semantics:
+    # scalar_pressure [Pa]
+    # scalar_grad_mag / scalar_effective_grad_mag / scalar_grad_p_crit [Pa/m]
+    # scalar_apparent_viscosity [Pa路s]
+    # vector_flux_x / vector_flux_y [m/s]
     result = {
         "scalar_pressure": pressure.value,
         "scalar_filling": state["filling"].value,
