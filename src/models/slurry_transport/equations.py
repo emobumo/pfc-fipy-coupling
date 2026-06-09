@@ -18,31 +18,14 @@ def get_rheology_model(params):
     return model
 
 
-def get_inlet_x_range(params):
-    """
-    Return inlet x-range for placeholder localized borehole-injection region.
-    Prefer center+width keys; fall back to legacy center+half-width keys.
-    """
-    if ("inlet_zone_center_x" in params) and ("inlet_zone_width_x" in params):
-        half_width = 0.5 * params["inlet_zone_width_x"]
-        return (
-            params["inlet_zone_center_x"] - half_width,
-            params["inlet_zone_center_x"] + half_width,
-        )
-    return (
-        params["inlet_center_x"] - params["inlet_half_width_x"],
-        params["inlet_center_x"] + params["inlet_half_width_x"],
-    )
-
-
 def get_inlet_geometry(params):
     """
     Return placeholder borehole-injection geometry and pressures.
     Core = stronger borehole-influence patch; spread = weaker surrounding patch.
     """
-    center = params.get("inlet_zone_center_x", params.get("inlet_center_x", 0.0))
-    core_width = params.get("inlet_core_width_x", params.get("inlet_zone_width_x", 0.0))
-    spread_width = params.get("inlet_spread_width_x", params.get("inlet_zone_width_x", core_width))
+    center = params.get("inlet_zone_center_x", 0.0)
+    core_width = params.get("inlet_core_width_x", 0.0)
+    spread_width = params.get("inlet_spread_width_x", core_width)
     if core_width <= 0.0:
         core_width = 0.5 * spread_width if spread_width > 0.0 else 0.4
     if spread_width <= 0.0:
@@ -56,7 +39,7 @@ def get_inlet_geometry(params):
 
     core_half = 0.5 * core_width
     spread_half = 0.5 * spread_width
-    core_p = params.get("inlet_pressure_core_value", params.get("inlet_pressure_value", 1.0))
+    core_p = params.get("inlet_pressure_core_value", 1.0)
     spread_factor = params.get("inlet_pressure_spread_factor", 0.6)
     if spread_factor <= 0.0:
         spread_factor = 0.6
@@ -113,11 +96,11 @@ def _to_array(value_or_var):
 
 
 def get_porous_bingham_eps(params):
-    legacy_eps = max(float(params.get("regularization_eps", 1.0e-12)), 1.0e-20)
+    default_eps = 1.0e-12
     return {
-        "length_eps_m": max(float(params.get("length_eps_m", legacy_eps)), 1.0e-20),
-        "gradient_eps_pa_per_m": max(float(params.get("gradient_eps_pa_per_m", legacy_eps)), 1.0e-20),
-        "activation_eps": max(float(params.get("activation_eps", legacy_eps)), 1.0e-20),
+        "length_eps_m": max(float(params.get("length_eps_m", default_eps)), 1.0e-20),
+        "gradient_eps_pa_per_m": max(float(params.get("gradient_eps_pa_per_m", default_eps)), 1.0e-20),
+        "activation_eps": max(float(params.get("activation_eps", default_eps)), 1.0e-20),
     }
 
 
@@ -194,7 +177,7 @@ def compute_porous_bingham_fields(state):
     activation_floor = min(max(activation_floor, eps["activation_eps"]), 1.0)
     activation_eff = np.maximum(activation, activation_floor)
 
-    # Apparent viscosity [Pa路s].
+    # Apparent viscosity [Pa·s].
     mu_app = plastic_viscosity / activation_eff
     mu_app = np.maximum(mu_app, float(params.get("min_apparent_viscosity", 1.0e-3)))
     mu_app = np.minimum(mu_app, float(params.get("max_apparent_viscosity", 1.0e6)))
@@ -219,7 +202,7 @@ def update_effective_mobility(state, grad_mag=None, yield_factor=None):
     if rheology_model == "porous_bingham":
         porous_fields = compute_porous_bingham_fields(state)
         # mobility_effective = permeability / apparent_viscosity
-        # with units [m^2 / (Pa路s)].
+        # with units [m^2 / (Pa·s)].
         mobility_value = permeability / porous_fields["apparent_viscosity"]
         mobility_value = np.maximum(mobility_value, min_mobility)
         mobility_effective.setValue(mobility_value)
@@ -504,7 +487,7 @@ def solve_slurry_step(state, dt=0.01):
     # Result-field unit semantics:
     # scalar_pressure [Pa]
     # scalar_grad_mag / scalar_effective_grad_mag / scalar_grad_p_crit [Pa/m]
-    # scalar_apparent_viscosity [Pa路s]
+    # scalar_apparent_viscosity [Pa·s]
     # vector_flux_x / vector_flux_y [m/s]  q = -M_eff*(grad(p)-rho*g_vec)
     result = {
         "scalar_pressure": pressure.value,

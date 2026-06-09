@@ -36,12 +36,9 @@ def _gravity_column_profile(nx=6, ny=12, dx=0.2, dy=0.2, steps=40, dt=0.05):
     # Uniform top pressure across the full width: no horizontal injection
     # differential, so only gravity drives the vertical profile.
     params["inlet_zone_center_x"] = 0.5 * width
-    params["inlet_center_x"] = 0.5 * width
     params["inlet_core_width_x"] = 10.0 * width
     params["inlet_spread_width_x"] = 10.0 * width
-    params["inlet_zone_width_x"] = 10.0 * width
     params["inlet_pressure_core_value"] = 1.0e5
-    params["inlet_pressure_value"] = 1.0e5
     params["inlet_pressure_spread_factor"] = 1.0
     params["inlet_core_min_fraction_of_spread"] = 0.99
 

@@ -11,12 +11,11 @@ def build_placeholder_slurry_parameters():
     """
     return {
         # Provisional engineering SI defaults.
-        # reference_mobility [m^2 / (Pa路s)] at permeability_max.
+        # reference_mobility [m^2 / (Pa·s)] at permeability_max.
         "reference_mobility": 2.0e-4,
         # reference_storage [Pa^-1].
         "reference_storage": 1.0e-7,
-        "mobility_clogging_factor": 1.0,  # Legacy placeholder key (currently unused).
-        # min_mobility [m^2 / (Pa路s)] lower numerical bound.
+        # min_mobility [m^2 / (Pa·s)] lower numerical bound.
         "min_mobility": 1.0e-16,
         # Rheology switch:
         # - linear: backward-compatible baseline
@@ -34,14 +33,12 @@ def build_placeholder_slurry_parameters():
         # These are used only when rheology_model == "porous_bingham".
         # slurry_density [kg / m^3]
         "slurry_density": 1500.0,
-        # plastic_viscosity [Pa路s]
+        # plastic_viscosity [Pa·s]
         "plastic_viscosity": 0.05,
         # yield_stress [Pa]
         "yield_stress": 5.0,
         # gravity_y [m / s^2]
         "gravity_y": -9.81,
-        # Deprecated legacy porous-Bingham epsilon.
-        "regularization_eps": 1.0e-12,
         # length_eps_m [m]
         "length_eps_m": 1.0e-9,
         # gradient_eps_pa_per_m [Pa / m]
@@ -54,9 +51,9 @@ def build_placeholder_slurry_parameters():
         "mobility_activation_floor": 1.0e-3,
         # characteristic_pore_size [m]
         "characteristic_pore_size": 0.05,
-        # max_apparent_viscosity [Pa路s]
+        # max_apparent_viscosity [Pa·s]
         "max_apparent_viscosity": 1.0e6,
-        # min_apparent_viscosity [Pa路s]
+        # min_apparent_viscosity [Pa·s]
         "min_apparent_viscosity": 1.0e-3,
         # fill_accumulation_factor [dimensionless]
         "fill_accumulation_factor": 0.1,
@@ -102,15 +99,6 @@ def build_placeholder_slurry_parameters():
         # keep pressure scale fixed at 1.0 unless a test explicitly changes it.
         "inlet_loading_start_factor": 1.0,
         "inlet_loading_ramp_steps": 1,
-        # Legacy-only aliases retained for compatibility and easy rollback.
-        # inlet_zone_width_x [m]
-        "inlet_zone_width_x": 0.90,
-        # inlet_center_x [m]
-        "inlet_center_x": 1.25,
-        # inlet_half_width_x [m]
-        "inlet_half_width_x": 0.45,
-        # inlet_pressure_value [Pa]
-        "inlet_pressure_value": 2.0e5,
         # Placeholder filling/clogging/mobility feedback (Step 1):
         # filling and porosity are dimensionless.
         # filling is occupied pore-volume fraction, bounded by
@@ -119,8 +107,6 @@ def build_placeholder_slurry_parameters():
         "filling_limit_fraction": 0.95,
         # Mobility attenuation: intrinsic_mobility * (1 - clogging)^n.
         "mobility_blockage_exponent": 2.0,
-        "filling_rate": 0.1,  # Legacy placeholder key (currently unused).
-        "clogging_rate": 0.01,  # Legacy placeholder key (currently unused).
     }
 
 

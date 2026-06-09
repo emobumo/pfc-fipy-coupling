@@ -81,7 +81,7 @@ def initialize_structure_mobility_once(state):
 
     permeability = porosity_to_permeability(porosity, params)
     # reference_mobility is interpreted as the structural mobility scale
-    # at permeability_max [m^2 / (Pa路s)].
+    # at permeability_max [m^2 / (Pa·s)].
     permeability_max = max(float(params["permeability_max"]), 1.0e-30)
     mobility_structural = params["reference_mobility"] * (permeability / permeability_max)
 
