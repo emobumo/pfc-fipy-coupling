@@ -1,0 +1,28 @@
+# Runtime dependency reference for the FiPy side of this project.
+#
+# IMPORTANT: do NOT run `pip install -r requirements.txt`.
+# This project runs inside PFC 5.0's bundled CPython 2.7, which already ships
+# these packages. Use that interpreter directly (see scripts/run_local.ps1);
+# there is no separate install step. These pins exist to DOCUMENT the bundled
+# versions so the runtime is reproducible and the Python 2.7 compatibility
+# constraint stays explicit. All src/ code must remain Python 2.7 compatible.
+#
+# Bundled with PFC 5.0  (D:\Program Files\Itasca\PFC500\exe64\python27):
+#   Python   2.7.9
+#   numpy    1.9.2
+#   scipy    0.15.1
+#   fipy     bundled 3.x  (exact version string not recorded in the install)
+#
+# PFC-only, provided by the PFC host at runtime (NOT importable standalone and
+# NOT on PyPI). Imported lazily so the FiPy side runs without PFC:
+#   itasca
+#
+# Third-party packages imported by src/ (for reference):
+#   fipy   - Grid2D, CellVariable, FaceVariable, DiffusionTerm, TransientTerm
+#   numpy
+#   scipy  - scipy.interpolate.Rbf
+
+numpy==1.9.2
+scipy==0.15.1
+# fipy: bundled with PFC 5.0; the matching version is not available from PyPI.
+# itasca: provided by the PFC runtime; not a PyPI package.

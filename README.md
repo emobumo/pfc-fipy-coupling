@@ -34,6 +34,25 @@ Detailed physical assumptions and modeling scope are described in:
 
 - `docs/physical_model.md`
 
+## Environment & running
+
+This project runs inside **PFC 5.0's bundled CPython 2.7.9** (which ships numpy,
+scipy, and fipy). There is no separate install step — do not `pip install`. All
+`src/` code must stay **Python 2.7 compatible**. See `requirements.txt` for the
+documented runtime versions.
+
+The FiPy side decouples from PFC: the PFC write-back imports `itasca` lazily and
+skips when it is absent, so the continuum solve can run and be tested without
+launching PFC, using PFC's bundled interpreter.
+
+- Run a script:
+  `powershell -File scripts\run_local.ps1 scripts\smoke_test_src.py`
+- Run the tests:
+  `powershell -File scripts\run_local.ps1 -m unittest discover -s tests -v`
+
+`scripts\run_local.ps1` auto-locates the bundled Python and sets `PYTHONPATH`;
+override the interpreter with `$env:PFC_PYTHON` if PFC is installed elsewhere.
+
 ## Current design principles
 
 Implementation work in this repository should follow these principles:
