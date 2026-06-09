@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from fipy import DiffusionTerm, TransientTerm
+from fipy import DiffusionTerm, TransientTerm, FaceVariable
 
 
 def get_slurry_parameters(state):
@@ -393,6 +393,10 @@ def apply_boundary_conditions(state):
     pressure.grad.constrain(0.0, mesh.facesRight)
     pressure.grad.constrain(0.0, mesh.facesBottom)
 
+    # Open (Dirichlet injection) faces; everything else on the boundary is a
+    # sealed no-flow wall. Used to zero gravity flux through sealed walls.
+    state["open_pressure_faces"] = spread_faces | core_faces
+
 
 def _solve_pressure_once(state, dt):
     pressure = state["pressure"]
@@ -403,11 +407,24 @@ def _solve_pressure_once(state, dt):
     rho = float(params.get("slurry_density", 2000.0))
     gravity_y = float(params.get("gravity_y", -9.81))
 
-    # Gravity source: div(-M_eff * rho * g_vec) where g_vec = (0, gravity_y).
-    # Sign matches Darcy flux q = -M*(grad(p) - rho*g_vec); face normal
-    # y-components project the body force onto each face.
-    ny = np.asarray(mesh.faceNormals)[1]
-    grav_source = (mobility_effective.arithmeticFaceValue * (-rho * gravity_y * ny)).divergence
+    # Gravity body force as a rank-1 face vector b = -rho*g_vec, g_vec=(0,gravity_y).
+    # Sign matches Darcy flux q = -M*(grad(p) - rho*g_vec). For the TOTAL flux to
+    # vanish at sealed no-flow walls, the gravity flux is zeroed on every exterior
+    # face except the open injection faces; otherwise gravity leaks through sealed
+    # walls and doubles the steady gradient.
+    num_faces = mesh.numberOfFaces
+    body_force = np.zeros((2, num_faces), dtype=float)
+    body_force[1, :] = -rho * gravity_y
+    exterior = np.asarray(mesh.exteriorFaces.value, dtype=bool)
+    open_faces = state.get("open_pressure_faces")
+    if open_faces is not None:
+        open_mask = np.asarray(open_faces.value, dtype=bool)
+    else:
+        open_mask = np.zeros(num_faces, dtype=bool)
+    sealed = exterior & np.logical_not(open_mask)
+    body_force[1, sealed] = 0.0
+    gravity_face = FaceVariable(mesh=mesh, rank=1, value=body_force)
+    grav_source = (mobility_effective.arithmeticFaceValue * gravity_face).divergence
 
     eq = TransientTerm(coeff=storage) == DiffusionTerm(coeff=mobility_effective) + grav_source
     eq.solve(var=pressure, dt=dt)

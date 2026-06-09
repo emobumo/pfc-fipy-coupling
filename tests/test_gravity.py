@@ -5,10 +5,10 @@ Gravity sign self-check.
 Physical invariant: in a closed column driven only by gravity, hydrostatic
 pressure must INCREASE with depth (deeper cells hold higher pressure).
 
-This test asserts DIRECTION only, not magnitude. A separate, known issue makes
-the steady gradient ~2x the ideal hydrostatic value (no-flow walls are imposed
-as grad(p)=0 rather than full Darcy flux = 0); that is intentionally not checked
-here so this test stays robust to the unrelated boundary-treatment fix.
+Checks both DIRECTION (deeper > shallower) and MAGNITUDE (steady vertical
+gradient ~= rho*g). The magnitude check is meaningful only after the no-flow
+walls were made gravity-consistent (gravity flux zeroed on sealed exterior
+faces); before that fix the gradient was ~2x the hydrostatic value.
 
 Runs under PFC 5.0's bundled Python 2.7, no PFC required.
 """
@@ -82,6 +82,30 @@ class TestGravitySign(unittest.TestCase):
                 shallow - 1.0e-6,
                 "pressure decreased going deeper (non-monotonic hydrostatic)",
             )
+
+    def test_gradient_magnitude_matches_hydrostatic(self):
+        # After the sealed-wall gravity fix, the steady vertical gradient
+        # |dp/dy| should equal rho*g (not ~2x). Allow a 10% tolerance.
+        profile = _gravity_column_profile()
+        y_bottom, p_bottom = profile[0]
+        y_top, p_top = profile[-1]
+        slope = abs((p_top - p_bottom) / (y_top - y_bottom))
+
+        # rho/g come from the same placeholder parameters used in the column.
+        from src.models.slurry_transport.variables import (
+            build_placeholder_slurry_parameters,
+        )
+
+        params = build_placeholder_slurry_parameters()
+        rho = float(params["slurry_density"])
+        g = abs(float(params["gravity_y"]))
+        ideal = rho * g
+        self.assertAlmostEqual(
+            slope / ideal,
+            1.0,
+            delta=0.10,
+            msg="steady gradient %.1f Pa/m vs hydrostatic %.1f Pa/m" % (slope, ideal),
+        )
 
 
 if __name__ == "__main__":
