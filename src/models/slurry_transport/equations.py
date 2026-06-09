@@ -172,9 +172,9 @@ def compute_porous_bingham_fields(state):
     plastic_viscosity = max(float(params.get("plastic_viscosity", 1.0)), eps["activation_eps"])
     band_scale = max(float(params.get("yield_regularization_band", 0.10)), 0.0)
 
-    # Driving force consistent with PDE: grad(p) + rho*g_vec, g_vec=(0, gravity_y).
+    # Driving force consistent with PDE: grad(p) - rho*g_vec, g_vec=(0, gravity_y).
     effective_grad_x = grad_x
-    effective_grad_y = grad_y + rho * gravity_y
+    effective_grad_y = grad_y - rho * gravity_y
     effective_grad_mag = np.sqrt(
         np.maximum(
             effective_grad_x * effective_grad_x + effective_grad_y * effective_grad_y,
@@ -288,9 +288,9 @@ def _compute_net_inflow_from_flux(state):
     params = get_slurry_parameters(state)
     rho = float(params.get("slurry_density", 2000.0))
     gravity_y = float(params.get("gravity_y", -9.81))
-    # Flux: q = -M_eff * (grad(p) + rho*g_vec), g_vec=(0, gravity_y).
+    # Flux: q = -M_eff * (grad(p) - rho*g_vec), g_vec=(0, gravity_y), gravity_y<0.
     qx = -_to_array(mobility_effective.value) * grad_x
-    qy = -_to_array(mobility_effective.value) * (grad_y + rho * gravity_y)
+    qy = -_to_array(mobility_effective.value) * (grad_y - rho * gravity_y)
 
     # Preferred path: true net inflow from FiPy divergence if supported.
     try:
@@ -403,10 +403,11 @@ def _solve_pressure_once(state, dt):
     rho = float(params.get("slurry_density", 2000.0))
     gravity_y = float(params.get("gravity_y", -9.81))
 
-    # Gravity source: div(M_eff * rho * g_vec) where g_vec = (0, gravity_y).
-    # face normal y-components project the body force onto each face.
+    # Gravity source: div(-M_eff * rho * g_vec) where g_vec = (0, gravity_y).
+    # Sign matches Darcy flux q = -M*(grad(p) - rho*g_vec); face normal
+    # y-components project the body force onto each face.
     ny = np.asarray(mesh.faceNormals)[1]
-    grav_source = (mobility_effective.arithmeticFaceValue * (rho * gravity_y * ny)).divergence
+    grav_source = (mobility_effective.arithmeticFaceValue * (-rho * gravity_y * ny)).divergence
 
     eq = TransientTerm(coeff=storage) == DiffusionTerm(coeff=mobility_effective) + grav_source
     eq.solve(var=pressure, dt=dt)
@@ -487,7 +488,7 @@ def solve_slurry_step(state, dt=0.01):
     # scalar_pressure [Pa]
     # scalar_grad_mag / scalar_effective_grad_mag / scalar_grad_p_crit [Pa/m]
     # scalar_apparent_viscosity [Pa路s]
-    # vector_flux_x / vector_flux_y [m/s]  q = -M_eff*(grad(p)+rho*g_vec)
+    # vector_flux_x / vector_flux_y [m/s]  q = -M_eff*(grad(p)-rho*g_vec)
     result = {
         "scalar_pressure": pressure.value,
         "scalar_filling": state["filling"].value,
@@ -502,6 +503,6 @@ def solve_slurry_step(state, dt=0.01):
         "scalar_apparent_viscosity": state.get("apparent_viscosity_last", np.zeros_like(grad_mag)),
         "scalar_net_inflow": net_inflow,
         "vector_flux_x": _to_array(-mobility_effective * pressure.grad()[0]),
-        "vector_flux_y": _to_array(-mobility_effective * (pressure.grad()[1] + rho * gravity_y)),
+        "vector_flux_y": _to_array(-mobility_effective * (pressure.grad()[1] - rho * gravity_y)),
     }
     return result
