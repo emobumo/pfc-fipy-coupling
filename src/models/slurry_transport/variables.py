@@ -12,7 +12,7 @@ def build_placeholder_slurry_parameters():
     return {
         # Provisional engineering SI defaults.
         # reference_mobility [m^2 / (Pa路s)] at permeability_max.
-        "reference_mobility": 5.0e-9,
+        "reference_mobility": 2.0e-4,
         # reference_storage [Pa^-1].
         "reference_storage": 1.0e-7,
         "mobility_clogging_factor": 1.0,  # Legacy placeholder key (currently unused).
@@ -33,11 +33,11 @@ def build_placeholder_slurry_parameters():
         # First-stage porous Bingham slurry parameters.
         # These are used only when rheology_model == "porous_bingham".
         # slurry_density [kg / m^3]
-        "slurry_density": 2000.0,
+        "slurry_density": 1500.0,
         # plastic_viscosity [Pa路s]
-        "plastic_viscosity": 2.0,
+        "plastic_viscosity": 0.05,
         # yield_stress [Pa]
-        "yield_stress": 50.0,
+        "yield_stress": 5.0,
         # gravity_y [m / s^2]
         "gravity_y": -9.81,
         # Deprecated legacy porous-Bingham epsilon.
@@ -53,7 +53,7 @@ def build_placeholder_slurry_parameters():
         # mobility_activation_floor [dimensionless]
         "mobility_activation_floor": 1.0e-3,
         # characteristic_pore_size [m]
-        "characteristic_pore_size": 5.0e-3,
+        "characteristic_pore_size": 0.05,
         # max_apparent_viscosity [Pa路s]
         "max_apparent_viscosity": 1.0e6,
         # min_apparent_viscosity [Pa路s]
@@ -75,10 +75,10 @@ def build_placeholder_slurry_parameters():
         "porosity_clip_min": 0.05,
         "porosity_clip_max": 0.95,
         # permeability_* [m^2] provisional SI permeability bounds.
-        "permeability_min": 1.0e-10,
-        "permeability_max": 1.0e-8,
-        "permeability_clip_min": 1.0e-10,
-        "permeability_clip_max": 1.0e-8,
+        "permeability_min": 1.0e-7,
+        "permeability_max": 1.0e-5,
+        "permeability_clip_min": 1.0e-7,
+        "permeability_clip_max": 1.0e-5,
         "porosity_to_permeability_exponent": 2.0,
         "porosity_to_permeability_formula": "power_normalized_linear_range",
         # Placeholder borehole-injection boundary
@@ -95,7 +95,7 @@ def build_placeholder_slurry_parameters():
         # inlet_core_min_fraction_of_spread [dimensionless]
         "inlet_core_min_fraction_of_spread": 0.60,
         # inlet_pressure_core_value [Pa]
-        "inlet_pressure_core_value": 5.0e4,
+        "inlet_pressure_core_value": 2.0e5,
         # inlet_pressure_spread_factor [dimensionless]
         "inlet_pressure_spread_factor": 0.50,
         # Constant-pressure borehole injection baseline:
@@ -110,7 +110,7 @@ def build_placeholder_slurry_parameters():
         # inlet_half_width_x [m]
         "inlet_half_width_x": 0.45,
         # inlet_pressure_value [Pa]
-        "inlet_pressure_value": 5.0e4,
+        "inlet_pressure_value": 2.0e5,
         # Placeholder filling/clogging/mobility feedback (Step 1):
         # filling and porosity are dimensionless.
         # filling is occupied pore-volume fraction, bounded by
