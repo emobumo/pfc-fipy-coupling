@@ -63,6 +63,10 @@ print("porosity mean/median: %.4f / %.4f" % (float(np.mean(phi)), float(np.media
 print("cells at min clip   : %d (%.1f%%)" % (n_at_min, 100.0 * n_at_min / num_cells))
 print("cells at max clip   : %d (%.1f%%)" % (n_at_max, 100.0 * n_at_max / num_cells))
 print("permeability min/max: %.3e / %.3e" % (report["permeability_min"], report["permeability_max"]))
+print("k formula           : %s" % report.get("porosity_to_permeability_formula", "?"))
+if "cell_diameter_min" in report:
+    print("cell diameter m/M/avg: %.4f / %.4f / %.4f m"
+          % (report["cell_diameter_min"], report["cell_diameter_max"], report["cell_diameter_mean"]))
 
 # --- Ball / resolution diagnostics. Porosity pinned at the clip rails usually
 # means cells are too small (0-1 balls each) rather than a representative

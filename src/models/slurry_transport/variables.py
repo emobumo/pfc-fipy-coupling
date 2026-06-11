@@ -72,12 +72,23 @@ def build_placeholder_slurry_parameters():
         "porosity_clip_min": 0.05,
         "porosity_clip_max": 0.95,
         # permeability_* [m^2] provisional SI permeability bounds.
+        # permeability_min/max are the OUTPUT range of the legacy power-law only.
         "permeability_min": 1.0e-7,
         "permeability_max": 1.0e-5,
-        "permeability_clip_min": 1.0e-7,
-        "permeability_clip_max": 1.0e-5,
+        # Clip applied to the final permeability (both formulas). Kept wide so
+        # Kozeny-Carman shows its true range; tighten once the realistic
+        # waste-rock permeability magnitude is confirmed.
+        "permeability_clip_min": 1.0e-10,
+        "permeability_clip_max": 1.0e-1,
         "porosity_to_permeability_exponent": 2.0,
-        "porosity_to_permeability_formula": "power_normalized_linear_range",
+        # Active porosity->permeability law:
+        #   "kozeny_carman"                -> k = d^2/C * phi^3/(1-phi)^2 (per-cell d)
+        #   "power_normalized_linear_range"-> legacy placeholder power law
+        "porosity_to_permeability_formula": "kozeny_carman",
+        # Kozeny-Carman constant C (~180 for packed spheres).
+        "kozeny_carman_constant": 180.0,
+        # Fallback grain diameter [m] for cells with no balls / no PFC.
+        "default_particle_diameter": 0.25,
         # Placeholder borehole-injection boundary
         # (localized top influence region as engineering equivalent).
         # Preferred geometry keys:
