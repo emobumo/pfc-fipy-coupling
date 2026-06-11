@@ -25,10 +25,13 @@ def _build_cell_index_map(x, y):
     x0 = float(np.min(x_unique)) - 0.5 * dx
     y0 = float(np.min(y_unique)) - 0.5 * dy
 
+    # Use floor here to match the ball-binning loop in read_cell_porosity_once.
+    # round() would disagree (notably round(i+0.5) == i+1 on Python 2.7), which
+    # shifts every cell key by one and leaves the top row / right column empty.
     cell_index_map = {}
     for i in range(n):
-        ix = int(round((x[i] - x0) / dx))
-        iy = int(round((y[i] - y0) / dy))
+        ix = int(math.floor((x[i] - x0) / dx))
+        iy = int(math.floor((y[i] - y0) / dy))
         cell_index_map[(ix, iy)] = i
 
     return cell_index_map, x0, y0, dx, dy, nx, ny
