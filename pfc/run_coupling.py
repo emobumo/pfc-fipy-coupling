@@ -40,10 +40,9 @@ from src.pfc_adapter.porosity_reader import _read_ball_radius
 
 # Domain MUST match the PFC model extent (x: -7.5..7.5 m, y: 0..40 m).
 DOMAIN = (-7.5, 7.5, 0.0, 40.0)
-# Cell size tuned so each cell averages over many balls (~33 at 1.5 m for this
-# model: 8986 balls, mean radius 0.127 m). Too small -> porosity pins at the
-# clip rails; too large -> coarse flow resolution. Re-tune per model.
-CELL_SIZE = 1.5
+# 1.0 m cells: resolves the 1 m injection zone (a top cell sits at x = 0) while
+# still averaging ~16 balls/cell for porosity. Re-tune per model.
+CELL_SIZE = 1.0
 
 state = initialize_problem(domain=DOMAIN, cell_size=CELL_SIZE)
 report = state["structure_init_report"]

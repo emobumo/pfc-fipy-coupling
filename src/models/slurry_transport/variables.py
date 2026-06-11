@@ -29,7 +29,8 @@ def build_placeholder_slurry_parameters():
         # yield_eps is retained for legacy gated_bingham compatibility.
         "yield_eps": 1.0e-12,
         "yield_floor_factor": 0.05,
-        # First-stage porous Bingham slurry parameters.
+        # First-stage porous Bingham slurry parameters (neutral placeholder
+        # defaults; the engineering case overrides these).
         # These are used only when rheology_model == "porous_bingham".
         # slurry_density [kg / m^3]
         "slurry_density": 1500.0,
@@ -89,11 +90,8 @@ def build_placeholder_slurry_parameters():
         "kozeny_carman_constant": 180.0,
         # Fallback grain diameter [m] for cells with no balls / no PFC.
         "default_particle_diameter": 0.25,
-        # Placeholder borehole-injection boundary
-        # (localized top influence region as engineering equivalent).
-        # Preferred geometry keys:
-        #   core footprint + spread footprint on the top boundary [m].
-        # This remains an engineering placeholder, not a final inflow model.
+        # Borehole-injection placeholder (neutral default; the engineering case
+        # overrides center/width/pressure). Localized top influence region.
         # inlet_zone_center_x [m]
         "inlet_zone_center_x": 1.25,
         # inlet_core_width_x [m]
@@ -121,7 +119,38 @@ def build_placeholder_slurry_parameters():
     }
 
 
-def initialize_slurry_variables(mesh):
+def build_engineering_case_parameters():
+    """
+    Parameters for the model1 engineering case: top-borehole constant-pressure
+    grouting of a cement slurry into a waste-rock pile. Starts from the neutral
+    placeholder defaults and overrides the slurry rheology and injection.
+
+    Slurry: 325 slag Portland cement, 55% mass concentration, W/C ~ 0.82,
+    Bingham regime (density 1414 kg/m^3, yield stress 4.6 Pa, plastic
+    viscosity 0.183 Pa.s). Injection: localized 1 m zone at the top center,
+    constant 2 MPa (resolves on the 1.0 m mesh, where a top cell sits at x = 0).
+    """
+    params = build_placeholder_slurry_parameters()
+    params.update({
+        "rheology_model": "porous_bingham",
+        # Cement slurry (Bingham).
+        "slurry_density": 1414.0,
+        "yield_stress": 4.6,
+        "plastic_viscosity": 0.183,
+        "characteristic_pore_size": 0.10,
+        # Borehole injection: 1 m zone at top center, constant 2 MPa.
+        "inlet_zone_center_x": 0.0,
+        "inlet_core_width_x": 1.0,
+        "inlet_spread_width_x": 1.0,
+        "inlet_pressure_core_value": 2.0e6,
+        "inlet_pressure_spread_factor": 0.90,
+    })
+    return params
+
+
+def initialize_slurry_variables(mesh, params=None):
+    if params is None:
+        params = build_placeholder_slurry_parameters()
     mobility_structural = CellVariable(name="mobility_structural", mesh=mesh, value=1.0)
     mobility_effective = CellVariable(name="mobility_effective", mesh=mesh, value=1.0)
     state = {
@@ -137,7 +166,7 @@ def initialize_slurry_variables(mesh):
         "filling": CellVariable(name="filling", mesh=mesh, value=0.0),
         "clogging": CellVariable(name="clogging", mesh=mesh, value=0.0),
         "yield_factor": CellVariable(name="yield_factor", mesh=mesh, value=1.0),
-        "slurry_parameters": build_placeholder_slurry_parameters(),
+        "slurry_parameters": params,
         "structure_initialized_once": False,
         "flow_step_index": 0,
         "structure_init_report": {},

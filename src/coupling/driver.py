@@ -4,17 +4,24 @@ from src.pfc_adapter.particle_writer import (
     write_vector_field_to_particles,
 )
 from src.coupling.porosity_to_permeability import initialize_structure_mobility_once
-from src.models.slurry_transport.variables import initialize_slurry_variables
+from src.models.slurry_transport.variables import (
+    initialize_slurry_variables,
+    build_engineering_case_parameters,
+)
 from src.models.slurry_transport.equations import solve_slurry_step
 
 
 # Engineering domain, aligned to the PFC waste-rock model extent.
 # (x: -7.5..7.5 m, y: 0..40 m). Override per model if the geometry changes.
 DEFAULT_DOMAIN = (-7.5, 7.5, 0.0, 40.0)
-DEFAULT_CELL_SIZE = 1.5
+# 1.0 m cells: a top cell sits at x = 0 so the 1 m injection zone resolves; the
+# pile still averages ~16 balls/cell for porosity.
+DEFAULT_CELL_SIZE = 1.0
 
 
-def initialize_problem(domain=DEFAULT_DOMAIN, cell_size=DEFAULT_CELL_SIZE):
+def initialize_problem(domain=DEFAULT_DOMAIN, cell_size=DEFAULT_CELL_SIZE, params=None):
+    if params is None:
+        params = build_engineering_case_parameters()
     x_min, x_max, y_min, y_max = domain
     mesh, x, y, fx, fy = build_mesh_for_domain(x_min, x_max, y_min, y_max, cell_size)
     state = {
@@ -24,7 +31,7 @@ def initialize_problem(domain=DEFAULT_DOMAIN, cell_size=DEFAULT_CELL_SIZE):
         "fx": fx,
         "fy": fy,
     }
-    slurry_state = initialize_slurry_variables(state["mesh"])
+    slurry_state = initialize_slurry_variables(state["mesh"], params=params)
     state.update(slurry_state)
     # One-time structure transfer: PFC porosity -> FiPy permeability/mobility.
     initialize_structure_mobility_once(state)
