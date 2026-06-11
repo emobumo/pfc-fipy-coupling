@@ -1,4 +1,4 @@
-from src.fipy_adapter.mesh_init import build_mesh
+from src.fipy_adapter.mesh_init import build_mesh_for_domain
 from src.pfc_adapter.particle_writer import (
     write_field_to_particles,
     write_vector_field_to_particles,
@@ -8,8 +8,15 @@ from src.models.slurry_transport.variables import initialize_slurry_variables
 from src.models.slurry_transport.equations import solve_slurry_step
 
 
-def initialize_problem():
-    mesh, x, y, fx, fy = build_mesh(nx=25, ny=15, dx=0.1, dy=0.1)
+# Engineering domain, aligned to the PFC waste-rock model extent.
+# (x: -7.5..7.5 m, y: 0..40 m). Override per model if the geometry changes.
+DEFAULT_DOMAIN = (-7.5, 7.5, 0.0, 40.0)
+DEFAULT_CELL_SIZE = 1.5
+
+
+def initialize_problem(domain=DEFAULT_DOMAIN, cell_size=DEFAULT_CELL_SIZE):
+    x_min, x_max, y_min, y_max = domain
+    mesh, x, y, fx, fy = build_mesh_for_domain(x_min, x_max, y_min, y_max, cell_size)
     state = {
         "mesh": mesh,
         "x": x,

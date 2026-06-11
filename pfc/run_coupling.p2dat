@@ -1,0 +1,13 @@
+; PFC2D entry: restore the waste-rock model and run the FiPy coupling.
+;
+; Usage: open and run this file in PFC2D. Paths are absolute so it works
+; regardless of the PFC working directory.
+;
+; NOTE: use FORWARD slashes in PFC paths. A backslash is an escape character in
+; PFC strings and gets stripped, which corrupts Windows paths.
+;
+; This first version only reads porosity from the model and reports it; it does
+; not yet run the flow solve or write back to ball extras.
+
+restore 'D:/PFC item/pfc_fipy_model1/sample.p2sav'
+call 'D:/work/pfc-fipy-coupling/pfc/run_coupling.py'
