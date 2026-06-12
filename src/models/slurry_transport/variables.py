@@ -48,8 +48,17 @@ def build_placeholder_slurry_parameters():
         "activation_eps": 1.0e-12,
         # yield_regularization_band [dimensionless multiplier on grad_p_crit]
         "yield_regularization_band": 0.10,
-        # mobility_activation_floor [dimensionless]
+        # mobility_activation_floor [dimensionless] (legacy tanh mode only).
         "mobility_activation_floor": 1.0e-3,
+        # porous_bingham activation form:
+        #   "threshold" -> mobility = (k/mu_p)*max(0, 1 - lambda/(|gradPhi|+eps)),
+        #                  lambda = 2*tau0/sqrt(8k/phi) per cell, zero below
+        #                  threshold (default)
+        #   "tanh"      -> legacy smooth on/off gate via apparent viscosity
+        "porous_bingham_activation": "threshold",
+        # yield_truncation_eps_pa_per_m [Pa/m]: regularization added to
+        # |grad Phi| in the truncation. 0 -> auto: 1e-6 * p0 / L_domain.
+        "yield_truncation_eps_pa_per_m": 0.0,
         # characteristic_pore_size [m]
         "characteristic_pore_size": 0.05,
         # max_apparent_viscosity [Pa·s]
@@ -60,8 +69,11 @@ def build_placeholder_slurry_parameters():
         "fill_accumulation_factor": 0.1,
         # filling_max [dimensionless]
         "filling_max": 1.0,
-        "picard_max_iters": 4,
-        "picard_tol": 1.0e-6,
+        "picard_max_iters": 20,
+        # Picard tolerance, RELATIVE to the step's first-iteration residual.
+        "picard_tol": 1.0e-4,
+        # Under-relaxation factor for the threshold-mode mobility update.
+        "picard_relaxation": 0.5,
         # Gate for first-version baseline behavior.
         # Keep clogging feedback disabled unless explicitly enabled in a test/case.
         "enable_clogging_feedback": False,

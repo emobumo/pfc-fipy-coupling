@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from fipy import DiffusionTerm, TransientTerm, FaceVariable
+from fipy import DiffusionTerm, TransientTerm, FaceVariable, Variable
 
 
 def get_slurry_parameters(state):
@@ -30,8 +30,10 @@ def get_inlet_geometry(params):
         core_width = 0.5 * spread_width if spread_width > 0.0 else 0.4
     if spread_width <= 0.0:
         spread_width = core_width
-    if spread_width <= core_width:
-        spread_width = core_width * 1.2 if core_width > 0.0 else 0.48
+    # spread == core is a valid single-zone borehole; only widen a spread that
+    # is narrower than the core (the core constraint overrides the overlap).
+    if spread_width < core_width:
+        spread_width = core_width
     min_core_fraction = params.get("inlet_core_min_fraction_of_spread", 0.6)
     if (min_core_fraction <= 0.0) or (min_core_fraction >= 1.0):
         min_core_fraction = 0.6
@@ -137,6 +139,93 @@ def compute_yield_factor(state, grad_mag):
     return np.ones_like(grad_mag)
 
 
+def get_porous_bingham_activation(params):
+    """
+    Sub-mode of porous_bingham:
+      - "threshold": mobility = (k/mu_p) * max(0, 1 - lambda/(|grad Phi|+eps)),
+        lambda = 2*tau0/r_eff per cell, exact zero below threshold (default);
+      - "tanh": legacy smooth on/off activation via apparent viscosity (kept
+        as a switchable comparison mode, not used by default).
+    """
+    model = params.get("porous_bingham_activation", "threshold")
+    if model not in ("threshold", "tanh"):
+        model = "threshold"
+    return model
+
+
+def get_yield_truncation_eps(state, params):
+    """
+    Regularization epsilon [Pa/m] added to |grad Phi| in the truncation factor.
+    Explicit yield_truncation_eps_pa_per_m wins; otherwise auto-default to
+    1e-6 of the characteristic driving gradient p0 / L_domain.
+    """
+    eps = float(params.get("yield_truncation_eps_pa_per_m", 0.0))
+    if eps > 0.0:
+        return eps
+    p0 = abs(float(params.get("inlet_pressure_core_value", 1.0)))
+    x = _to_array(state["x"])
+    y = _to_array(state["y"])
+    extent = max(
+        float(np.max(x)) - float(np.min(x)),
+        float(np.max(y)) - float(np.min(y)),
+        1.0e-12,
+    )
+    return max(1.0e-6 * p0 / extent, 1.0e-20)
+
+
+def compute_threshold_bingham_fields(state):
+    """
+    Porous-Bingham mobility with the start-up pressure-gradient truncation:
+
+        mobility   = (k / mu_p) * max(0, 1 - lambda / (|grad Phi| + eps))
+        lambda     = 2 * tau0 / r_eff          [Pa/m, per cell]
+        r_eff      = sqrt(8 k / phi)           [m, capillary-bundle radius]
+        |grad Phi| = |grad p - rho * g_vec|    (g_vec = (0, gravity_y))
+
+    Below the threshold the mobility is exactly zero (no creep), so a true
+    stagnation front exists at L_max = p0 / lambda in 1D.
+    """
+    params = get_slurry_parameters(state)
+    grad_x, grad_y = compute_pressure_gradient_components(state)
+    rho = float(params.get("slurry_density", 1800.0))
+    gravity_y = float(params.get("gravity_y", -9.81))
+    yield_stress = float(params.get("yield_stress", 50.0))
+    plastic_viscosity = max(float(params.get("plastic_viscosity", 1.0)), 1.0e-20)
+
+    # Driving force consistent with the PDE: grad(p) - rho*g_vec.
+    effective_grad_x = grad_x
+    effective_grad_y = grad_y - rho * gravity_y
+    effective_grad_mag = np.sqrt(
+        np.maximum(
+            effective_grad_x * effective_grad_x + effective_grad_y * effective_grad_y,
+            0.0,
+        )
+    )
+
+    permeability = np.maximum(_to_array(state["permeability"]), 1.0e-30)
+    porosity = np.clip(_to_array(state["porosity"]), 1.0e-6, 1.0 - 1.0e-6)
+    r_eff = np.sqrt(8.0 * permeability / porosity)
+    grad_p_crit = 2.0 * yield_stress / np.maximum(r_eff, 1.0e-20)
+
+    eps = get_yield_truncation_eps(state, params)
+    truncation = np.maximum(0.0, 1.0 - grad_p_crit / (effective_grad_mag + eps))
+    mobility = (permeability / plastic_viscosity) * truncation
+
+    # Diagnostic apparent viscosity (infinite below threshold; report clipped).
+    max_mu = float(params.get("max_apparent_viscosity", 1.0e6))
+    mu_app = np.minimum(
+        plastic_viscosity / np.maximum(truncation, 1.0e-30), max_mu
+    )
+
+    return {
+        "effective_grad_mag": effective_grad_mag,
+        "grad_p_crit": grad_p_crit,
+        "activation": truncation,
+        "apparent_viscosity": mu_app,
+        "mobility": mobility,
+    }
+
+
 def compute_porous_bingham_fields(state):
     """
     First-stage porous-medium Bingham approximation.
@@ -200,6 +289,32 @@ def update_effective_mobility(state, grad_mag=None, yield_factor=None):
     min_mobility = float(params["min_mobility"])
 
     if rheology_model == "porous_bingham":
+        if get_porous_bingham_activation(params) == "threshold":
+            porous_fields = compute_threshold_bingham_fields(state)
+            omega = float(params.get("picard_relaxation", 0.5))
+            if (omega <= 0.0) or (omega > 1.0):
+                omega = 0.5
+            mobility_new = porous_fields["mobility"]
+            mobility_old = _to_array(mobility_effective)
+            # Under-relaxed Picard update in the flowing region. Where the
+            # truncation says zero, mobility is set to EXACTLY zero (no
+            # relaxation tail, no min_mobility floor): below the start-up
+            # gradient the slurry must not creep.
+            mobility_value = np.where(
+                mobility_new > 0.0,
+                (1.0 - omega) * mobility_old + omega * mobility_new,
+                0.0,
+            )
+            mobility_effective.setValue(mobility_value)
+            state["mobility"].setValue(mobility_value)
+            state["yield_factor"].setValue(porous_fields["activation"])
+            state["effective_grad_mag_last"] = porous_fields["effective_grad_mag"]
+            state["grad_p_crit_last"] = porous_fields["grad_p_crit"]
+            state["apparent_viscosity_last"] = porous_fields["apparent_viscosity"]
+            storage.setValue(params["reference_storage"])
+            return
+
+        # Legacy tanh activation path (porous_bingham_activation == "tanh").
         porous_fields = compute_porous_bingham_fields(state)
         # mobility_effective = permeability / apparent_viscosity
         # with units [m^2 / (Pa·s)].
@@ -263,6 +378,31 @@ def update_effective_properties(state):
     update_effective_mobility(state)
 
 
+def _build_gravity_face(state):
+    """
+    Rank-1 face body force b = -rho*g_vec with the gravity flux zeroed on
+    sealed exterior faces (every boundary face except the open injection
+    faces). Shared by the pressure solve and the net-inflow diagnostic so
+    both see the same gravity flux.
+    """
+    mesh = state["mesh"]
+    params = get_slurry_parameters(state)
+    rho = float(params.get("slurry_density", 2000.0))
+    gravity_y = float(params.get("gravity_y", -9.81))
+    num_faces = mesh.numberOfFaces
+    body_force = np.zeros((2, num_faces), dtype=float)
+    body_force[1, :] = -rho * gravity_y
+    exterior = np.asarray(mesh.exteriorFaces.value, dtype=bool)
+    open_faces = state.get("open_pressure_faces")
+    if open_faces is not None:
+        open_mask = np.asarray(open_faces.value, dtype=bool)
+    else:
+        open_mask = np.zeros(num_faces, dtype=bool)
+    sealed = exterior & np.logical_not(open_mask)
+    body_force[1, sealed] = 0.0
+    return FaceVariable(mesh=mesh, rank=1, value=body_force)
+
+
 def _compute_net_inflow_from_flux(state):
     pressure = state["pressure"]
     mobility_effective = state["mobility_effective"]
@@ -277,9 +417,14 @@ def _compute_net_inflow_from_flux(state):
 
     # Preferred path: true net inflow from FiPy divergence if supported.
     try:
-        # q = -mobility_effective * grad(p), so net inflow = -div(q)
-        # = div(mobility_effective * grad(p)).
-        net_inflow = _to_array((mobility_effective * pressure.grad()).divergence)
+        # q = -M_eff*(grad(p) - rho*g_vec), so net inflow = -div(q)
+        # = div(M_eff*grad(p)) + div(M_eff_face * b), with the same sealed-wall
+        # gravity face used by the pressure solve (matches grav_source there).
+        gravity_face = _build_gravity_face(state)
+        net_inflow = _to_array(
+            (mobility_effective * pressure.grad()).divergence
+            + (mobility_effective.arithmeticFaceValue * gravity_face).divergence
+        )
         if net_inflow.shape == pressure.value.shape:
             return net_inflow
     except Exception:
@@ -358,19 +503,35 @@ def update_filling_from_flux(state, dt):
 def apply_boundary_conditions(state):
     """
     Apply placeholder borehole-injection boundary conditions.
+
+    Constraints are installed ONCE (FiPy constrain() is append-only, so
+    re-constraining every step would accumulate duplicate constraints). The
+    Dirichlet values are fipy Variables kept in state, so later calls only
+    refresh the inlet loading factor; the inlet geometry is fixed after the
+    first call.
     """
     pressure = state["pressure"]
     mesh = state["mesh"]
     params = get_slurry_parameters(state)
+    load_factor = get_inlet_loading_factor(state, params)
+
+    handles = state.get("boundary_condition_handles")
+    if handles is not None:
+        geo = handles["geometry"]
+        handles["spread_value"].setValue(geo["spread_pressure_value"] * load_factor)
+        handles["core_value"].setValue(geo["core_pressure_value"] * load_factor)
+        return
+
     fx, fy = mesh.faceCenters()
     geo = get_inlet_geometry(params)
-    load_factor = get_inlet_loading_factor(state, params)
 
     spread_faces = mesh.facesTop & (fx > geo["spread_x_min"]) & (fx < geo["spread_x_max"])
     core_faces = mesh.facesTop & (fx > geo["core_x_min"]) & (fx < geo["core_x_max"])
 
-    pressure.constrain(geo["spread_pressure_value"] * load_factor, spread_faces)
-    pressure.constrain(geo["core_pressure_value"] * load_factor, core_faces)
+    spread_value = Variable(value=geo["spread_pressure_value"] * load_factor)
+    core_value = Variable(value=geo["core_pressure_value"] * load_factor)
+    pressure.constrain(spread_value, spread_faces)
+    pressure.constrain(core_value, core_faces)
 
     pressure.grad.constrain(0.0, mesh.facesLeft)
     pressure.grad.constrain(0.0, mesh.facesRight)
@@ -379,38 +540,86 @@ def apply_boundary_conditions(state):
     # Open (Dirichlet injection) faces; everything else on the boundary is a
     # sealed no-flow wall. Used to zero gravity flux through sealed walls.
     state["open_pressure_faces"] = spread_faces | core_faces
+    state["boundary_condition_handles"] = {
+        "geometry": geo,
+        "spread_value": spread_value,
+        "core_value": core_value,
+    }
 
 
 def _solve_pressure_once(state, dt):
     pressure = state["pressure"]
     storage = state["storage"]
     mobility_effective = state["mobility_effective"]
-    mesh = state["mesh"]
-    params = get_slurry_parameters(state)
-    rho = float(params.get("slurry_density", 2000.0))
-    gravity_y = float(params.get("gravity_y", -9.81))
 
     # Gravity body force as a rank-1 face vector b = -rho*g_vec, g_vec=(0,gravity_y).
     # Sign matches Darcy flux q = -M*(grad(p) - rho*g_vec). For the TOTAL flux to
     # vanish at sealed no-flow walls, the gravity flux is zeroed on every exterior
     # face except the open injection faces; otherwise gravity leaks through sealed
     # walls and doubles the steady gradient.
-    num_faces = mesh.numberOfFaces
-    body_force = np.zeros((2, num_faces), dtype=float)
-    body_force[1, :] = -rho * gravity_y
-    exterior = np.asarray(mesh.exteriorFaces.value, dtype=bool)
-    open_faces = state.get("open_pressure_faces")
-    if open_faces is not None:
-        open_mask = np.asarray(open_faces.value, dtype=bool)
-    else:
-        open_mask = np.zeros(num_faces, dtype=bool)
-    sealed = exterior & np.logical_not(open_mask)
-    body_force[1, sealed] = 0.0
-    gravity_face = FaceVariable(mesh=mesh, rank=1, value=body_force)
+    gravity_face = _build_gravity_face(state)
     grav_source = (mobility_effective.arithmeticFaceValue * gravity_face).divergence
 
     eq = TransientTerm(coeff=storage) == DiffusionTerm(coeff=mobility_effective) + grav_source
     eq.solve(var=pressure, dt=dt)
+
+
+def solve_pressure_step(state, dt=0.01):
+    """
+    Run the (possibly nonlinear) pressure solve for one step.
+
+    Assumes boundary conditions are already installed on state["pressure"]
+    (apply_boundary_conditions or test-specific constraints). Records
+    picard_iterations_last / picard_residual_last / picard_history_last
+    (list of max|dp| per Picard iteration) in state.
+
+    Convergence: picard_tol is RELATIVE to the first-iteration residual of
+    this step (default 1e-4), so the criterion is pressure-scale invariant
+    (an absolute Pa tolerance was unreachable at engineering MPa scales).
+    """
+    pressure = state["pressure"]
+    params = get_slurry_parameters(state)
+    rheology_model = get_rheology_model(params)
+
+    if rheology_model in ("gated_bingham", "porous_bingham"):
+        max_iters = int(params.get("picard_max_iters", 20))
+        if max_iters < 1:
+            max_iters = 1
+        tol_rel = float(params.get("picard_tol", 1.0e-4))
+        if tol_rel <= 0.0:
+            tol_rel = 1.0e-4
+
+        previous_pressure = np.array(pressure.value, copy=True)
+        picard_residual = 0.0
+        history = []
+        initial_residual = None
+        it = 0
+        for it in range(max_iters):
+            if rheology_model == "gated_bingham":
+                grad_mag = compute_pressure_gradient_magnitude(state)
+                yield_factor = compute_yield_factor(state, grad_mag)
+                update_effective_mobility(state, grad_mag=grad_mag, yield_factor=yield_factor)
+            else:
+                update_effective_mobility(state)
+            _solve_pressure_once(state, dt=dt)
+
+            picard_residual = float(np.max(np.abs(pressure.value - previous_pressure)))
+            previous_pressure = np.array(pressure.value, copy=True)
+            history.append(picard_residual)
+            if initial_residual is None:
+                initial_residual = picard_residual
+            if picard_residual <= tol_rel * initial_residual:
+                break
+        state["picard_iterations_last"] = it + 1
+        state["picard_residual_last"] = picard_residual
+        state["picard_history_last"] = history
+    else:
+        # Linear baseline.
+        update_effective_mobility(state)
+        _solve_pressure_once(state, dt=dt)
+        state["picard_iterations_last"] = 1
+        state["picard_residual_last"] = 0.0
+        state["picard_history_last"] = [0.0]
 
 
 def solve_slurry_step(state, dt=0.01):
@@ -426,39 +635,7 @@ def solve_slurry_step(state, dt=0.01):
     rheology_model = get_rheology_model(params)
 
     apply_boundary_conditions(state)
-
-    if rheology_model in ("gated_bingham", "porous_bingham"):
-        max_iters = int(params.get("picard_max_iters", 4))
-        if max_iters < 1:
-            max_iters = 1
-        tol = float(params.get("picard_tol", 1.0e-6))
-        if tol <= 0.0:
-            tol = 1.0e-6
-
-        previous_pressure = np.array(pressure.value, copy=True)
-        picard_residual = 0.0
-        it = 0
-        for it in range(max_iters):
-            if rheology_model == "gated_bingham":
-                grad_mag = compute_pressure_gradient_magnitude(state)
-                yield_factor = compute_yield_factor(state, grad_mag)
-                update_effective_mobility(state, grad_mag=grad_mag, yield_factor=yield_factor)
-            else:
-                update_effective_mobility(state)
-            _solve_pressure_once(state, dt=dt)
-
-            picard_residual = float(np.max(np.abs(pressure.value - previous_pressure)))
-            previous_pressure = np.array(pressure.value, copy=True)
-            if picard_residual <= tol:
-                break
-        state["picard_iterations_last"] = it + 1
-        state["picard_residual_last"] = picard_residual
-    else:
-        # Linear baseline.
-        update_effective_mobility(state)
-        _solve_pressure_once(state, dt=dt)
-        state["picard_iterations_last"] = 1
-        state["picard_residual_last"] = 0.0
+    solve_pressure_step(state, dt=dt)
 
     if rheology_model == "gated_bingham":
         grad_mag = compute_pressure_gradient_magnitude(state)
