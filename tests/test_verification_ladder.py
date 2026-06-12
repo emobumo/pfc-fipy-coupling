@@ -147,8 +147,11 @@ S2_TAU0 = 0.5 * S2_LAMBDA * math.sqrt(8.0 * S2_K / S2_PHI)  # [Pa]
 # relax back -- physically correct hysteresis, numerically demands small dt).
 # Empirically the locked-in overshoot is ~2.5 cells at dt=0.01 s and scales
 # down with dt (stale-mobility motion in the last Picard iteration of a step).
-S2_DT = 0.005        # time step [s]
-S2_MAX_STEPS = 2400
+# The face-built mobility (round 4) makes the front face fully conductive
+# (the legacy cell coefficient arithmetic-averaged it to half), roughly
+# doubling the per-step front motion, so dt is halved again.
+S2_DT = 0.0025       # time step [s]
+S2_MAX_STEPS = 4800
 S2_STATIC_STEPS = 15  # consecutive near-zero front moves that declare a stall
 
 _STEP2_CACHE = {}
@@ -311,9 +314,11 @@ S3_IMAX = S3_R0 + S3_P0 / S3_LAMBDA                         # = 0.7 m
 # doc, with I_max as the characteristic length:
 #     T = c * I_max^2 / (2 * k/mu) = 1e-7 * 0.49 / (2 * 2e-8) = 1.225 s
 # Round 2 found dt ~ T/100..T/200 keeps the locked-in overshoot around one
-# cell; dx here (0.02 m) is twice the step-2 cell, so dt = 0.01 s ~ T/122.
-S3_DT = 0.01         # time step [s]
-S3_MAX_STEPS = 600
+# cell; dx here (0.02 m) is twice the step-2 cell. The round-4 face-built
+# mobility doubles the front-face conductance (see step-2 note), so dt is
+# halved from 0.01 to 0.005 s ~ T/245.
+S3_DT = 0.005        # time step [s]
+S3_MAX_STEPS = 1200
 S3_STATIC_STEPS = 15
 
 _STEP3_CACHE = {}

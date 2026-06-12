@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from fipy import DiffusionTerm, TransientTerm, FaceVariable, Variable
+from fipy import (
+    DiffusionTerm,
+    TransientTerm,
+    FaceVariable,
+    ImplicitSourceTerm,
+    Variable,
+)
 
 
 def get_slurry_parameters(state):
@@ -226,6 +232,130 @@ def compute_threshold_bingham_fields(state):
     }
 
 
+def get_pressure_coeff_form(params):
+    """
+    Pressure-equation diffusion-coefficient discretization (threshold mode):
+      - "face": explicitly built FaceVariable, M_f = harmonic(k)/mu_p *
+        truncation(face gradient) * upwind k_r  (default; required for the
+        saturation transport's discrete consistency)
+      - "cell": legacy cell coefficient (FiPy arithmetic face averaging),
+        kept as a comparison/fallback mode.
+    """
+    form = params.get("pressure_coeff_form", "face")
+    if form not in ("face", "cell"):
+        form = "face"
+    return form
+
+
+def _face_upwind_relperm(state, normal_force):
+    """
+    Upwind (donor-cell) relative permeability at faces.
+
+    normal_force is the face driving force along the face normal,
+    (grad(p) + b) . n_hat; the flux runs along -normal_force, and FiPy face
+    normals point from faceCellIDs[0] to faceCellIDs[1], so the donor is
+    cell0 when normal_force <= 0 (flux along +n) and cell1 otherwise.
+    Exterior inflow faces use the boundary saturation: 1 on the open
+    injection faces, 0 elsewhere (sealed walls cannot supply slurry).
+
+    Until the saturation field is wired in (k_r == 1 everywhere), this
+    returns ones and acts as the upwind hook only.
+    """
+    params = get_slurry_parameters(state)
+    saturation = state.get("saturation")
+    mesh = state["mesh"]
+    num_faces = mesh.numberOfFaces
+    if (saturation is None) or (not params.get("enable_saturation_transport", False)):
+        return np.ones(num_faces, dtype=float)
+
+    exponent = float(params.get("relperm_exponent", 3.0))
+    s = np.clip(_to_array(saturation), 0.0, 1.0)
+    kr_cell = np.power(s, exponent)
+
+    ids0 = np.asarray(mesh.faceCellIDs[0])
+    ids1 = np.asarray(mesh.faceCellIDs[1])
+    donor_is_cell0 = normal_force <= 0.0
+    kr_face = np.where(donor_is_cell0, kr_cell[ids0], kr_cell[ids1])
+
+    exterior = np.asarray(mesh.exteriorFaces.value, dtype=bool)
+    open_faces = state.get("open_pressure_faces")
+    if open_faces is not None:
+        open_mask = np.asarray(open_faces.value, dtype=bool)
+    else:
+        open_mask = np.zeros(num_faces, dtype=bool)
+    # Exterior faces: inflow (flux along the inward normal, normal_force > 0
+    # at an exterior face whose normal points outward) draws from the
+    # boundary saturation; outflow keeps the interior donor value.
+    boundary_s = np.where(open_mask, 1.0, 0.0)
+    boundary_kr = np.power(boundary_s, exponent)
+    inflow_ext = exterior & (normal_force > 0.0)
+    kr_face = np.where(inflow_ext, boundary_kr, kr_face)
+    return kr_face
+
+
+def update_threshold_face_mobility(state):
+    """
+    Build the face diffusion coefficient for the threshold Bingham mode:
+
+        M_f = (harmonic(k)_f / mu_p) * trunc_f * k_r_up_f
+        trunc_f = max(0, 1 - lambda_f / (|gradPhi|_f + eps))
+        lambda_f = 2*tau0 / sqrt(8 k_f / phi_f)
+        gradPhi_f = faceGrad(p) + b_f   (same sealed-wall gravity face as
+                                         the solve and the explicit fluxes)
+
+    Under-relaxed like the cell mobility; exactly zero below threshold.
+    Stores/refreshes state["mobility_face"] (FaceVariable).
+    """
+    params = get_slurry_parameters(state)
+    mesh = state["mesh"]
+    pressure = state["pressure"]
+    yield_stress = float(params.get("yield_stress", 50.0))
+    plastic_viscosity = max(float(params.get("plastic_viscosity", 1.0)), 1.0e-20)
+
+    k_face = np.maximum(_to_array(state["permeability"].harmonicFaceValue), 1.0e-30)
+    phi_face = np.clip(
+        _to_array(state["porosity"].arithmeticFaceValue), 1.0e-6, 1.0 - 1.0e-6
+    )
+    r_eff = np.sqrt(8.0 * k_face / phi_face)
+    lam_face = 2.0 * yield_stress / np.maximum(r_eff, 1.0e-20)
+
+    gravity_face = _build_gravity_face(state)
+    grad_face = pressure.faceGrad() + gravity_face
+    gx = _to_array(grad_face[0])
+    gy = _to_array(grad_face[1])
+    grad_mag = np.sqrt(np.maximum(gx * gx + gy * gy, 0.0))
+
+    normals = np.asarray(mesh.faceNormals)
+    normal_force = gx * normals[0] + gy * normals[1]
+    kr_face = _face_upwind_relperm(state, normal_force)
+
+    eps = get_yield_truncation_eps(state, params)
+    truncation = np.maximum(0.0, 1.0 - lam_face / (grad_mag + eps))
+    mobility_new = (k_face / plastic_viscosity) * truncation * kr_face
+
+    mobility_face = state.get("mobility_face")
+    if mobility_face is None:
+        mobility_face = FaceVariable(
+            mesh=mesh,
+            value=_to_array(state["mobility_effective"].arithmeticFaceValue),
+        )
+        state["mobility_face"] = mobility_face
+
+    omega = float(params.get("picard_relaxation", 0.5))
+    if (omega <= 0.0) or (omega > 1.0):
+        omega = 0.5
+    mobility_old = _to_array(mobility_face)
+    # Same policy as the cell mobility: relax in the flowing region, snap to
+    # EXACTLY zero below threshold (no creep, no relaxation tail).
+    mobility_value = np.where(
+        mobility_new > 0.0,
+        (1.0 - omega) * mobility_old + omega * mobility_new,
+        0.0,
+    )
+    mobility_face.setValue(mobility_value)
+    return mobility_face
+
+
 def compute_porous_bingham_fields(state):
     """
     First-stage porous-medium Bingham approximation.
@@ -312,6 +442,10 @@ def update_effective_mobility(state, grad_mag=None, yield_factor=None):
             state["grad_p_crit_last"] = porous_fields["grad_p_crit"]
             state["apparent_viscosity_last"] = porous_fields["apparent_viscosity"]
             storage.setValue(params["reference_storage"])
+            if get_pressure_coeff_form(params) == "face":
+                update_threshold_face_mobility(state)
+            else:
+                state["mobility_face"] = None
             return
 
         # Legacy tanh activation path (porous_bingham_activation == "tanh").
@@ -418,13 +552,19 @@ def _compute_net_inflow_from_flux(state):
     # Preferred path: true net inflow from FiPy divergence if supported.
     try:
         # q = -M_eff*(grad(p) - rho*g_vec), so net inflow = -div(q)
-        # = div(M_eff*grad(p)) + div(M_eff_face * b), with the same sealed-wall
-        # gravity face used by the pressure solve (matches grav_source there).
+        # = div(M_f*faceGrad(p)) + div(M_f * b), with the same face mobility
+        # and sealed-wall gravity face as the pressure solve.
         gravity_face = _build_gravity_face(state)
-        net_inflow = _to_array(
-            (mobility_effective * pressure.grad()).divergence
-            + (mobility_effective.arithmeticFaceValue * gravity_face).divergence
-        )
+        mobility_face = state.get("mobility_face")
+        if mobility_face is not None:
+            net_inflow = _to_array(
+                (mobility_face * (pressure.faceGrad() + gravity_face)).divergence
+            )
+        else:
+            net_inflow = _to_array(
+                (mobility_effective * pressure.grad()).divergence
+                + (mobility_effective.arithmeticFaceValue * gravity_face).divergence
+            )
         if net_inflow.shape == pressure.value.shape:
             return net_inflow
     except Exception:
@@ -558,9 +698,20 @@ def _solve_pressure_once(state, dt):
     # face except the open injection faces; otherwise gravity leaks through sealed
     # walls and doubles the steady gradient.
     gravity_face = _build_gravity_face(state)
-    grav_source = (mobility_effective.arithmeticFaceValue * gravity_face).divergence
 
-    eq = TransientTerm(coeff=storage) == DiffusionTerm(coeff=mobility_effective) + grav_source
+    # Face-built coefficient (threshold mode default) or legacy cell
+    # coefficient; the gravity source must use the SAME face mobility as the
+    # diffusion operator for the total flux to be consistent.
+    mobility_face = state.get("mobility_face")
+    if mobility_face is not None:
+        diff_coeff = mobility_face
+        face_mob = mobility_face
+    else:
+        diff_coeff = mobility_effective
+        face_mob = mobility_effective.arithmeticFaceValue
+    grav_source = (face_mob * gravity_face).divergence
+
+    eq = TransientTerm(coeff=storage) == DiffusionTerm(coeff=diff_coeff) + grav_source
     eq.solve(var=pressure, dt=dt)
 
 

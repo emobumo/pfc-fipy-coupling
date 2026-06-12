@@ -59,6 +59,16 @@ def build_placeholder_slurry_parameters():
         # yield_truncation_eps_pa_per_m [Pa/m]: regularization added to
         # |grad Phi| in the truncation. 0 -> auto: 1e-6 * p0 / L_domain.
         "yield_truncation_eps_pa_per_m": 0.0,
+        # Pressure-equation diffusion-coefficient discretization (threshold
+        # mode): "face" = harmonic(k)*trunc(faceGrad)*upwind k_r FaceVariable
+        # (default, required by saturation transport); "cell" = legacy cell
+        # coefficient (FiPy arithmetic averaging), comparison/fallback only.
+        "pressure_coeff_form": "face",
+        # Saturation transport (design doc): k_r = S^a.
+        "relperm_exponent": 3.0,
+        # Saturation transport master switch (off in the neutral baseline so
+        # the legacy linear tests are bit-identical; cases enable it).
+        "enable_saturation_transport": False,
         # characteristic_pore_size [m]
         "characteristic_pore_size": 0.05,
         # max_apparent_viscosity [Pa·s]
@@ -143,6 +153,12 @@ def build_engineering_case_parameters():
     constant 2 MPa (resolves on the 1.0 m mesh, where a top cell sits at x = 0).
     """
     params = build_placeholder_slurry_parameters()
+    # NOTE reference_storage scaling rule (saturation design review): keep c
+    # per-case and size it so c*p0 <= 1% * porosity. At p0 = 2 MPa and
+    # n ~ 0.3 this requires c <= ~1.5e-9 Pa^-1; the inherited default 1e-7
+    # makes c*p0 ~ 0.2 (same order as n) and is ONLY acceptable while the
+    # legacy fully-saturated mode is in use. Revisit when this case switches
+    # to enable_saturation_transport=True.
     params.update({
         "rheology_model": "porous_bingham",
         # Cement slurry (Bingham).
