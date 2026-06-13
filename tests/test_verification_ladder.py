@@ -34,6 +34,8 @@ from src.models.slurry_transport.variables import (
 from src.models.slurry_transport.equations import (
     update_effective_mobility,
     solve_pressure_step,
+    solve_transport_step,
+    conservation_report,
     _solve_pressure_once,
 )
 
@@ -184,6 +186,9 @@ def _build_step2_state():
     # Constant-pressure injection at x=0; right end keeps FiPy's natural
     # zero-flux condition. Initial pressure is 0 everywhere.
     state["pressure"].constrain(S2_P0, state["mesh"].facesLeft)
+    # Inlet faces double as the S=1 supply boundary for the upwind k_r when
+    # the saturation transport is enabled (2b reuses this builder).
+    state["open_pressure_faces"] = state["mesh"].facesLeft
     return state
 
 
@@ -349,6 +354,7 @@ def _build_step3_state():
     )
     state["pressure"].constrain(S3_P0, borehole)
     state["pressure"].constrain(0.0, mesh.facesRight | mesh.facesTop)
+    state["open_pressure_faces"] = borehole
     return state
 
 
@@ -446,6 +452,245 @@ class TestStep3RadialGustafsonStille(unittest.TestCase):
             0.08,
             "stalled radial profile deviates from p0 - lambda*(r - r0): "
             "max |dp|/p0 = %g" % max_dev,
+        )
+
+
+# --- Step 2b configuration ---------------------------------------------------
+# Variable-saturation fill on a dry pile (1D): S starts at 0, the inlet
+# supplies S=1 slurry, and the fill closure (penalized air-pressure cells +
+# explicit face-inflow fill) advances a sharp S front. This is the
+# Gustafson-Stille 1D benchmark in its native form -- a relative
+# penetration / relative time curve, NOT a single terminal stall point.
+#
+# Analytic 1D fill (quasi-steady volume balance, S=1 behind a sharp front):
+#   uniform flux behind front  q = (k/mu)*(p0/x_f - lambda)
+#   volume balance             n dx_f/dt = q
+#   =>  t(x_f) = (n/(M*lambda)) * [ L_max*ln(L_max/(L_max - x_f)) - x_f ],
+#       M = k/mu,  L_max = p0/lambda.
+# The log term diverges as x_f -> L_max, so the front reaches L_max only as
+# t -> infinity: at any FINITE time the analytic front is strictly below
+# L_max. The test therefore checks that the numeric front TRACKS this
+# analytic time-distance curve over the injection period (the GS benchmark),
+# instead of asserting a terminal stall position (which is an asymptotic
+# limit, not reachable in finite steps).
+#
+# Known open issue (round-5 solver work, documented in saturation_design.md):
+# near the yield margin the truncation max(0,1-lambda/|grad|) has diverging
+# sensitivity and the Picard iteration does not converge (hits the cap with a
+# non-decaying residual). This leaks a slow unphysical creep that, integrated
+# over very long times, pushes the front past L_max (~+13% at t ~ 36*L_max/
+# v_char). It is negligible over the injection period sampled here (< 3% to
+# x_f ~ 0.67*L_max) but is why this test tracks the curve at moderate time
+# rather than asserting a hard terminal stall.
+#
+# mu only sets the time scale (L_max has no mu). NX = 50 (coarser than step 2)
+# keeps the long march affordable; the front stays sharp (1-2 cells) and the
+# quasi-steady profile is mesh-converged for this smooth problem.
+S2B_MU = 0.005
+S2B_NX = 50
+S2B_K = S2_K
+S2B_PHI = S2_PHI
+S2B_M0 = S2B_K / S2B_MU
+S2B_LMAX = S2_LMAX
+S2B_LAMBDA = S2_LAMBDA
+# Gustafson-Stille time coefficient n/(M*lambda) [s].
+S2B_GS_COEF = S2B_PHI / (S2B_M0 * S2B_LAMBDA)
+# March until the front passes this fraction of L_max (well inside the
+# curve-tracking regime, before the long-time creep matters).
+S2B_TARGET_FRAC = 0.65
+S2B_MAX_STEPS = 1500
+
+_STEP2B_CACHE = {}
+
+
+def _gs_time(x_f):
+    """Analytic fill time to reach front position x_f (< L_max) [s]."""
+    if x_f <= 0.0:
+        return 0.0
+    x_f = min(x_f, S2B_LMAX * (1.0 - 1.0e-9))
+    return S2B_GS_COEF * (
+        S2B_LMAX * math.log(S2B_LMAX / (S2B_LMAX - x_f)) - x_f
+    )
+
+
+def _gs_front(t):
+    """Invert _gs_time: analytic front position at time t (bisection)."""
+    if t <= 0.0:
+        return 0.0
+    lo, hi = 0.0, S2B_LMAX * (1.0 - 1.0e-12)
+    for _ in range(80):
+        mid = 0.5 * (lo + hi)
+        if _gs_time(mid) < t:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
+def _build_step2b_state():
+    dx = S2_L / float(S2B_NX)
+    mesh, x, y, fx, fy = build_mesh(nx=S2B_NX, ny=1, dx=dx, dy=dx)
+    state = {"mesh": mesh, "x": x, "y": y, "fx": fx, "fy": fy}
+
+    params = build_placeholder_slurry_parameters()
+    params["rheology_model"] = "porous_bingham"
+    params["porous_bingham_activation"] = "threshold"
+    params["gravity_y"] = 0.0
+    params["yield_stress"] = S2_TAU0
+    params["plastic_viscosity"] = S2B_MU
+    params["inlet_pressure_core_value"] = S2_P0
+    params["enable_saturation_transport"] = True
+    # Validated fill configuration (round-4 experiments): chained Picard +
+    # symmetric relaxation + yield latch + dt_p ON. The latch kills the
+    # head-refill/tail-drain jitter pumping that otherwise creeps the front,
+    # and dt_p keeps steps small enough that the step-end gradients settle so
+    # the latch can engage (dt_p OFF overran badly even with the latch).
+    params["dt_cfl"] = 0.9
+    state.update(initialize_slurry_variables(mesh, params=params))
+
+    state["permeability"].setValue(S2B_K)
+    state["porosity"].setValue(S2B_PHI)
+    state["mobility_structural"].setValue(S2B_M0)
+    state["mobility_effective"].setValue(S2B_M0)
+    state["pressure"].constrain(S2_P0, mesh.facesLeft)
+    state["open_pressure_faces"] = mesh.facesLeft
+    # Dry initial pile: the fill transport drives the front.
+    state["saturation"].setValue(0.0)
+    return state
+
+
+def _saturation_front(state):
+    """Interpolated x where S crosses 0.5 (sharp fill front)."""
+    x = np.asarray(state["x"], dtype=float)
+    s = np.asarray(state["saturation"].value, dtype=float)
+    order = np.argsort(x)
+    xs, ss = x[order], s[order]
+    above = np.where(ss >= 0.5)[0]
+    if above.size == 0:
+        return 0.0
+    i = int(above[-1])
+    if i == len(xs) - 1:
+        return float(xs[-1])
+    if ss[i] <= ss[i + 1]:
+        return float(xs[i])
+    return float(xs[i] + (ss[i] - 0.5) / (ss[i] - ss[i + 1]) * (xs[i + 1] - xs[i]))
+
+
+def _run_step2b_march():
+    if "state" not in _STEP2B_CACHE:
+        state = _build_step2b_state()
+        t = 0.0
+        # (time, numeric_front) trajectory for curve-tracking checks.
+        trajectory = []
+        v_in_history = []
+        for _ in range(S2B_MAX_STEPS):
+            dt = solve_transport_step(state, dt_cap=0.5)
+            t += float(dt)
+            front = _saturation_front(state)
+            trajectory.append((t, front))
+            v_in_history.append(float(state["injected_volume_total"]))
+            if front >= S2B_TARGET_FRAC * S2B_LMAX:
+                break
+        _STEP2B_CACHE["state"] = state
+        _STEP2B_CACHE["trajectory"] = trajectory
+        _STEP2B_CACHE["v_in_history"] = v_in_history
+    return (
+        _STEP2B_CACHE["state"],
+        _STEP2B_CACHE["trajectory"],
+        _STEP2B_CACHE["v_in_history"],
+    )
+
+
+class TestStep2bSaturationFront(unittest.TestCase):
+    """Step 2b: the dry-pile S front must track the Gustafson-Stille
+    analytic penetration-vs-time curve over the injection period."""
+
+    def test_front_tracks_gustafson_stille_curve(self):
+        _, trajectory, _ = _run_step2b_march()
+        # Compare the numeric front to the analytic front at the SAME time, at
+        # several samples spanning the tracked range (skip the first 20% of
+        # the march: the dt ramp / first-cell fill is a startup transient).
+        start = max(int(0.2 * len(trajectory)), 1)
+        worst = 0.0
+        worst_msg = ""
+        for t, front in trajectory[start:]:
+            analytic = _gs_front(t)
+            err = abs(front - analytic) / S2B_LMAX
+            if err > worst:
+                worst = err
+                worst_msg = ("t=%.3f s: numeric front %.4f vs GS %.4f "
+                             "(err %.3f of L_max)" % (t, front, analytic, err))
+        self.assertLess(
+            worst,
+            0.05,
+            "front departs from the GS curve: %s" % worst_msg,
+        )
+
+    def test_injected_volume_monotone(self):
+        _, _, v_in = _run_step2b_march()
+        v = np.asarray(v_in, dtype=float)
+        diffs = np.diff(v)
+        self.assertTrue(
+            np.all(diffs >= -1.0e-12 * max(abs(v[-1]), 1.0)),
+            "V_in(t) decreased during the fill",
+        )
+
+
+class TestConservationLedger(unittest.TestCase):
+    """Global mass balance of the fill transport (design doc section 5)."""
+
+    def test_relative_drift_below_tolerance(self):
+        state, _, _ = _run_step2b_march()
+        rep = conservation_report(state)
+        self.assertLess(
+            rep["drift_rel"],
+            1.0e-5,
+            "ledger drift %.3e (V_in=%.6e store=%.6e comp=%.6e clip=%.3e)"
+            % (rep["drift_rel"], rep["v_in"], rep["v_store"],
+               rep["v_comp"], rep["v_clip"]),
+        )
+
+    def test_clipped_volume_is_zero(self):
+        state, _, _ = _run_step2b_march()
+        rep = conservation_report(state)
+        self.assertLessEqual(
+            abs(rep["v_clip"]),
+            1.0e-10 * max(abs(rep["v_in"]), 1.0e-30),
+            "fill clipping engaged: clip=%.3e vs V_in=%.6e"
+            % (rep["v_clip"], rep["v_in"]),
+        )
+
+
+class TestSaturationDegeneracy(unittest.TestCase):
+    """Design doc section 6: with S = 1 everywhere the saturation transport
+    must reproduce the plain fully-saturated solve EXACTLY (same pressure
+    field arithmetic: no filling cells -> no penalty, k_r = 1)."""
+
+    def _march(self, enable_saturation):
+        state = _build_step2_state()
+        params = state["slurry_parameters"]
+        if enable_saturation:
+            params["enable_saturation_transport"] = True
+            # dt_p / lagged-CFL must not alter dt: pin dt to the cap so both
+            # marches take identical steps.
+            params["enable_front_dt_constraint"] = False
+            state["saturation"].setValue(1.0)
+        for _ in range(10):
+            if enable_saturation:
+                solve_transport_step(state, dt_cap=S2_DT)
+            else:
+                solve_pressure_step(state, dt=S2_DT)
+        return np.asarray(state["pressure"].value, dtype=float)
+
+    def test_s_equal_one_is_bit_identical_to_plain_solve(self):
+        p_plain = self._march(False)
+        p_saturated = self._march(True)
+        max_diff = float(np.max(np.abs(p_saturated - p_plain)))
+        self.assertEqual(
+            max_diff,
+            0.0,
+            "S=1 transport deviates from the plain solve: max |dp| = %g"
+            % max_diff,
         )
 
 

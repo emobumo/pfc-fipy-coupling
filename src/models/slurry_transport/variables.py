@@ -69,6 +69,23 @@ def build_placeholder_slurry_parameters():
         # Saturation transport master switch (off in the neutral baseline so
         # the legacy linear tests are bit-identical; cases enable it).
         "enable_saturation_transport": False,
+        # Fill closure (design doc "实施期修订"): cells with S below this
+        # threshold are pinned at air pressure ~0 via a penalty source and
+        # fill from the explicit face inflow; at/above it they join the
+        # pressure domain.
+        "saturation_active_threshold": 1.0 - 1.0e-3,
+        # Penalty magnitude multiplier on max(M/dx^2, c/dt).
+        "fill_penalty_factor": 1.0e6,
+        # Adaptive dt: fill CFL number and the front-time-constant rule
+        # dt_p = theta * c * L_c^2 / (2 M_wet) from round 2.
+        "dt_cfl": 0.5,
+        "dt_front_theta": 0.01,
+        "enable_front_dt_constraint": True,
+        # Characteristic front length for dt_p; 0 -> auto (domain max extent).
+        "front_char_length": 0.0,
+        # Deprecated filling-indicator path (pre-saturation accumulation with
+        # the 0.1 factor); kept only for PFC visualization continuity.
+        "legacy_filling_mode": False,
         # characteristic_pore_size [m]
         "characteristic_pore_size": 0.05,
         # max_apparent_viscosity [Pa·s]
@@ -82,6 +99,12 @@ def build_placeholder_slurry_parameters():
         "picard_max_iters": 20,
         # Picard tolerance, RELATIVE to the step's first-iteration residual.
         "picard_tol": 1.0e-4,
+        # Picard transient handling: "chained" (legacy; previous iterate is
+        # the old state -> fast pseudo-steady marches) or "backward_euler"
+        # (each iteration re-solves the step from its initial pressure;
+        # REQUIRED for fill-transport cases, otherwise the yield-margin
+        # ratchet creeps the front past the stagnation length).
+        "picard_transient_mode": "chained",
         # Under-relaxation factor for the threshold-mode mobility update.
         "picard_relaxation": 0.5,
         # Gate for first-version baseline behavior.
@@ -194,9 +217,17 @@ def initialize_slurry_variables(mesh, params=None):
         "filling": CellVariable(name="filling", mesh=mesh, value=0.0),
         "clogging": CellVariable(name="clogging", mesh=mesh, value=0.0),
         "yield_factor": CellVariable(name="yield_factor", mesh=mesh, value=1.0),
+        # Slurry saturation S (occupied pore fraction); the conserved field
+        # of the fill closure. Initially dry; cases/tests may set 1.0 for the
+        # fully-saturated degenerate mode.
+        "saturation": CellVariable(name="saturation", mesh=mesh, value=0.0),
         "slurry_parameters": params,
         "structure_initialized_once": False,
         "flow_step_index": 0,
         "structure_init_report": {},
+        # Conservation ledger (volumes per unit thickness, [m^3/m]).
+        "injected_volume_total": 0.0,
+        "clipped_volume_total": 0.0,
+        "last_div_q": None,
     }
     return state

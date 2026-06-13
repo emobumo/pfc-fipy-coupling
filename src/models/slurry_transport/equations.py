@@ -2,6 +2,7 @@
 
 import numpy as np
 from fipy import (
+    CellVariable,
     DiffusionTerm,
     TransientTerm,
     FaceVariable,
@@ -272,8 +273,15 @@ def _face_upwind_relperm(state, normal_force):
     s = np.clip(_to_array(saturation), 0.0, 1.0)
     kr_cell = np.power(s, exponent)
 
-    ids0 = np.asarray(mesh.faceCellIDs[0])
-    ids1 = np.asarray(mesh.faceCellIDs[1])
+    # faceCellIDs[1] is masked on exterior faces; both np.where branches are
+    # evaluated, so sanitize the indices (the masked entries are never the
+    # selected donor: exterior outflow picks cell0, exterior inflow is
+    # overwritten with the boundary value below).
+    ids1_raw = mesh.faceCellIDs[1]
+    if hasattr(ids1_raw, "filled"):
+        ids1_raw = ids1_raw.filled(0)
+    ids0 = np.clip(np.asarray(mesh.faceCellIDs[0]).astype(int), 0, kr_cell.size - 1)
+    ids1 = np.clip(np.asarray(ids1_raw).astype(int), 0, kr_cell.size - 1)
     donor_is_cell0 = normal_force <= 0.0
     kr_face = np.where(donor_is_cell0, kr_cell[ids0], kr_cell[ids1])
 
@@ -345,13 +353,43 @@ def update_threshold_face_mobility(state):
     if (omega <= 0.0) or (omega > 1.0):
         omega = 0.5
     mobility_old = _to_array(mobility_face)
-    # Same policy as the cell mobility: relax in the flowing region, snap to
-    # EXACTLY zero below threshold (no creep, no relaxation tail).
-    mobility_value = np.where(
-        mobility_new > 0.0,
-        (1.0 - omega) * mobility_old + omega * mobility_new,
-        0.0,
-    )
+
+    # Mobility-update policy (round-4 experiments, see saturation_design.md):
+    #
+    # WITHOUT filling cells (fully saturated / S=1 modes): asymmetric
+    # under-relaxation with snap-to-zero below threshold. This holds the
+    # Bingham stall hard (rounds 2-3 results) and there is no activation
+    # seam to choke.
+    #
+    # WITH filling cells (fill transport): the snap's discontinuity
+    # limit-cycles at the activation seam (a just-activated cell decouples
+    # from the wet column, choking the front ~250x), so use SYMMETRIC
+    # relaxation (continuous map) plus a per-face yield latch with
+    # hysteresis: faces whose step-end converged gradient was <= lambda stay
+    # at exactly zero until the iterate gradient exceeds (1+h)*lambda.
+    # Without the latch, near-stall jitter (head refill from the pressure
+    # boundary + tail drain into penalized cells) pumps slurry across
+    # sub-threshold faces and the front creeps far past L_max. h only acts
+    # at the front face there (position cost ~h*dx), default 0.05.
+    if state.get("fill_penalty_active", False):
+        mobility_value = (1.0 - omega) * mobility_old + omega * mobility_new
+        if params.get("enable_yield_latch", True):
+            latched = state.get("face_yield_latched")
+            if latched is None:
+                latched = np.zeros(mesh.numberOfFaces, dtype=bool)
+            hband = 1.0 + max(
+                float(params.get("yield_hysteresis_band", 0.05)), 0.0
+            )
+            latched = latched & np.logical_not(grad_mag > hband * lam_face)
+            state["face_yield_latched"] = latched
+            mobility_value = np.where(latched, 0.0, mobility_value)
+    else:
+        mobility_value = np.where(
+            mobility_new > 0.0,
+            (1.0 - omega) * mobility_old + omega * mobility_new,
+            0.0,
+        )
+
     mobility_face.setValue(mobility_value)
     return mobility_face
 
@@ -426,15 +464,11 @@ def update_effective_mobility(state, grad_mag=None, yield_factor=None):
                 omega = 0.5
             mobility_new = porous_fields["mobility"]
             mobility_old = _to_array(mobility_effective)
-            # Under-relaxed Picard update in the flowing region. Where the
-            # truncation says zero, mobility is set to EXACTLY zero (no
-            # relaxation tail, no min_mobility floor): below the start-up
-            # gradient the slurry must not creep.
-            mobility_value = np.where(
-                mobility_new > 0.0,
-                (1.0 - omega) * mobility_old + omega * mobility_new,
-                0.0,
-            )
+            # SYMMETRIC under-relaxation (also toward zero); see the face
+            # update for why an asymmetric snap-to-zero limit-cycles. The
+            # truncation is continuous, so the fixed point is exactly zero
+            # below the start-up gradient (no steady creep, no floor).
+            mobility_value = (1.0 - omega) * mobility_old + omega * mobility_new
             mobility_effective.setValue(mobility_value)
             state["mobility"].setValue(mobility_value)
             state["yield_factor"].setValue(porous_fields["activation"])
@@ -687,6 +721,88 @@ def apply_boundary_conditions(state):
     }
 
 
+def get_saturation_transport_enabled(state):
+    """
+    True when the variable-saturation fill transport is active. Requires the
+    threshold porous-Bingham mode with the face-built coefficient (the fill
+    fluxes must be the matrix fluxes; see docs/saturation_design.md).
+    """
+    params = get_slurry_parameters(state)
+    if not params.get("enable_saturation_transport", False):
+        return False
+    if get_rheology_model(params) != "porous_bingham":
+        raise ValueError(
+            "enable_saturation_transport requires rheology_model='porous_bingham'"
+        )
+    if get_porous_bingham_activation(params) != "threshold":
+        raise ValueError(
+            "enable_saturation_transport requires porous_bingham_activation='threshold'"
+        )
+    if get_pressure_coeff_form(params) != "face":
+        raise ValueError(
+            "enable_saturation_transport requires pressure_coeff_form='face'"
+        )
+    return True
+
+
+def _update_fill_mask(state):
+    """
+    Freeze the active/filling split for this step: cells with
+    S < saturation_active_threshold are 'filling' (pinned at air pressure ~0
+    by the penalty source); the rest are active pressure unknowns.
+    """
+    params = get_slurry_parameters(state)
+    threshold = float(params.get("saturation_active_threshold", 1.0 - 1.0e-3))
+    s = np.clip(_to_array(state["saturation"]), 0.0, 1.0)
+    empty = s < threshold
+    state["fill_empty_mask"] = empty
+
+    penalty_var = state.get("fill_penalty_var")
+    if penalty_var is None:
+        penalty_var = CellVariable(mesh=state["mesh"], value=0.0)
+        state["fill_penalty_var"] = penalty_var
+    penalty_var.setValue(np.where(empty, 1.0, 0.0))
+    state["fill_penalty_active"] = bool(np.any(empty))
+    return empty
+
+
+def _fill_penalty_beta(state, dt):
+    """Penalty magnitude [1/(Pa*s)]: must dominate both the diffusion row
+    scale M/dx^2 and the storage row scale c/dt."""
+    params = get_slurry_parameters(state)
+    factor = max(float(params.get("fill_penalty_factor", 1.0e6)), 1.0)
+    mobility_face = state.get("mobility_face")
+    if mobility_face is not None:
+        m_max = float(np.max(_to_array(mobility_face)))
+    else:
+        m_max = float(np.max(_to_array(state["mobility_effective"])))
+    m_max = max(m_max, 1.0e-30)
+    vols = np.asarray(state["mesh"].cellVolumes, dtype=float)
+    dx2 = max(float(np.min(vols)), 1.0e-30)
+    c = float(params.get("reference_storage", 1.0e-7))
+    return factor * (m_max / dx2 + c / max(float(dt), 1.0e-30))
+
+
+def compute_total_face_flux(state):
+    """
+    Explicit total face flux q_f = -M_f*(faceGrad(p) + b), with the SAME face
+    mobility and sealed-wall gravity face as the pressure matrix (discrete
+    consistency). Returns (div_q [1/s], q_normal [m/s], face_areas [m]).
+    """
+    mesh = state["mesh"]
+    pressure = state["pressure"]
+    mobility_face = state["mobility_face"]
+    gravity_face = _build_gravity_face(state)
+    q_face = -(mobility_face * (pressure.faceGrad() + gravity_face))
+    div_q = _to_array(q_face.divergence)
+    qx = _to_array(q_face[0])
+    qy = _to_array(q_face[1])
+    normals = np.asarray(mesh.faceNormals)
+    q_normal = qx * normals[0] + qy * normals[1]
+    areas = np.asarray(mesh._faceAreas, dtype=float)
+    return div_q, q_normal, areas
+
+
 def _solve_pressure_once(state, dt):
     pressure = state["pressure"]
     storage = state["storage"]
@@ -711,7 +827,15 @@ def _solve_pressure_once(state, dt):
         face_mob = mobility_effective.arithmeticFaceValue
     grav_source = (face_mob * gravity_face).divergence
 
-    eq = TransientTerm(coeff=storage) == DiffusionTerm(coeff=diff_coeff) + grav_source
+    rhs = DiffusionTerm(coeff=diff_coeff) + grav_source
+    # Fill closure: cells still filling (S < threshold) are pinned at air
+    # pressure ~0 by a strong implicit sink; their inflow is credited to the
+    # saturation update instead of the pressure storage.
+    if state.get("fill_penalty_active", False):
+        beta = _fill_penalty_beta(state, dt)
+        rhs = rhs + ImplicitSourceTerm(coeff=-beta * state["fill_penalty_var"])
+
+    eq = TransientTerm(coeff=storage) == rhs
     eq.solve(var=pressure, dt=dt)
 
 
@@ -740,6 +864,19 @@ def solve_pressure_step(state, dt=0.01):
         if tol_rel <= 0.0:
             tol_rel = 1.0e-4
 
+        # Transient handling of the Picard iteration:
+        #   "chained" (legacy): each iteration treats the PREVIOUS ITERATE as
+        #     the old state (FiPy reads the variable at assembly time), so a
+        #     step advances up to max_iters*dt of pseudo-time -- fast steady
+        #     marches, but c*dp/dt = -div q does not hold per step, and near
+        #     the yield margin the head-refill/tail-drain ratchet lets a
+        #     pinned-front column creep past the stagnation length.
+        #   "backward_euler": every iteration re-solves the SAME step from
+        #     the step's initial pressure; transported volume per step is
+        #     c-storage-bounded, so the fill front overrun is structurally
+        #     capped (~1 cell). Required by the fill-transport cases.
+        be_mode = params.get("picard_transient_mode", "chained") == "backward_euler"
+        pressure_start = np.array(pressure.value, copy=True)
         previous_pressure = np.array(pressure.value, copy=True)
         picard_residual = 0.0
         history = []
@@ -752,6 +889,8 @@ def solve_pressure_step(state, dt=0.01):
                 update_effective_mobility(state, grad_mag=grad_mag, yield_factor=yield_factor)
             else:
                 update_effective_mobility(state)
+            if be_mode:
+                pressure.setValue(pressure_start)
             _solve_pressure_once(state, dt=dt)
 
             picard_residual = float(np.max(np.abs(pressure.value - previous_pressure)))
@@ -764,6 +903,9 @@ def solve_pressure_step(state, dt=0.01):
         state["picard_iterations_last"] = it + 1
         state["picard_residual_last"] = picard_residual
         state["picard_history_last"] = history
+        # Static-yield hysteresis: latch faces that ended the step at/below
+        # the start-up gradient (threshold mode only; no-op otherwise).
+        _update_yield_latch(state)
     else:
         # Linear baseline.
         update_effective_mobility(state)
@@ -773,20 +915,271 @@ def solve_pressure_step(state, dt=0.01):
         state["picard_history_last"] = [0.0]
 
 
+def _update_yield_latch(state):
+    """
+    Static-yield hysteresis bookkeeping for the FILL mode, evaluated once
+    per step from the converged step-end state: LATCH faces whose driving
+    gradient is at/below lambda. Unlatching happens per-iteration inside
+    update_threshold_face_mobility when the iterate gradient exceeds
+    (1+h)*lambda -- whole-step latching was tried and forces a cross-step
+    period-2 at the activation seam (a cell's supply and drain faces latch
+    alternately and the intra-step flux balance point is never reachable).
+    """
+    params = get_slurry_parameters(state)
+    if not state.get("fill_penalty_active", False):
+        return
+    if not params.get("enable_yield_latch", True):
+        return
+    if get_rheology_model(params) != "porous_bingham":
+        return
+    if get_porous_bingham_activation(params) != "threshold":
+        return
+    if get_pressure_coeff_form(params) != "face":
+        return
+    mesh = state["mesh"]
+    pressure = state["pressure"]
+    yield_stress = float(params.get("yield_stress", 50.0))
+    k_face = np.maximum(_to_array(state["permeability"].harmonicFaceValue), 1.0e-30)
+    phi_face = np.clip(
+        _to_array(state["porosity"].arithmeticFaceValue), 1.0e-6, 1.0 - 1.0e-6
+    )
+    lam_face = 2.0 * yield_stress / np.maximum(
+        np.sqrt(8.0 * k_face / phi_face), 1.0e-20
+    )
+    gravity_face = _build_gravity_face(state)
+    grad_face = pressure.faceGrad() + gravity_face
+    gx = _to_array(grad_face[0])
+    gy = _to_array(grad_face[1])
+    grad_mag = np.sqrt(np.maximum(gx * gx + gy * gy, 0.0))
+    latched = state.get("face_yield_latched")
+    if latched is None:
+        latched = np.zeros(mesh.numberOfFaces, dtype=bool)
+    state["face_yield_latched"] = latched | (grad_mag <= lam_face)
+
+
+def _ensure_saturation_ledger(state):
+    """Snapshot the initial S and p fields the first time transport runs."""
+    if state.get("saturation_initial_for_ledger") is None:
+        state["saturation_initial_for_ledger"] = np.array(
+            _to_array(state["saturation"]), copy=True
+        )
+        state["pressure_initial_for_ledger"] = np.array(
+            _to_array(state["pressure"]), copy=True
+        )
+        state.setdefault("injected_volume_total", 0.0)
+        state.setdefault("clipped_volume_total", 0.0)
+        state.setdefault("compressed_volume_total", 0.0)
+
+
+def _fill_cfl_dt(state, div_q):
+    """
+    Fill CFL: dt such that no filling cell gains more than
+    dt_cfl * (1 - S) of saturation this step (structural no-overshoot,
+    hence clipped_volume ~ 0). Returns a large number when nothing fills.
+    """
+    params = get_slurry_parameters(state)
+    cfl = float(params.get("dt_cfl", 0.5))
+    if (cfl <= 0.0) or (cfl > 1.0):
+        cfl = 0.5
+    empty = state.get("fill_empty_mask")
+    if empty is None or not np.any(empty):
+        return 1.0e30
+    s = np.clip(_to_array(state["saturation"]), 0.0, 1.0)
+    porosity = np.clip(_to_array(state["porosity"]), 1.0e-6, 1.0)
+    inflow_rate = np.maximum(-np.asarray(div_q, dtype=float), 0.0)  # [1/s]
+    cand = empty & (inflow_rate > 1.0e-30)
+    if not np.any(cand):
+        return 1.0e30
+    gap = np.maximum(1.0 - s, 0.0)
+    dt_per_cell = gap[cand] * porosity[cand] / inflow_rate[cand]
+    return cfl * float(np.min(dt_per_cell))
+
+
+def compute_adaptive_dt(state, dt_cap):
+    """
+    dt = min(dt_cap, dt_p, dt_S):
+      dt_p = theta * c * L_c^2 / (2 M_wet)  (front time constant, round 2;
+             toggleable via enable_front_dt_constraint)
+      dt_S = fill CFL evaluated with the LAGGED fluxes of the previous step
+             (the in-step re-solve in solve_transport_step is the hard guard).
+    """
+    params = get_slurry_parameters(state)
+    dt = float(dt_cap)
+    if params.get("enable_front_dt_constraint", True):
+        theta = max(float(params.get("dt_front_theta", 0.01)), 1.0e-6)
+        c = float(params.get("reference_storage", 1.0e-7))
+        length = float(params.get("front_char_length", 0.0))
+        if length <= 0.0:
+            x = _to_array(state["x"])
+            y = _to_array(state["y"])
+            length = max(
+                float(np.max(x)) - float(np.min(x)),
+                float(np.max(y)) - float(np.min(y)),
+                1.0e-12,
+            )
+        m_wet = max(float(np.max(_to_array(state["mobility_effective"]))), 1.0e-30)
+        dt = min(dt, theta * c * length * length / (2.0 * m_wet))
+    last_div_q = state.get("last_div_q")
+    if last_div_q is not None:
+        dt = min(dt, _fill_cfl_dt(state, last_div_q))
+    return max(dt, 1.0e-12)
+
+
+def update_saturation_from_flux(state, dt, div_q, q_normal, face_areas):
+    """
+    Explicit fill update + conservation ledger.
+
+    Filling cells gain dt * (net inflow)/(n V); active cells keep their S
+    (their net inflow is absorbed by the c*dp/dt storage, which the ledger
+    books as V_comp). Clip residue (structurally ~0 thanks to the fill CFL)
+    is accumulated into clipped_volume_total.
+    """
+    mesh = state["mesh"]
+    saturation = state["saturation"]
+    empty = state["fill_empty_mask"]
+    porosity = np.clip(_to_array(state["porosity"]), 1.0e-6, 1.0)
+    vols = np.asarray(mesh.cellVolumes, dtype=float)
+
+    s_old = np.clip(_to_array(saturation), 0.0, 1.0)
+    inflow_rate = -np.asarray(div_q, dtype=float)  # [1/s], >0 = net inflow
+    raw = s_old + np.where(empty, dt * inflow_rate / porosity, 0.0)
+    s_new = np.clip(raw, 0.0, 1.0)
+    saturation.setValue(s_new)
+
+    clipped_step = float(np.sum((raw - s_new) * porosity * vols))
+    state["clipped_volume_total"] = (
+        state.get("clipped_volume_total", 0.0) + clipped_step
+    )
+
+    # Active-cell absorption booked from the SAME explicit flux field (the
+    # chained-iterate Picard does not satisfy c*dp/dt = -div q exactly, so
+    # booking c*dp here would leak the Picard transient slip into the
+    # ledger; with flux-field booking the balance is Gauss-exact).
+    active = np.logical_not(empty)
+    v_comp_step = float(np.sum(np.where(active, inflow_rate, 0.0) * vols)) * float(dt)
+    state["compressed_volume_total"] = (
+        state.get("compressed_volume_total", 0.0) + v_comp_step
+    )
+
+    # Net boundary inflow of this step (exterior normals point outward).
+    exterior = np.asarray(mesh.exteriorFaces.value, dtype=bool)
+    v_in_step = -float(
+        np.sum(q_normal[exterior] * face_areas[exterior])
+    ) * float(dt)
+    state["injected_volume_total"] = (
+        state.get("injected_volume_total", 0.0) + v_in_step
+    )
+    state["last_div_q"] = np.asarray(div_q, dtype=float)
+    return s_new
+
+
+def conservation_report(state):
+    """
+    Global ledger: V_in (net boundary inflow) vs
+    dV_store (sum n*dS*V) + V_comp (active-cell absorption, booked from the
+    same explicit flux field) + clipped_volume. All four terms come from one
+    flux field, so the drift is Gauss-exact (float noise only) and catches
+    any wiring inconsistency in the fill update.
+
+    v_comp_pressure (sum c*dp*V) is reported as a separate physical
+    cross-check; its gap to v_comp measures the Picard transient slip of the
+    chained-iterate pressure solve (diagnostic, not asserted).
+    """
+    mesh = state["mesh"]
+    params = get_slurry_parameters(state)
+    vols = np.asarray(mesh.cellVolumes, dtype=float)
+    porosity = np.clip(_to_array(state["porosity"]), 1.0e-6, 1.0)
+
+    s = np.clip(_to_array(state["saturation"]), 0.0, 1.0)
+    s0 = state.get("saturation_initial_for_ledger")
+    if s0 is None:
+        s0 = np.zeros_like(s)
+    v_store = float(np.sum(porosity * (s - s0) * vols))
+
+    p = _to_array(state["pressure"])
+    p0 = state.get("pressure_initial_for_ledger")
+    if p0 is None:
+        p0 = np.zeros_like(p)
+    c = float(params.get("reference_storage", 1.0e-7))
+    v_comp_pressure = float(np.sum(c * (p - p0) * vols))
+
+    v_in = float(state.get("injected_volume_total", 0.0))
+    v_comp = float(state.get("compressed_volume_total", 0.0))
+    v_clip = float(state.get("clipped_volume_total", 0.0))
+    drift = v_in - v_store - v_comp - v_clip
+    rel = abs(drift) / max(abs(v_in), 1.0e-30)
+    return {
+        "v_in": v_in,
+        "v_store": v_store,
+        "v_comp": v_comp,
+        "v_comp_pressure": v_comp_pressure,
+        "v_clip": v_clip,
+        "drift": drift,
+        "drift_rel": rel,
+    }
+
+
+def solve_transport_step(state, dt_cap=0.01):
+    """
+    One IMPES fill step (boundary conditions must already be installed):
+
+      1. freeze the active/filling split from the current S,
+      2. dt = min(dt_cap, dt_p, lagged fill CFL),
+      3. implicit pressure solve (Picard); filling cells penalized to ~0,
+      4. explicit total face flux; if it violates the fill CFL, restore the
+         pressure and re-solve with the compliant dt (hard no-overshoot
+         guard, keeps clipped_volume at zero),
+      5. explicit S update + conservation ledger.
+
+    Returns the dt actually used.
+    """
+    if not get_saturation_transport_enabled(state):
+        solve_pressure_step(state, dt=dt_cap)
+        return dt_cap
+
+    pressure = state["pressure"]
+    _ensure_saturation_ledger(state)
+    _update_fill_mask(state)
+    dt = compute_adaptive_dt(state, dt_cap)
+
+    pressure_before = np.array(pressure.value, copy=True)
+    div_q = None
+    q_normal = None
+    face_areas = None
+    for _attempt in range(3):
+        solve_pressure_step(state, dt=dt)
+        div_q, q_normal, face_areas = compute_total_face_flux(state)
+        dt_required = _fill_cfl_dt(state, div_q)
+        if dt <= dt_required * (1.0 + 1.0e-12):
+            break
+        pressure.setValue(pressure_before)
+        dt = max(dt_required * 0.9, 1.0e-12)
+
+    update_saturation_from_flux(state, dt, div_q, q_normal, face_areas)
+    state["dt_last"] = dt
+    return dt
+
+
 def solve_slurry_step(state, dt=0.01):
     """
     Solve one slurry-transport step.
 
     Default path stays compatible with the current linear baseline.
     Bingham-like yield control is activated only when enable_bingham_yield=True.
-    dt is interpreted in seconds [s].
+    With enable_saturation_transport the step runs the IMPES fill transport
+    and dt acts as the adaptive-dt cap. dt is interpreted in seconds [s].
     """
     pressure = state["pressure"]
     params = get_slurry_parameters(state)
     rheology_model = get_rheology_model(params)
+    saturation_on = get_saturation_transport_enabled(state)
 
     apply_boundary_conditions(state)
-    solve_pressure_step(state, dt=dt)
+    if saturation_on:
+        dt_used = solve_transport_step(state, dt_cap=dt)
+    else:
+        solve_pressure_step(state, dt=dt)
+        dt_used = dt
 
     if rheology_model == "gated_bingham":
         grad_mag = compute_pressure_gradient_magnitude(state)
@@ -800,7 +1193,17 @@ def solve_slurry_step(state, dt=0.01):
         grad_mag = np.zeros_like(pressure.value, dtype=float)
         yield_factor = np.ones_like(pressure.value, dtype=float)
         update_effective_mobility(state, grad_mag=grad_mag, yield_factor=yield_factor)
-    net_inflow = update_filling_from_flux(state, dt)
+
+    if saturation_on:
+        # The saturation update inside solve_transport_step already consumed
+        # the fluxes; the legacy filling indicator is not advanced.
+        net_inflow = -np.asarray(state["last_div_q"], dtype=float)
+    elif params.get("legacy_filling_mode", False):
+        # Deprecated pre-saturation filling accumulation (0.1 factor), kept
+        # only for PFC visualization continuity.
+        net_inflow = update_filling_from_flux(state, dt)
+    else:
+        net_inflow = _compute_net_inflow_from_flux(state)
 
     step_idx_raw = state.get("flow_step_index", 0)
     try:
@@ -817,9 +1220,15 @@ def solve_slurry_step(state, dt=0.01):
     # scalar_grad_mag / scalar_effective_grad_mag / scalar_grad_p_crit [Pa/m]
     # scalar_apparent_viscosity [Pa·s]
     # vector_flux_x / vector_flux_y [m/s]  q = -M_eff*(grad(p)-rho*g_vec)
+    if saturation_on:
+        filling_out = state["saturation"].value
+    else:
+        filling_out = state["filling"].value
     result = {
         "scalar_pressure": pressure.value,
-        "scalar_filling": state["filling"].value,
+        "scalar_saturation": state["saturation"].value,
+        "scalar_filling": filling_out,
+        "dt_used": dt_used,
         "scalar_filling_cap": state.get("filling_cap_last", np.zeros_like(state["filling"].value)),
         "scalar_clogging": state["clogging"].value,
         "scalar_mobility_effective": mobility_effective.value,
