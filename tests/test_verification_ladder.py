@@ -698,17 +698,142 @@ class TestSaturationDegeneracy(unittest.TestCase):
         )
 
 
-class TestStep4MeshConvergence(unittest.TestCase):
-    """Step 4 placeholder: grid-refinement convergence order."""
+# --- Step 4 configuration ---------------------------------------------------
+# Two sub-cases, deliberately separated:
+#
+# 4a (smooth solution -> verifies the base discretization is 2nd order). The
+#    step-1 LINEAR exact profile cannot show an order: a 2nd-order FV scheme
+#    reproduces a linear field exactly (the leading truncation error ~ p'''' is
+#    zero), so its L2 error is round-off, not discretization. We therefore use
+#    a CURVED exact solution: heterogeneous mobility M(x) = M0*(1 + a*x/L) with
+#    no source gives the steady no-flux-divergence solution
+#        p(x) = p0 * [1 - ln(1 + a*x/L) / ln(1 + a)],
+#    whose 4th derivative is nonzero, so the L2 error decays at the FV order.
+#    This stays on the production linear-mode path (FiPy arithmetic face
+#    averaging of the cell mobility).
+#
+# 4b (Bingham stall -> the engineering accuracy at a non-smooth front). The
+#    stalled profile max(0, p0 - lambda*x) has a kink at L_max, and the
+#    saturated threshold solve locks in a transient overshoot remnant
+#    (round-2). Both effects cap the order well below 2. dt is refined WITH dx
+#    (dt prop dx) so the temporal overshoot error vanishes together with the
+#    spatial error. The robust convergence metric is the STALL-POSITION error
+#    (= the horizontal shift of the kinked front); the pointwise profile L2 is
+#    erratic (it is near-zero when L_max aligns with a cell edge and the
+#    piecewise-linear profile is reproduced, and jumps when an overshoot
+#    remnant survives), so it is reported as a diagnostic but not asserted.
+S4A_P0 = 1000.0
+S4A_L = 1.0
+S4A_M0 = 2.0e-8
+S4A_A = 1.0  # mobility varies 2x across the domain
 
-    def test_l2_error_convergence_order(self):
-        self.skipTest(
-            "Step 4 not implemented yet. Plan: re-run a case with an exact "
-            "solution (Step 1 setup or a manufactured solution with "
-            "x-varying k) on successively refined meshes (e.g. nx = 16, 32, "
-            "64, 128), fit log2(L2 error) vs log2(h), and assert the slope "
-            "is close to the theoretical order (~2 for FiPy's central "
-            "DiffusionTerm)."
+
+def _s4a_exact(x):
+    return S4A_P0 * (1.0 - np.log1p(S4A_A * x / S4A_L) / np.log1p(S4A_A))
+
+
+def _s4a_l2_error(nx):
+    dx = S4A_L / float(nx)
+    mesh, x, y, fx, fy = build_mesh(nx=nx, ny=1, dx=dx, dy=dx)
+    state = {"mesh": mesh, "x": x, "y": y, "fx": fx, "fy": fy}
+    params = build_placeholder_slurry_parameters()
+    params["rheology_model"] = "linear"
+    params["gravity_y"] = 0.0
+    state.update(initialize_slurry_variables(mesh, params=params))
+    xv = np.asarray(state["x"], dtype=float)
+    mob = S4A_M0 * (1.0 + S4A_A * xv / S4A_L)
+    state["mobility_structural"].setValue(mob)
+    state["mobility_effective"].setValue(mob)
+    state["pressure"].constrain(S4A_P0, mesh.facesLeft)
+    state["pressure"].constrain(0.0, mesh.facesRight)
+    for _ in range(12):
+        update_effective_mobility(state)
+        _solve_pressure_once(state, dt=1.0e6)  # dt -> steady in one solve
+    p = np.asarray(state["pressure"].value, dtype=float)
+    return np.sqrt(np.mean((p - _s4a_exact(xv)) ** 2)) / S4A_P0
+
+
+def _s4b_stall_position(nx, t_end=6.0, dt_ref=0.0025, nx_ref=50.0):
+    dx = S2_L / float(nx)
+    dt = dt_ref * (nx_ref / float(nx))   # dt proportional to dx
+    n_steps = int(round(t_end / dt))
+    mesh, x, y, fx, fy = build_mesh(nx=nx, ny=1, dx=dx, dy=dx)
+    state = {"mesh": mesh, "x": x, "y": y, "fx": fx, "fy": fy}
+    params = build_placeholder_slurry_parameters()
+    params["rheology_model"] = "porous_bingham"
+    params["porous_bingham_activation"] = "threshold"
+    params["gravity_y"] = 0.0
+    params["yield_stress"] = S2_TAU0
+    params["plastic_viscosity"] = S2_MU
+    params["inlet_pressure_core_value"] = S2_P0
+    state.update(initialize_slurry_variables(mesh, params=params))
+    state["permeability"].setValue(S2_K)
+    state["porosity"].setValue(S2_PHI)
+    state["mobility_structural"].setValue(S2_K / S2_MU)
+    state["mobility_effective"].setValue(S2_K / S2_MU)
+    state["pressure"].constrain(S2_P0, mesh.facesLeft)
+    for _ in range(n_steps):
+        solve_pressure_step(state, dt=dt)
+    xv = np.asarray(state["x"], dtype=float)
+    p = np.asarray(state["pressure"].value, dtype=float)
+    order = np.argsort(xv)
+    xs, ps = xv[order], p[order]
+    dpdx = np.abs(np.diff(ps) / np.diff(xs))
+    below = np.where(dpdx < 0.5 * S2_LAMBDA)[0]
+    return 0.5 * (xs[below[0]] + xs[below[0] + 1]) if below.size else float(xs[-1])
+
+
+def _observed_order(errs, refine_ratio=2.0):
+    """Mean log-ratio convergence order across successive refinements."""
+    orders = [
+        math.log(errs[i - 1] / errs[i]) / math.log(refine_ratio)
+        for i in range(1, len(errs))
+        if errs[i] > 0.0 and errs[i - 1] > 0.0
+    ]
+    return orders, (sum(orders) / len(orders) if orders else 0.0)
+
+
+class TestStep4aSmoothConvergence(unittest.TestCase):
+    """Step 4a: heterogeneous-k linear Darcy with a curved exact solution
+    must converge at the ~2nd-order FV rate."""
+
+    def test_l2_order_near_two(self):
+        Ns = [20, 40, 80, 160]
+        errs = [_s4a_l2_error(n) for n in Ns]
+        orders, mean_order = _observed_order(errs)
+        self.assertGreater(
+            mean_order,
+            1.8,
+            "smooth L2 order %.3f below 1.8 (errs=%s, orders=%s)"
+            % (mean_order, ["%.2e" % e for e in errs],
+               ["%.3f" % o for o in orders]),
+        )
+
+
+class TestStep4bBinghamFrontConvergence(unittest.TestCase):
+    """Step 4b: the Bingham stall position must converge under refinement
+    (dt prop dx). The order is ~1 (not 2): the stalled profile has a kink at
+    L_max and the threshold solve locks a transient overshoot remnant, both
+    inherently first-order at the front. This is a property of the sharp
+    Bingham front, not an implementation defect (cf. the 2nd order of the
+    smooth 4a case on the same solver)."""
+
+    def test_stall_position_converges(self):
+        Ns = [25, 50, 100]
+        stalls = [_s4b_stall_position(n) for n in Ns]
+        errs = [abs(s - S2_LMAX) for s in stalls]
+        orders, mean_order = _observed_order(errs)
+        self.assertTrue(
+            all(errs[i] <= errs[i - 1] + 1.0e-12 for i in range(1, len(errs))),
+            "stall-position error not monotone under refinement: %s"
+            % ["%.4f" % e for e in errs],
+        )
+        self.assertGreater(
+            mean_order,
+            0.8,
+            "stall-position order %.3f below 0.8 (stalls=%s, errs=%s)"
+            % (mean_order, ["%.4f" % s for s in stalls],
+               ["%.4f" % e for e in errs]),
         )
 
 
