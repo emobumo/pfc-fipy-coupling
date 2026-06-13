@@ -180,6 +180,53 @@ def get_yield_truncation_eps(state, params):
     return max(1.0e-6 * p0 / extent, 1.0e-20)
 
 
+def get_yield_truncation_mode(params):
+    """
+    Start-up-gradient truncation form:
+      - "papanastasiou": C1 exponentially-regularized truncation with a
+        bounded derivative (default; removes the kink at |gradPhi| = lambda
+        that makes the Picard fixed-point map non-smooth and non-convergent
+        near the stall);
+      - "hard": the original max(0, 1 - lambda/|gradPhi|) (kept for
+        comparison and for the rounds 2-3 reference results).
+    """
+    mode = params.get("yield_truncation_mode", "papanastasiou")
+    if mode not in ("papanastasiou", "hard"):
+        mode = "papanastasiou"
+    return mode
+
+
+def yield_truncation_factor(grad_mag, lam, eps, params):
+    """
+    Truncation factor T in  mobility = (k/mu_p) * T(|gradPhi|).
+
+    Hard:  T = max(0, u),                       u = 1 - lambda/(|gradPhi|+eps)
+    Reg.:  T = softplus(m*u)/m                  (Papanastasiou-style)
+           softplus(x) = max(x,0) + ln(1+exp(-|x|))   (overflow-safe)
+
+    The regularized form is C1 in |gradPhi| with a bounded derivative:
+      - u -> -inf (|gradPhi| << lambda):  T -> exp(m*u)/m -> 0  (no blow-up
+        of M_eff = (k/mu)*T because T decays exponentially, faster than
+        |gradPhi| -> 0);
+      - u = 0  (|gradPhi| = lambda):  T = ln(2)/m  (small, the only creep);
+      - u -> 1  (|gradPhi| >> lambda):  T -> u = 1 - lambda/|gradPhi|.
+    m = yield_reg_m is dimensionless (u is dimensionless); the transition
+    width in |gradPhi| is ~lambda/m, so m -> inf recovers the hard kink.
+    Larger m  => sharper (less creep, smaller long-time drift) but a stiffer
+    Picard map; smaller m => smoother/converging but more sub-threshold
+    creep. This trade-off is the round-5 m_reg scan.
+    """
+    u = 1.0 - lam / (grad_mag + eps)
+    if get_yield_truncation_mode(params) == "hard":
+        return np.maximum(0.0, u)
+    m = float(params.get("yield_reg_m", 40.0))
+    if m <= 0.0:
+        m = 40.0
+    x = m * u
+    softplus = np.maximum(x, 0.0) + np.log1p(np.exp(-np.abs(x)))
+    return softplus / m
+
+
 def compute_threshold_bingham_fields(state):
     """
     Porous-Bingham mobility with the start-up pressure-gradient truncation:
@@ -215,7 +262,9 @@ def compute_threshold_bingham_fields(state):
     grad_p_crit = 2.0 * yield_stress / np.maximum(r_eff, 1.0e-20)
 
     eps = get_yield_truncation_eps(state, params)
-    truncation = np.maximum(0.0, 1.0 - grad_p_crit / (effective_grad_mag + eps))
+    truncation = yield_truncation_factor(
+        effective_grad_mag, grad_p_crit, eps, params
+    )
     mobility = (permeability / plastic_viscosity) * truncation
 
     # Diagnostic apparent viscosity (infinite below threshold; report clipped).
@@ -338,8 +387,6 @@ def update_threshold_face_mobility(state):
     kr_face = _face_upwind_relperm(state, normal_force)
 
     eps = get_yield_truncation_eps(state, params)
-    truncation = np.maximum(0.0, 1.0 - lam_face / (grad_mag + eps))
-    mobility_new = (k_face / plastic_viscosity) * truncation * kr_face
 
     mobility_face = state.get("mobility_face")
     if mobility_face is None:
@@ -349,31 +396,34 @@ def update_threshold_face_mobility(state):
         )
         state["mobility_face"] = mobility_face
 
-    omega = float(params.get("picard_relaxation", 0.5))
-    if (omega <= 0.0) or (omega > 1.0):
-        omega = 0.5
     mobility_old = _to_array(mobility_face)
 
-    # Mobility-update policy (round-4 experiments, see saturation_design.md):
+    # Mobility-update policy. The fill path and the fully-saturated reference
+    # benchmarks are treated differently; steps 2/3 stay bit-identical to
+    # rounds 2-3 (they are the sharp-stall benchmarks and converge fine).
     #
-    # WITHOUT filling cells (fully saturated / S=1 modes): asymmetric
-    # under-relaxation with snap-to-zero below threshold. This holds the
-    # Bingham stall hard (rounds 2-3 results) and there is no activation
-    # seam to choke.
+    # WITH filling cells (fill transport): the yield-margin Picard map has a
+    # strong sign-flipping eigenvalue (round-5 finding). The cure is small
+    # under-relaxation (picard_relaxation_fill ~ 0.15): omega=0.5 oscillates
+    # without contracting (long-time front creep ~+11% of L_max), omega=0.15
+    # converges (creep ~+2.4%). The Papanastasiou C1 truncation
+    # (yield_truncation_mode, papanastasiou by default) gives a marginal
+    # extra improvement (+2.4% vs +2.7% hard) and a smoother map for
+    # heterogeneous k; it is NOT the primary fix. SYMMETRIC under-relaxation
+    # (no snap) keeps the map continuous. The yield latch is off by default
+    # (nearly inert once the relaxation is small).
     #
-    # WITH filling cells (fill transport): the snap's discontinuity
-    # limit-cycles at the activation seam (a just-activated cell decouples
-    # from the wet column, choking the front ~250x), so use SYMMETRIC
-    # relaxation (continuous map) plus a per-face yield latch with
-    # hysteresis: faces whose step-end converged gradient was <= lambda stay
-    # at exactly zero until the iterate gradient exceeds (1+h)*lambda.
-    # Without the latch, near-stall jitter (head refill from the pressure
-    # boundary + tail drain into penalized cells) pumps slurry across
-    # sub-threshold faces and the front creeps far past L_max. h only acts
-    # at the front face there (position cost ~h*dx), default 0.05.
+    # WITHOUT filling cells (fully saturated / S=1 modes): HARD truncation
+    # max(0, 1 - lambda/|gradPhi|) with asymmetric snap-to-zero below
+    # threshold -- the rounds 2-3 sharp Bingham stall, omega=0.5.
     if state.get("fill_penalty_active", False):
+        omega = float(params.get("picard_relaxation_fill", 0.15))
+        if (omega <= 0.0) or (omega > 1.0):
+            omega = 0.15
+        truncation = yield_truncation_factor(grad_mag, lam_face, eps, params)
+        mobility_new = (k_face / plastic_viscosity) * truncation * kr_face
         mobility_value = (1.0 - omega) * mobility_old + omega * mobility_new
-        if params.get("enable_yield_latch", True):
+        if params.get("enable_yield_latch", False):
             latched = state.get("face_yield_latched")
             if latched is None:
                 latched = np.zeros(mesh.numberOfFaces, dtype=bool)
@@ -384,6 +434,11 @@ def update_threshold_face_mobility(state):
             state["face_yield_latched"] = latched
             mobility_value = np.where(latched, 0.0, mobility_value)
     else:
+        omega = float(params.get("picard_relaxation", 0.5))
+        if (omega <= 0.0) or (omega > 1.0):
+            omega = 0.5
+        truncation = np.maximum(0.0, 1.0 - lam_face / (grad_mag + eps))
+        mobility_new = (k_face / plastic_viscosity) * truncation * kr_face
         mobility_value = np.where(
             mobility_new > 0.0,
             (1.0 - omega) * mobility_old + omega * mobility_new,
@@ -928,7 +983,7 @@ def _update_yield_latch(state):
     params = get_slurry_parameters(state)
     if not state.get("fill_penalty_active", False):
         return
-    if not params.get("enable_yield_latch", True):
+    if not params.get("enable_yield_latch", False):
         return
     if get_rheology_model(params) != "porous_bingham":
         return

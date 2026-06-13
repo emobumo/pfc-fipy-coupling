@@ -495,8 +495,12 @@ S2B_LMAX = S2_LMAX
 S2B_LAMBDA = S2_LAMBDA
 # Gustafson-Stille time coefficient n/(M*lambda) [s].
 S2B_GS_COEF = S2B_PHI / (S2B_M0 * S2B_LAMBDA)
-# March until the front passes this fraction of L_max (well inside the
-# curve-tracking regime, before the long-time creep matters).
+# March until the front passes this fraction of L_max. Kept to the injection
+# period (before the slow yield-margin phase) so the unit suite stays fast
+# (~550 steps). The round-5 convergence / long-time-creep study (marching to
+# ~36 characteristic times) lives in outputs/scan_mreg.py, not the suite:
+# with the default picard_relaxation_fill=0.15 the long-time front drift is
+# ~+2.4% of L_max vs ~+11% at omega=0.5.
 S2B_TARGET_FRAC = 0.65
 S2B_MAX_STEPS = 1500
 

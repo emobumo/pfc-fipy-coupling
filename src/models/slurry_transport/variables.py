@@ -59,6 +59,17 @@ def build_placeholder_slurry_parameters():
         # yield_truncation_eps_pa_per_m [Pa/m]: regularization added to
         # |grad Phi| in the truncation. 0 -> auto: 1e-6 * p0 / L_domain.
         "yield_truncation_eps_pa_per_m": 0.0,
+        # Start-up-gradient truncation form (threshold mode):
+        #   "papanastasiou" -> C1 exponential regularization T =
+        #                      softplus(m*(1-lambda/|gradPhi|))/m, bounded
+        #                      derivative -> Picard converges near the stall
+        #                      (default; round 5)
+        #   "hard"          -> max(0, 1-lambda/|gradPhi|) (rounds 2-3 ref)
+        "yield_truncation_mode": "papanastasiou",
+        # Papanastasiou sharpness m (dimensionless). Larger -> closer to the
+        # hard kink (less sub-threshold creep, smaller long-time drift, but a
+        # stiffer Picard map). 40 is the round-5 scan default.
+        "yield_reg_m": 40.0,
         # Pressure-equation diffusion-coefficient discretization (threshold
         # mode): "face" = harmonic(k)*trunc(faceGrad)*upwind k_r FaceVariable
         # (default, required by saturation transport); "cell" = legacy cell
@@ -101,12 +112,23 @@ def build_placeholder_slurry_parameters():
         "picard_tol": 1.0e-4,
         # Picard transient handling: "chained" (legacy; previous iterate is
         # the old state -> fast pseudo-steady marches) or "backward_euler"
-        # (each iteration re-solves the step from its initial pressure;
-        # REQUIRED for fill-transport cases, otherwise the yield-margin
-        # ratchet creeps the front past the stagnation length).
+        # (each iteration re-solves the step from its initial pressure).
         "picard_transient_mode": "chained",
         # Under-relaxation factor for the threshold-mode mobility update.
+        # Saturated (S=1 / no fill) modes converge at 0.5. The FILL path uses
+        # picard_relaxation_fill: round-5 scans show the yield-margin Picard
+        # map has a strong sign-flipping eigenvalue, so omega=0.5 oscillates
+        # (does not contract) while omega=0.15 converges and cuts the
+        # long-time front creep from ~+11% to ~+2.4% of L_max. This GLOBAL
+        # under-relaxation was sufficient; per-face adaptive relaxation was
+        # not needed.
         "picard_relaxation": 0.5,
+        "picard_relaxation_fill": 0.15,
+        # Yield latch (round-4 band-aid for the hard-truncation jitter). With
+        # the round-5 fill relaxation it is nearly inert (omega=0.2 on/off
+        # differ by 0.3% drift), so it is OFF by default; kept as an option.
+        "enable_yield_latch": False,
+        "yield_hysteresis_band": 0.05,
         # Gate for first-version baseline behavior.
         # Keep clogging feedback disabled unless explicitly enabled in a test/case.
         "enable_clogging_feedback": False,
