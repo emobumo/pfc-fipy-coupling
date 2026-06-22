@@ -28,6 +28,32 @@ def kozeny_carman_permeability(porosity, cell_diameter, params):
     return np.clip(k, k_clip_min, k_clip_max)
 
 
+def calibrated_power_permeability(porosity, params):
+    """
+    Calibrated porosity-permeability law of the Kozeny-Carman SHAPE but with a
+    single data-anchored coefficient A instead of d^2/C:
+
+        k = A * phi^3 / (1 - phi)^2      [m^2]
+
+    A (calibrated_permeability_coefficient) is anchored to a measured field
+    permeability rather than to a grain size. For coarse decimetre waste rock
+    the geometric Kozeny-Carman k(d50) overestimates the flow-controlling
+    permeability by ~3 orders (the throat is set by the fines, and the grout is
+    arrested by filtration/bridging, not the geometric pore space); A folds that
+    correction into one number. The default A = 9.4e-8 gives k(0.25) ~ 2.6e-9
+    m^2, the self-consistent anchor for ~12 m spread at p0 = 5 MPa, tau0 ~ 60 Pa
+    (k(0.10) ~ 1.2e-10, k(0.45) ~ 2.9e-8 m^2).
+    """
+    a = float(params.get("calibrated_permeability_coefficient", 9.4e-8))
+    k_clip_min = float(params.get("permeability_clip_min", 1.0e-12))
+    k_clip_max = float(params.get("permeability_clip_max", 1.0e0))
+    if k_clip_max < k_clip_min:
+        k_clip_min, k_clip_max = k_clip_max, k_clip_min
+    phi = np.clip(np.asarray(porosity, dtype=float), 1.0e-6, 1.0 - 1.0e-6)
+    k = a * (phi ** 3) / ((1.0 - phi) ** 2)
+    return np.clip(k, k_clip_min, k_clip_max)
+
+
 def porosity_to_permeability(porosity, params, cell_diameter=None):
     formula = params.get(
         "porosity_to_permeability_formula", "power_normalized_linear_range"
@@ -38,6 +64,8 @@ def porosity_to_permeability(porosity, params, cell_diameter=None):
                 params.get("default_particle_diameter", 0.25)
             )
         return kozeny_carman_permeability(porosity, cell_diameter, params)
+    if formula == "calibrated_power":
+        return calibrated_power_permeability(porosity, params)
 
     # Legacy normalized power-law range mapping (kept as a switchable option).
     p_min = float(params["porosity_min"])

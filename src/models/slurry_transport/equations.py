@@ -890,6 +890,23 @@ def _solve_pressure_once(state, dt):
         beta = _fill_penalty_beta(state, dt)
         rhs = rhs + ImplicitSourceTerm(coeff=-beta * state["fill_penalty_var"])
 
+    # Optional interior fixed-pressure cells (e.g. an injection borehole that
+    # lies INSIDE the domain, such as an inclined drill hole, rather than on a
+    # boundary face). Opt-in: only active when a case installs
+    # state["interior_dirichlet_mask"] (a 0/1 CellVariable). A strong penalty
+    # drives those cells to state["interior_dirichlet_value"], using the same
+    # scale as the fill closure. Existing cases never set the key, so the
+    # boundary-face Dirichlet path is untouched and bit-identical.
+    idir_mask = state.get("interior_dirichlet_mask")
+    if idir_mask is not None:
+        beta_d = _fill_penalty_beta(state, dt)
+        target = float(state.get("interior_dirichlet_value", 0.0))
+        rhs = (
+            rhs
+            + ImplicitSourceTerm(coeff=-beta_d * idir_mask)
+            + beta_d * idir_mask * target
+        )
+
     eq = TransientTerm(coeff=storage) == rhs
     eq.solve(var=pressure, dt=dt)
 

@@ -151,10 +151,16 @@ def build_placeholder_slurry_parameters():
         "porosity_to_permeability_exponent": 2.0,
         # Active porosity->permeability law:
         #   "kozeny_carman"                -> k = d^2/C * phi^3/(1-phi)^2 (per-cell d)
+        #   "calibrated_power"             -> k = A * phi^3/(1-phi)^2 (data-anchored A)
         #   "power_normalized_linear_range"-> legacy placeholder power law
         "porosity_to_permeability_formula": "kozeny_carman",
         # Kozeny-Carman constant C (~180 for packed spheres).
         "kozeny_carman_constant": 180.0,
+        # Calibrated-power coefficient A [m^2] (calibrated_power formula): a
+        # single data-anchored number replacing the geometric d^2/C, so the
+        # flow-controlling permeability of coarse waste rock is fit to field
+        # data instead of overestimated from d50. Default anchors k(0.25)~2.6e-9.
+        "calibrated_permeability_coefficient": 9.4e-8,
         # Fallback grain diameter [m] for cells with no balls / no PFC.
         "default_particle_diameter": 0.25,
         # Borehole-injection placeholder (neutral default; the engineering case
