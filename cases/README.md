@@ -41,9 +41,10 @@ L_max=4.93 m; phi=0.18 -> 6.30e5, 7.93 m; phi=0.30 -> 3.23e5, 15.49 m. So a
 
 ## inclined_hole_grouting.py — baseline on the real pack
 
-Reads `D:/PFC item/pfc_fipy_model1/particles.csv` (36127 balls; override with the
-`PARTICLES_CSV` env var — the CSV lives outside the repo, so this case is the one
-that is not self-contained). Bins it to areal porosity: mean 0.184, std 0.014 —
+Reads `data/particles.csv` (36127 balls, vendored into the repo so the case is
+self-contained; the original export lives at
+`D:/PFC item/pfc_fipy_model1/particles.csv`, and `PARTICLES_CSV` overrides the
+path). Bins it to areal porosity: mean 0.184, std 0.014 —
 a near-homogeneous random pack with no zoning, so no heterogeneity signature is
 expected or seen. The whole 17 m line is a 5 MPa source.
 

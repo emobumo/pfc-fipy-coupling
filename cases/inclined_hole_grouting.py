@@ -4,7 +4,7 @@ APPLICATION benchmark (NOT a verification-ladder test): inclined-hole
 constant-pressure grouting of a Bingham cement slurry into a fixed waste-rock
 pile, on the validated FiPy IMPES fill-transport engine.
 
-  - particles  : D:/PFC item/pfc_fipy_model1/particles.csv  (x,y,radius)
+  - particles  : data/particles.csv  (x,y,radius; 36127 balls, vendored)
   - domain     : x in [-15,15], y in [0,30], 2.5 m cells (12x12 = 144 cells)
   - permeability: calibrated_power k = A phi^3/(1-phi)^2, A=9.4e-8  (NOT KC)
   - injection  : inclined hole, mouth (-15,1), dip 35 deg, length 17 m, the
@@ -47,8 +47,11 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _OUT = os.path.join(os.path.dirname(_HERE), "outputs")
 if not os.path.isdir(_OUT):
     os.makedirs(_OUT)
+# Particle export vendored into the repo (data/particles.csv) so the case is
+# self-contained and reproducible; the original lives outside the repo at
+# D:/PFC item/pfc_fipy_model1/particles.csv. Override with PARTICLES_CSV.
 CSV_PATH = os.environ.get(
-    "PARTICLES_CSV", "D:/PFC item/pfc_fipy_model1/particles.csv"
+    "PARTICLES_CSV", os.path.join(os.path.dirname(_HERE), "data", "particles.csv")
 )
 
 # --- domain / mesh ---------------------------------------------------------
