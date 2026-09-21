@@ -118,3 +118,72 @@ quantization noise: **treat 1.22 as +-0.1, not a precise number**. Refine to
 1.0 / 0.5 m before publishing quantitative values. The gradient field is
 analytic, not a real PFC structure — it demonstrates the mechanism, it does not
 reproduce a measured pile.
+
+## inclined_hole_channel.py — runaway and bypass voids from through-going structure
+
+Same hole, parameters, mesh and stall rule as `inclined_hole_gradient.py`
+(it borrows that file's `build_case` and swaps only the porosity field), with
+fields that contain a connected high-porosity feature from
+`src/structure/porosity_fields.py`: a vertical through-going band (the
+backfill/host-rock contact, or a persistent gap), and anisotropic correlated
+random fields. Diagnostics from `src/analysis/fill_diagnostics.py`.
+
+**Stop rule is stall OR volume quota.** Run to full stall and the Bingham
+model fills every reachable cell, so a sealed domain cannot show a void that
+way. In the field the injection ends when the hole stops taking grout OR the
+budgeted volume is spent — and runaway is the second ending arriving first.
+Every structured run therefore gets the volume the uniform baseline needed to
+stall (46.14 m³/m) and stops at min(stall, quota). The design target is the
+baseline's own stalled footprint (50 cells).
+
+    powershell -File scripts\run_local.ps1 cases\inclined_hole_channel.py --set band|position|random|all --plot
+
+Band at φ=0.45, one cell wide, full height, swept over POSITION:
+
+| band position | stop | t [s] | Q tail/peak | r_obs / r_equiv | target filled | reachable-unfilled |
+|---|---|---|---|---|---|---|
+| none (baseline) | stall | 1535 | 0.009 | 1.34 | — | 1 |
+| past the toe (x=+3.75) | quota | 556 | 0.064 | 1.26 | 90% | 11 |
+| crossing the hole mid-length (x=−8.75) | quota | **96** | 0.074 | 2.50 | 70% | 27 |
+| **at the collar (x=−13.75)** | quota | **119** | **0.101** | **2.92** | **70%** | 21 |
+
+Position matters far more than band porosity (the φ sweep at the toe,
+0.30/0.45/0.60, gives 649/556/582 s and 94/90/92% — nearly flat). A band the
+hole ENTERS THROUGH — which is what a backfill/rock contact is — drains the
+quota 13× faster than the baseline, with the injection rate still an order of
+magnitude above the stall line, spread ~3× what the volume could fill
+uniformly, and the hole's intended zone 30% short. That is the reference
+project's runaway mechanism ("充填体与原岩的交界面…贯通空隙") reproduced from
+structure alone, with no open boundary: the grout has nowhere to escape and it
+still starves the target.
+
+No bypass voids in any band run: an unfilled reachable region stays connected
+to open ground in these fields. Enclosed voids need structure that wraps —
+see the random realisations.
+
+Random correlated fields (mean 0.18, std 0.06, correlation 7.5 m × 2.5 m —
+horizontal streaks), one per seed, same quota and target:
+
+| seed | stop | t [s] | V_in | Q tail/peak | target filled | of which UNREACHABLE | reachable-unfilled |
+|---|---|---|---|---|---|---|---|
+| 1 | quota | 445 | 46.2 | **0.137** | 78% | 20% | 7 |
+| 2 | **stall** | 1624 | **39.4** | 0.015 | 80% | 20% | 0 |
+| 3 | quota | 411 | 46.2 | 0.043 | 86% | 12% | 6 |
+
+Still no bypass voids — but the realisations separate the two ways a target
+can go unfilled. Seed 1 hits a loose streak and drains the quota with the
+rate still high (runaway signature), yet most of its 22% target shortfall is
+ground the path integral says is unreachable at 5 MPa. Seed 2 is the mirror
+image: tight ground, the hole stalls at 39 m³ before the quota is spent, and
+the whole 20% shortfall is unreachable — a **design shortfall** (pressure or
+spacing insufficient for this ground), with zero fill defect. The same
+"80% filled" reads as runaway in one field and as under-pressure in the other,
+and only the reachable domain tells them apart.
+
+**Bypass voids did not appear in any single-stage run** — nine structured
+fields, none. At this resolution and structure strength a single injection
+leaves shortfalls that stay connected to open ground, not pockets sealed in
+by grout. Enclosed voids need structure that wraps around a tight patch, or
+the staged sequence: a pocket left unfilled by one stage, then walled off by
+that stage's cement from the next stage's source (`stage_update.py`). That
+is the 4.6 mechanism and the next case.
