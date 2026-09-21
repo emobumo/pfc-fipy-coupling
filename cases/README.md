@@ -187,3 +187,69 @@ by grout. Enclosed voids need structure that wraps around a tight patch, or
 the staged sequence: a pocket left unfilled by one stage, then walled off by
 that stage's cement from the next stage's source (`stage_update.py`). That
 is the 4.6 mechanism and the next case.
+
+## inclined_hole_staged.py — staged advancing grouting versus a single pass
+
+Same hole, parameters, mesh and per-stage stop rule as `inclined_hole_channel.py`.
+The hole is drilled in passes; at stage k the perforated pipe bleeds along the
+whole hole so far, [0, DEPTH_k]; when the stage stops the grout sets
+(`stage_update.apply_stage_closure`) and the next pass drills deeper. Single
+and staged runs inject the SAME total budget (the uniform baseline's stalled
+46.14 m³/m), unused quota carried forward. Cumulative fill (what set,
+`(n₀−n_final)/n₀`) is classified against the reachable domain of the VIRGIN
+field from the FULL hole — what one pass could have reached.
+
+    powershell -File scripts\run_local.ps1 cases\inclined_hole_staged.py --field base,collar,random --plot
+
+| field / sequence | V used | t [s] | cells | of virgin reach | permanent residual |
+|---|---|---|---|---|---|
+| uniform / single | 46.14 | 1535 | 40 | **98%** | 1 |
+| uniform / 7 → 10 → 17 m | **41.64** (stalled, 4.5 unspent) | 1678 | 33 | **86%** | 7 |
+| uniform / 8.5 → 17 m | 41.64 | 1374 | 33 | 86% | 7 |
+| collar band / single | 46.68 | 119 | 30 | 66% | 21 |
+| collar band / 7 → 10 → 17 m | 46.44 | 254 | 23 | **54%** | 28 |
+| random seed 1 / single | 46.19 | 445 | 34 | 86% | 7 |
+| random seed 1 / 7 → 10 → 17 m | 46.28 | 1436 | 34 | 86% | 7 |
+
+Per stage, the reference sequence 7 → 10 → 17 m on uniform ground:
+
+| pass | source cells | of which buried in earlier cement | stop | V | newly filled |
+|---|---|---|---|---|---|
+| 1, to 7 m | 5 | 0 | stall 683 s | 21.26 | 18 |
+| **2, to 10 m** | 6 | **6** | stall 304 s | **0.00** | **0** |
+| 3, to 17 m | 10 | 8 | stall 691 s | 20.37 | 18 |
+
+**A drilling increment shorter than L_max is a wasted pass — measured in 2D on
+all three fields.** The 3 m advance to 10 m puts every new source cell inside
+the first pass's cemented zone (6 of 6 buried): the pass injects 0.00 m³,
+Q collapses to 1e-11, and the crew pumps for 300 s into nothing. The reference
+project's 7 → 10 → 17.5 m has exactly this increment. Removing that pass
+(8.5 → 17 m) changes nothing — the two sequences are identical on this grid,
+because 7.0 and 8.5 m select the same five 2.5 m source cells and the 10 m
+pass delivered nothing anyway.
+
+**Staging costs reach on uniform ground.** Two short sources each fill a
+smaller stadium than the full hole does, and by the time the last pass runs,
+the first pass's cement stands between its two fresh cells and the outer rim.
+Same hole, same grout: 86% of the reachable zone instead of 98%, and the
+sequence stalls with 4.5 m³ of the budget it cannot place. The seven lost rim
+cells are a **permanent residual** — after a full-depth sequence the hole is
+cemented all round, so no further pass from it can reach them (the `shadow`
+column, reachable in the virgin field and unreachable from the last pass in
+the cemented field, equals the shortfall for every full-depth run).
+
+**Staging cannot fix a collar runaway.** The interface band sits at the mouth,
+so it is in every pass's source: the first pass drains the whole quota in
+254 s and the later passes get 0.00 and 0.07 m³. Staged fills 54% of the
+reachable zone against 66% for the single pass. The remedy for a
+through-going contact is to seal it (the reference project's double-fluid
+collar/bottom sealing), not to stage the injection.
+
+**On the random field staging is neutral** (86% either way): the first pass
+stalls early in tight ground at 6.2 m³, the third hits the loose streak and
+drains 40 m³ — the same volume ends up in the same streak, later.
+
+**No enclosed bypass voids in any run, single or staged.** The sequence's
+residual is a rim shadow, connected to open ground, not a sealed-in pocket.
+At 2.5 m cells a fill footprint spans 3–4 cells and stays convex; an
+enclosed void would need finer resolution or structure that wraps.
