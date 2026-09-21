@@ -148,10 +148,30 @@ def build_placeholder_slurry_parameters():
         # permeability_min/max are the OUTPUT range of the legacy power-law only.
         "permeability_min": 1.0e-7,
         "permeability_max": 1.0e-5,
-        # Clip applied to the final permeability (both formulas). Kept wide so
-        # Kozeny-Carman shows its true range; tighten once the realistic
-        # waste-rock permeability magnitude is confirmed.
-        "permeability_clip_min": 1.0e-10,
+        # Clip applied to the final permeability (both formulas). This is a
+        # NUMERICAL guard, not a constitutive value: it must sit below
+        # anything the active law can produce, or it silently becomes the
+        # model.
+        #
+        # It did exactly that before 2026-09-21. At 1.0e-10 the clip bound
+        # below phi ~ 0.095, which no virgin waste-rock field reaches
+        # (the cases run 0.12-0.45, the real binned pack bottoms out at
+        # 0.144), so it lay dormant -- until the between-stage closure
+        # (stage_update.py) started producing cemented cells at
+        # stage_porosity_floor = 1e-3. There the law gives k ~ 1.25e-16 m^2
+        # and the clip held it at 1e-10, which not only capped the
+        # cemented/virgin contrast at ~69x but INVERTED the start-up
+        # gradient: lambda = 2*tau0/sqrt(8k/n) has k over n, so holding k up
+        # while n collapses tells the model the cemented pores got WIDER.
+        # Measured lambda went to 0.48x virgin instead of 428x -- cemented
+        # ground yielding more easily than the rock around it.
+        #
+        # 1.0e-18 is two orders below the law's value at the porosity floor,
+        # so it never binds in the operating range and the law decides. The
+        # cemented permeability is then set by stage_porosity_floor through
+        # the law: k(1e-3) ~ 1.25e-16 m^2, the right order for set cement
+        # grout. Lowering it further is free; raising it re-arms the trap.
+        "permeability_clip_min": 1.0e-18,
         "permeability_clip_max": 1.0e-1,
         "porosity_to_permeability_exponent": 2.0,
         # Active porosity->permeability law:

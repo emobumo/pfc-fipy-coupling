@@ -1104,9 +1104,12 @@ class TestStep7StageClosureConservation(unittest.TestCase):
         filled cells barely exist at a stage end. Every filled cell therefore
         closes to n_k*(1-S_k) ~ 0 and lands on the porosity floor.
 
-        This is why stage_porosity_floor and permeability_clip_min are not
-        numerical guard rails but the de facto model of set grout: they, not
-        k = A n^3/(1-n)^2, decide what the next stage sees behind it.
+        This makes stage_porosity_floor the single parameter that fixes what
+        set grout looks like: it sets the residual porosity, and the law
+        k = A n^3/(1-n)^2 turns that into the cemented permeability
+        (1e-3 -> ~1.25e-16 m^2, the right order for hardened cement).
+        permeability_clip_min must stay below that, or it takes the decision
+        over -- see test_permeability_clip_never_binds_in_the_operating_range.
         """
         records = _run_step7_stages()
         params = _STEP7_CACHE["state"]["slurry_parameters"]
@@ -1148,7 +1151,7 @@ class TestStep7StageClosureConservation(unittest.TestCase):
         initialize_stage_ledger(state)
         params = state["slurry_parameters"]
         floor = get_stage_porosity_floor(params)
-        k_clip_min = float(params.get("permeability_clip_min", 1.0e-10))
+        k_clip_min = float(params.get("permeability_clip_min", 1.0e-18))
 
         ladder = np.array([0.0, 0.10, 0.20, 0.30, 0.40])
         s = np.zeros(S7_NX, dtype=float)
@@ -1173,42 +1176,63 @@ class TestStep7StageClosureConservation(unittest.TestCase):
         self.assertTrue(np.all(np.diff(k_rung) < 0.0))
         self.assertTrue(np.all(np.diff(_s7_lambda(rung)) > 0.0))
 
-    def test_permeability_clip_caps_the_cemented_contrast(self):
-        """Documented limit, asserted so it cannot drift unnoticed.
+    def test_cemented_ground_resists_start_up_far_more_than_virgin(self):
+        """The direction that matters for every barrier case.
 
-        A fully cemented cell closes to the porosity floor, where the law
-        would give k ~ 1e-16 m^2. permeability_clip_min stops it far above
-        that, so the modelled contrast between virgin and cemented ground is
-        bounded by k(phi0)/permeability_clip_min -- currently under two
-        orders of magnitude, against the ~9 orders real set grout would give.
-        Any case that leans on a cemented barrier (bottom sealing, or a
-        staged sequence expected not to leak backwards) inherits this bound.
+        lambda = 2*tau0/sqrt(8k/n) puts k over n, so a closure that collapses
+        n must let k collapse with it. If a permeability clip holds k up, the
+        ratio 8k/n RISES and the model concludes the cemented pores got
+        wider -- cemented ground then yields EASIER than the rock around it,
+        which is the opposite of a seal.
+
+        Before 2026-09-21 permeability_clip_min was 1e-10 and did exactly
+        that: measured lambda_cemented/lambda_virgin = 0.48. This test pins
+        the corrected direction.
         """
         params = _build_step7_state()["slurry_parameters"]
         floor = get_stage_porosity_floor(params)
-        k_clip_min = float(params.get("permeability_clip_min", 1.0e-10))
 
-        k_law_at_floor = S7_A * floor ** 3 / (1.0 - floor) ** 2
-        self.assertLess(
-            k_law_at_floor, k_clip_min,
-            msg="the law at the porosity floor is no longer clipped; this "
-                "test's premise has changed",
+        k_virgin = float(porosity_to_permeability(np.array([S7_PHI0]), params)[0])
+        k_cemented = float(porosity_to_permeability(np.array([floor]), params)[0])
+
+        # Permeability must fall by orders, not by a factor.
+        self.assertGreater(k_virgin / k_cemented, 1.0e6)
+
+        # Start-up gradient must RISE, and by a lot. lambda from the STORED
+        # permeability, which is what the solver actually rebuilds it from.
+        lam_virgin = 2.0 * S7_TAU0 / math.sqrt(8.0 * k_virgin / S7_PHI0)
+        lam_cemented = 2.0 * S7_TAU0 / math.sqrt(8.0 * k_cemented / floor)
+        self.assertGreater(
+            lam_cemented / lam_virgin, 100.0,
+            msg="cemented lambda is only %.4g x virgin (%.4g vs %.4g Pa/m); "
+                "a permeability clip is probably holding k up"
+                % (lam_cemented / lam_virgin, lam_cemented, lam_virgin),
         )
-        k_cemented = float(porosity_to_permeability(
-            np.array([floor]), params
-        )[0])
-        self.assertEqual(k_cemented, k_clip_min)
 
-        k_virgin = float(porosity_to_permeability(
-            np.array([S7_PHI0]), params
-        )[0])
-        contrast = k_virgin / k_cemented
-        self.assertGreater(contrast, 1.0)
-        self.assertLess(
-            contrast, 1.0e3,
-            msg="contrast %.3g exceeds the documented clip-bounded range; "
-                "if permeability_clip_min was lowered deliberately, update "
-                "this bound and the cases that depend on it" % contrast,
+    def test_permeability_clip_never_binds_in_the_operating_range(self):
+        """permeability_clip_min must stay a numerical guard, not a model.
+
+        It has to sit below what the law produces anywhere the solver can
+        go -- from the loosest virgin ground down to a fully cemented cell
+        at stage_porosity_floor. The moment it binds it starts deciding
+        physics, silently, as it did until 2026-09-21.
+        """
+        params = _build_step7_state()["slurry_parameters"]
+        floor = get_stage_porosity_floor(params)
+        k_clip_min = float(params["permeability_clip_min"])
+
+        # The lowest permeability the closure can ever hand the solver.
+        k_law_at_floor = S7_A * floor ** 3 / (1.0 - floor) ** 2
+        self.assertGreater(
+            k_law_at_floor, k_clip_min,
+            msg="the clip (%.3g) binds at the porosity floor, where the law "
+                "gives %.3g m^2; it is deciding the cemented permeability"
+                % (k_clip_min, k_law_at_floor),
+        )
+        # And the clipped result equals the raw law there, bit for bit.
+        self.assertEqual(
+            float(porosity_to_permeability(np.array([floor]), params)[0]),
+            k_law_at_floor,
         )
 
     def test_remaining_capacity_decreases_monotonically(self):

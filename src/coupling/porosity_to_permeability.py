@@ -17,7 +17,7 @@ def kozeny_carman_permeability(porosity, cell_diameter, params):
     measured permeability when available.
     """
     kc_const = max(float(params.get("kozeny_carman_constant", 180.0)), 1.0e-9)
-    k_clip_min = float(params.get("permeability_clip_min", 1.0e-12))
+    k_clip_min = float(params.get("permeability_clip_min", 1.0e-18))
     k_clip_max = float(params.get("permeability_clip_max", 1.0e0))
     if k_clip_max < k_clip_min:
         k_clip_min, k_clip_max = k_clip_max, k_clip_min
@@ -45,7 +45,7 @@ def calibrated_power_permeability(porosity, params):
     (k(0.10) ~ 1.2e-10, k(0.45) ~ 2.9e-8 m^2).
     """
     a = float(params.get("calibrated_permeability_coefficient", 9.4e-8))
-    k_clip_min = float(params.get("permeability_clip_min", 1.0e-12))
+    k_clip_min = float(params.get("permeability_clip_min", 1.0e-18))
     k_clip_max = float(params.get("permeability_clip_max", 1.0e0))
     if k_clip_max < k_clip_min:
         k_clip_min, k_clip_max = k_clip_max, k_clip_min
