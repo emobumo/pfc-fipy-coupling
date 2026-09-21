@@ -87,6 +87,11 @@ def build_placeholder_slurry_parameters():
         "saturation_active_threshold": 1.0 - 1.0e-3,
         # Penalty magnitude multiplier on max(M/dx^2, c/dt).
         "fill_penalty_factor": 1.0e6,
+        # Between-stage closure (stage_update.py): lower bound on porosity
+        # after n_{k+1} = n_k*(1-S_k). A cell at S=1 would close to n=0,
+        # hence k=0 and lambda=inf; the floor keeps that finite and books
+        # the refused volume so the stage ledger stays exact.
+        "stage_porosity_floor": 1.0e-3,
         # Adaptive dt: fill CFL number and the front-time-constant rule
         # dt_p = theta * c * L_c^2 / (2 M_wet) from round 2.
         "dt_cfl": 0.5,

@@ -7,6 +7,7 @@ Ladder (see CLAUDE.md for status tracking):
   Step 2: 1D Bingham stagnation front L_max = p0/lambda -- placeholder
   Step 3: radial Gustafson-Stille benchmark            -- placeholder
   Step 4: mesh-convergence order                       -- placeholder
+  Step 7: between-stage closure conservation           -- full assertions
 
 Step 1 deliberately bypasses apply_boundary_conditions (which hard-codes the
 top-borehole placeholder inlet) and drives the core PDE kernel directly:
@@ -30,6 +31,14 @@ from src.fipy_adapter.mesh_init import build_mesh
 from src.models.slurry_transport.variables import (
     build_placeholder_slurry_parameters,
     initialize_slurry_variables,
+)
+from src.coupling.porosity_to_permeability import porosity_to_permeability
+from src.models.slurry_transport.stage_update import (
+    get_stage_porosity_floor,
+    initialize_stage_ledger,
+    stage_fill_report,
+    apply_stage_closure,
+    stage_ledger_report,
 )
 from src.models.slurry_transport.equations import (
     update_effective_mobility,
@@ -835,6 +844,400 @@ class TestStep4bBinghamFrontConvergence(unittest.TestCase):
             % (mean_order, ["%.4f" % s for s in stalls],
                ["%.4f" % e for e in errs]),
         )
+
+
+
+# --- Step 7: between-stage closure conservation ---------------------------
+# Staged advancing grouting: each stage injects until it stalls, the grout
+# sets, and the next stage starts deeper into a medium the previous stage has
+# partly cemented. The closure that hardens a stage is the only place porosity
+# changes after initialization (see stage_update.py); the skeleton stays rigid.
+#
+# Fixture: 1D strip, L=6 m in 24 cells, uniform phi0=0.30, calibrated-power
+# permeability, interior Dirichlet source advancing 2.5 m per stage -- which
+# must EXCEED the local L_max ~2.1 m, or the next stage starts inside its
+# predecessor's cemented zone and cannot inject (see the S7_SOURCE_START note).
+# Parameters are the v0.6 set (tau0=30 Pa, mu_p=0.15 Pa.s, A=1.25e-7) with a
+# reduced p0 so L_max ~2.1 m fits inside the strip several times over.
+S7_L = 7.5
+S7_NX = 30
+S7_PHI0 = 0.30
+S7_A = 1.25e-7
+S7_TAU0 = 30.0
+S7_MU = 0.15
+S7_P0 = 3.0e5
+S7_STAGES = 3
+S7_STEPS_PER_STAGE = 25
+S7_DT_CAP = 1.0
+# First source cell for each stage; the source is two cells wide. The 10-cell
+# (2.5 m) advance is deliberately longer than L_max ~2.1 m: a shorter advance
+# leaves the new source buried in ground the previous stage already cemented,
+# where k sits on its clip and nothing flows. That is real process behaviour,
+# not a numerical artifact, but it makes a poor conservation fixture.
+S7_SOURCE_START = (0, 10, 20)
+
+_STEP7_CACHE = {}
+
+
+def _s7_lambda(phi, a=S7_A, tau0=S7_TAU0):
+    """lambda = 2*tau0/r_eff with r_eff = sqrt(8k/phi), k = A phi^3/(1-phi)^2.
+
+    Substituting k gives r_eff = sqrt(8A)*phi/(1-phi), so lambda is a strictly
+    DECREASING function of phi: cementing a cell (phi down) raises its start-up
+    gradient, which is the whole point of the staged closure.
+    """
+    phi = np.asarray(phi, dtype=float)
+    r_eff = math.sqrt(8.0 * a) * phi / (1.0 - phi)
+    return 2.0 * tau0 / r_eff
+
+
+def _s7_source_cells(stage):
+    start = S7_SOURCE_START[stage]
+    return np.array([start, start + 1], dtype=int)
+
+
+def _s7_install_source(state, stage):
+    """Stage-0 source install; later stages go through apply_stage_closure."""
+    from fipy import CellVariable
+    cells = _s7_source_cells(stage)
+    mask = np.zeros(S7_NX, dtype=float)
+    mask[cells] = 1.0
+    state["interior_dirichlet_mask"] = CellVariable(mesh=state["mesh"], value=mask)
+    state["interior_dirichlet_value"] = S7_P0
+    s0 = np.zeros(S7_NX, dtype=float)
+    s0[cells] = 1.0
+    state["saturation"].setValue(s0)
+    state["pressure"].setValue(np.where(mask > 0.5, S7_P0, 0.0))
+
+
+def _build_step7_state():
+    dx = S7_L / float(S7_NX)
+    mesh, x, y, fx, fy = build_mesh(nx=S7_NX, ny=1, dx=dx, dy=dx)
+    state = {"mesh": mesh, "x": x, "y": y, "fx": fx, "fy": fy}
+
+    params = build_placeholder_slurry_parameters()
+    params["rheology_model"] = "porous_bingham"
+    params["porous_bingham_activation"] = "threshold"
+    params["yield_truncation_mode"] = "papanastasiou"
+    params["pressure_coeff_form"] = "face"
+    params["enable_saturation_transport"] = True
+    params["porosity_to_permeability_formula"] = "calibrated_power"
+    params["calibrated_permeability_coefficient"] = S7_A
+    params["yield_stress"] = S7_TAU0
+    params["plastic_viscosity"] = S7_MU
+    params["gravity_y"] = 0.0
+    params["reference_storage"] = 1.0e-10
+    params["picard_transient_mode"] = "backward_euler"
+    params["enable_front_dt_constraint"] = False
+    params["dt_cfl"] = 0.5
+    params["picard_relaxation_fill"] = 0.15
+    params["picard_max_iters"] = 12
+    params["picard_tol"] = 1.0e-3
+    state.update(initialize_slurry_variables(mesh, params=params))
+
+    phi = np.zeros(S7_NX, dtype=float) + S7_PHI0
+    k = porosity_to_permeability(phi, params)
+    state["porosity"].setValue(phi)
+    state["permeability"].setValue(k)
+    for key in ("mobility_structural", "mobility_effective",
+                "mobility", "intrinsic_mobility"):
+        state[key].setValue(k / S7_MU)
+
+    _s7_install_source(state, 0)
+    return state
+
+
+def _run_step7_stages():
+    """March S7_STAGES stages, closing each one, recording everything."""
+    if "records" in _STEP7_CACHE:
+        return _STEP7_CACHE["records"]
+
+    state = _build_step7_state()
+    initialize_stage_ledger(state)
+    vols = np.asarray(state["mesh"].cellVolumes, dtype=float)
+    records = []
+
+    for stage in range(S7_STAGES):
+        src = _s7_source_cells(stage)
+        phi_at_stage_start = np.array(state["porosity"].value, copy=True)
+        phi_during = []
+        v_in_src = 0.0
+
+        for _ in range(S7_STEPS_PER_STAGE):
+            dt = solve_transport_step(state, dt_cap=S7_DT_CAP)
+            div_q = np.asarray(state["last_div_q"], dtype=float)
+            v_in_src += float(np.sum(div_q[src] * vols[src])) * float(dt)
+            # Source cells stay full while injecting, as in the cases.
+            s = np.array(state["saturation"].value, copy=True)
+            s[src] = 1.0
+            state["saturation"].setValue(s)
+            phi_during.append(np.array(state["porosity"].value, copy=True))
+
+        phi_before = np.array(state["porosity"].value, copy=True)
+        s_before = np.array(state["saturation"].value, copy=True)
+        report = stage_fill_report(state)
+        flow = conservation_report(state)
+
+        next_src = _s7_source_cells(stage + 1) if stage + 1 < S7_STAGES else None
+        ledger = apply_stage_closure(state, source_mask=next_src)
+        phi_after = np.array(state["porosity"].value, copy=True)
+
+        records.append({
+            "stage": stage,
+            "phi_at_stage_start": phi_at_stage_start,
+            "phi_during": phi_during,
+            "phi_before": phi_before,
+            "phi_after": phi_after,
+            "s_before": s_before,
+            "report": dict(state["stage_history"][-1]),
+            "report_pre": dict(report),
+            "flow": dict(flow),
+            "ledger": dict(ledger),
+            "v_in_src": v_in_src,
+            "stage_ledger_report": stage_ledger_report(state),
+        })
+
+    _STEP7_CACHE["records"] = records
+    _STEP7_CACHE["vols"] = vols
+    _STEP7_CACHE["state"] = state
+    return records
+
+
+class TestStep7StageClosureConservation(unittest.TestCase):
+    """Step 7: the between-stage closure must conserve grout volume exactly
+    and hand the next stage a strictly denser, strictly more resistant
+    medium."""
+
+    def test_closure_removes_exactly_the_hardened_pore_volume(self):
+        """sum (n_k - n_{k+1})V + floor_clip == sum n_k S_k V, to machine
+        precision. This is the closure rule itself: n_{k+1} = n_k(1-S_k)
+        means the porosity removed IS the grout that was sitting there."""
+        records = _run_step7_stages()
+        vols = _STEP7_CACHE["vols"]
+        for rec in records:
+            removed = float(np.sum((rec["phi_before"] - rec["phi_after"]) * vols))
+            occupied = rec["report"]["occupied_this_stage"]
+            floor_clip = rec["report"]["floor_clipped_step"]
+            self.assertAlmostEqual(
+                removed + floor_clip, occupied,
+                delta=1.0e-12 * max(abs(occupied), 1.0),
+                msg="stage %d: removed %.17g + clip %.17g != occupied %.17g"
+                    % (rec["stage"], removed, floor_clip, occupied),
+            )
+
+    def test_cumulative_basis_is_exact_across_stages(self):
+        """Per-stage hardened volumes must sum to the cumulative figure the
+        ledger reports against the invariant stage-0 basis, and that basis
+        must never move -- otherwise fill ratios from different stages are
+        not comparable."""
+        records = _run_step7_stages()
+        per_stage_sum = sum(
+            r["report"]["occupied_this_stage"] - r["report"]["floor_clipped_step"]
+            for r in records
+        )
+        final = records[-1]["ledger"]["occupied_cumulative"]
+        self.assertAlmostEqual(
+            per_stage_sum, final,
+            delta=1.0e-12 * max(abs(final), 1.0),
+            msg="per-stage sum %.17g != cumulative %.17g" % (per_stage_sum, final),
+        )
+        capacities = [r["stage_ledger_report"]["pore_capacity_initial"]
+                      for r in records]
+        for cap in capacities[1:]:
+            self.assertEqual(cap, capacities[0])
+
+    def test_capacity_accounting_closes(self):
+        """occupied_cumulative + remaining_capacity == pore_capacity_initial
+        after every stage. Nothing appears, nothing vanishes."""
+        records = _run_step7_stages()
+        for rec in records:
+            rep = rec["stage_ledger_report"]
+            total = rep["occupied_cumulative"] + rep["remaining_capacity"]
+            self.assertAlmostEqual(
+                total, rep["pore_capacity_initial"],
+                delta=1.0e-12 * rep["pore_capacity_initial"],
+                msg="stage %d: %.17g != %.17g"
+                    % (rec["stage"], total, rep["pore_capacity_initial"]),
+            )
+            self.assertAlmostEqual(
+                rep["fill_ratio_cumulative"] + rep["residual_ratio"], 1.0,
+                delta=1.0e-12,
+            )
+
+    def test_porosity_is_frozen_within_a_stage(self):
+        """The error the design explicitly warns against: reducing n as S
+        rises WITHIN a stage would seal the very channel carrying the grout.
+        Porosity must be bit-identical through every step of a stage and
+        change only at the closure."""
+        records = _run_step7_stages()
+        for rec in records:
+            base = rec["phi_at_stage_start"]
+            for i, phi in enumerate(rec["phi_during"]):
+                self.assertTrue(
+                    np.array_equal(phi, base),
+                    msg="stage %d step %d: porosity moved mid-stage"
+                        % (rec["stage"], i),
+                )
+
+    def test_closure_rule_applies_exactly(self):
+        """n_{k+1} == max(n_k*(1-S_k), floor) on every cell, bit for bit, and
+        cells the stage never wetted are untouched."""
+        records = _run_step7_stages()
+        params = _STEP7_CACHE["state"]["slurry_parameters"]
+        floor = get_stage_porosity_floor(params)
+        for rec in records:
+            before, after = rec["phi_before"], rec["phi_after"]
+            n_raw = before * (1.0 - rec["s_before"])
+            self.assertTrue(
+                np.array_equal(after, np.maximum(n_raw, floor)),
+                msg="stage %d: closure is not n_{k+1}=max(n_k(1-S_k), floor)"
+                    % rec["stage"],
+            )
+            self.assertTrue(np.all(after <= before + 1.0e-15))
+            dry = rec["s_before"] <= 1.0e-12
+            if np.any(dry):
+                self.assertTrue(np.array_equal(after[dry], before[dry]))
+
+    def test_filled_cells_cement_to_the_floor(self):
+        """The fill closure is a SHARP front: a cell is either still empty or
+        essentially full (S >= saturation_active_threshold), so partially
+        filled cells barely exist at a stage end. Every filled cell therefore
+        closes to n_k*(1-S_k) ~ 0 and lands on the porosity floor.
+
+        This is why stage_porosity_floor and permeability_clip_min are not
+        numerical guard rails but the de facto model of set grout: they, not
+        k = A n^3/(1-n)^2, decide what the next stage sees behind it.
+        """
+        records = _run_step7_stages()
+        params = _STEP7_CACHE["state"]["slurry_parameters"]
+        floor = get_stage_porosity_floor(params)
+        threshold = float(params.get("saturation_active_threshold", 1.0 - 1.0e-3))
+        for rec in records:
+            filled = rec["s_before"] >= threshold
+            self.assertTrue(
+                np.any(filled), "stage %d filled nothing" % rec["stage"]
+            )
+            after = rec["phi_after"]
+            self.assertTrue(np.all(after[filled] == floor))
+
+            # Compare against VIRGIN ground only: cells left untouched by a
+            # later stage include ground its predecessors already cemented,
+            # which sits at the same floor.
+            virgin = np.isclose(after, S7_PHI0)
+            if np.any(virgin):
+                k_after = porosity_to_permeability(after, params)
+                self.assertTrue(
+                    np.all(k_after[filled] < k_after[virgin].min()),
+                    msg="stage %d: cemented ground is not less permeable "
+                        "than virgin ground" % rec["stage"],
+                )
+
+    def test_partial_fill_densifies_monotonically(self):
+        """The closure's monotone content, on a prescribed saturation ladder
+        rather than a marched one.
+
+        A sharp front rarely leaves partially filled cells, so the marched
+        fixture cannot exercise 0 < S < 1. Here S is set directly, which
+        isolates the constitutive chain: more grout in a cell -> lower n ->
+        lower k -> higher start-up gradient lambda -> shorter local L_max for
+        whatever stage comes next. The rungs stay light enough (S <= 0.4) to
+        keep k off its clip; test_permeability_clip_caps_the_cemented_contrast
+        covers what happens past that.
+        """
+        state = _build_step7_state()
+        initialize_stage_ledger(state)
+        params = state["slurry_parameters"]
+        floor = get_stage_porosity_floor(params)
+        k_clip_min = float(params.get("permeability_clip_min", 1.0e-10))
+
+        ladder = np.array([0.0, 0.10, 0.20, 0.30, 0.40])
+        s = np.zeros(S7_NX, dtype=float)
+        s[:ladder.size] = ladder
+        state["saturation"].setValue(s)
+
+        before = np.array(state["porosity"].value, copy=True)
+        apply_stage_closure(state, reset_pressure=False)
+        after = np.array(state["porosity"].value, copy=True)
+
+        rung = after[:ladder.size]
+        expected = np.maximum(before[:ladder.size] * (1.0 - ladder), floor)
+        self.assertTrue(np.array_equal(rung, expected))
+        self.assertTrue(np.all(rung > floor))
+        self.assertTrue(np.all(np.diff(rung) < 0.0))
+
+        k_rung = porosity_to_permeability(rung, params)
+        self.assertTrue(
+            np.all(k_rung > k_clip_min),
+            msg="ladder reached the permeability clip; k=%s" % (k_rung,),
+        )
+        self.assertTrue(np.all(np.diff(k_rung) < 0.0))
+        self.assertTrue(np.all(np.diff(_s7_lambda(rung)) > 0.0))
+
+    def test_permeability_clip_caps_the_cemented_contrast(self):
+        """Documented limit, asserted so it cannot drift unnoticed.
+
+        A fully cemented cell closes to the porosity floor, where the law
+        would give k ~ 1e-16 m^2. permeability_clip_min stops it far above
+        that, so the modelled contrast between virgin and cemented ground is
+        bounded by k(phi0)/permeability_clip_min -- currently under two
+        orders of magnitude, against the ~9 orders real set grout would give.
+        Any case that leans on a cemented barrier (bottom sealing, or a
+        staged sequence expected not to leak backwards) inherits this bound.
+        """
+        params = _build_step7_state()["slurry_parameters"]
+        floor = get_stage_porosity_floor(params)
+        k_clip_min = float(params.get("permeability_clip_min", 1.0e-10))
+
+        k_law_at_floor = S7_A * floor ** 3 / (1.0 - floor) ** 2
+        self.assertLess(
+            k_law_at_floor, k_clip_min,
+            msg="the law at the porosity floor is no longer clipped; this "
+                "test's premise has changed",
+        )
+        k_cemented = float(porosity_to_permeability(
+            np.array([floor]), params
+        )[0])
+        self.assertEqual(k_cemented, k_clip_min)
+
+        k_virgin = float(porosity_to_permeability(
+            np.array([S7_PHI0]), params
+        )[0])
+        contrast = k_virgin / k_cemented
+        self.assertGreater(contrast, 1.0)
+        self.assertLess(
+            contrast, 1.0e3,
+            msg="contrast %.3g exceeds the documented clip-bounded range; "
+                "if permeability_clip_min was lowered deliberately, update "
+                "this bound and the cases that depend on it" % contrast,
+        )
+
+    def test_remaining_capacity_decreases_monotonically(self):
+        """Successive stages can only consume capacity, never restore it."""
+        records = _run_step7_stages()
+        remaining = [r["stage_ledger_report"]["remaining_capacity"] for r in records]
+        filled = [r["stage_ledger_report"]["fill_ratio_cumulative"] for r in records]
+        for i in range(1, len(remaining)):
+            self.assertLess(remaining[i], remaining[i - 1])
+            self.assertGreater(filled[i], filled[i - 1])
+        self.assertGreater(filled[0], 0.0)
+        self.assertLess(filled[-1], 1.0)
+
+    def test_hardened_volume_matches_what_the_flow_delivered(self):
+        """The physics tie: the pore volume that hardens in a stage must be
+        the grout the flow solve actually pushed out of the source, plus the
+        source cells' own prescribed fill. Toleranced, not exact -- it
+        inherits the flow ledger's Picard transient slip, the same ~1e-3
+        relative drift the application cases report."""
+        records = _run_step7_stages()
+        for rec in records:
+            delivered = rec["v_in_src"] + rec["report"]["v_prefill"]
+            occupied = rec["report"]["occupied_this_stage"]
+            rel = abs(occupied - delivered) / max(abs(occupied), 1.0e-30)
+            self.assertLess(
+                rel, 5.0e-2,
+                msg="stage %d: occupied %.6g vs delivered %.6g (rel %.3g)"
+                    % (rec["stage"], occupied, delivered, rel),
+            )
 
 
 if __name__ == "__main__":
