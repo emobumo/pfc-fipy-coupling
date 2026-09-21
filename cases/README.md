@@ -76,14 +76,22 @@ Asymmetry (1.26) is far milder than the local-L_max ratio (3.14) because spread 
 a **path integral** of yield resistance along the way, not the endpoint local
 lambda. This matters for reading every heterogeneous result that follows.
 
-## inclined_hole_toe.py — inclined-hole grouting, toe-segment bleed
+## inclined_hole_toe.py — a deliberate source-geometry control
 
-The real process cases the collar (orifice pipe + plug, as in the reference case),
-so grout does **not** bleed from the whole hole — only from the deep toe section.
-Geometry is unchanged from the two cases above, but the source is restricted to
-along-hole [12, 17] m (`BLEED_LEN`, tunable); the collar side just participates in
-the seepage without injecting. This is both the physically correct process and the
-control that strips the line-source geometry out of the previous result.
+**This case's source geometry is not the field process.** It restricts injection
+to along-hole [12, 17] m (`BLEED_LEN`, tunable) and lets the first 12 m take part
+in the seepage without injecting. Standard practice is a perforated grouting pipe
+bleeding along its whole length, so the line-source cases above are the
+engineering baseline; the orifice pipe seals only the collar (the reference
+project used Phi108x1500 mm in a 2.0 m mouth), not twelve metres of hole.
+
+An earlier version of this file claimed the toe bleed was "the physically correct
+process". It is not, and the case does not need that claim. Its job is to be a
+CONTROL: the 1.26 upward asymmetry of the line source could in principle be an
+artifact of injecting along a dipping line. Restricting the source to a compact
+toe patch is about as different a source geometry as this geometry allows, and it
+still gives ~1.2. The less this case resembles the field, the better it does that
+job — so keep it, and read it as a control rather than as a process model.
 
 | | gradient phi 0.12->0.30 | uniform phi=0.18 |
 |---|---|---|

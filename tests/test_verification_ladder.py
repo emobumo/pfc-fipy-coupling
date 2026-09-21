@@ -869,12 +869,20 @@ S7_P0 = 3.0e5
 S7_STAGES = 3
 S7_STEPS_PER_STAGE = 25
 S7_DT_CAP = 1.0
-# First source cell for each stage; the source is two cells wide. The 10-cell
-# (2.5 m) advance is deliberately longer than L_max ~2.1 m: a shorter advance
-# leaves the new source buried in ground the previous stage already cemented,
-# where k sits on its clip and nothing flows. That is real process behaviour,
-# not a numerical artifact, but it makes a poor conservation fixture.
-S7_SOURCE_START = (0, 10, 20)
+# Hole depth, in cells, after each drilling pass. The grouting pipe is
+# perforated along its WHOLE length, which is standard practice, so the
+# source at stage k is the entire hole [0, S7_HOLE_END[k]) -- it EXTENDS,
+# it does not move. The field sequence is drill -> grout -> set -> ream
+# through the set grout and drill deeper -> grout again (the reference
+# project logged 493 m of reaming against 500 m of drilling, and three
+# passes at 7 / 10 / 17.5 m).
+#
+# What must exceed the local L_max ~2.1 m is therefore the DRILLING
+# INCREMENT, not the source position: if the new hole section stays inside
+# the zone the previous stage cemented, the pass has nowhere to deliver.
+# 10 cells = 2.5 m per pass clears that. The reference project's own
+# increments (3 m and 7.5 m against a 12 m design spread) do not.
+S7_HOLE_END = (2, 12, 22)
 
 _STEP7_CACHE = {}
 
@@ -892,8 +900,9 @@ def _s7_lambda(phi, a=S7_A, tau0=S7_TAU0):
 
 
 def _s7_source_cells(stage):
-    start = S7_SOURCE_START[stage]
-    return np.array([start, start + 1], dtype=int)
+    """Every cell the hole occupies after pass `stage` -- a perforated pipe
+    bleeds along all of it."""
+    return np.arange(0, S7_HOLE_END[stage], dtype=int)
 
 
 def _s7_install_source(state, stage):
@@ -960,13 +969,27 @@ def _run_step7_stages():
     for stage in range(S7_STAGES):
         src = _s7_source_cells(stage)
         phi_at_stage_start = np.array(state["porosity"].value, copy=True)
+        # Split the perforated pipe into the part earlier passes already
+        # cemented and the part this pass just drilled. A cemented cell sits
+        # at the porosity floor; virgin ground is still at phi0.
+        floor = get_stage_porosity_floor(state["slurry_parameters"])
+        src_spent = src[phi_at_stage_start[src] <= floor * (1.0 + 1.0e-9)]
+        src_fresh = np.setdiff1d(src, src_spent)
         phi_during = []
         v_in_src = 0.0
+        v_in_spent = 0.0
+        v_in_fresh = 0.0
 
         for _ in range(S7_STEPS_PER_STAGE):
             dt = solve_transport_step(state, dt_cap=S7_DT_CAP)
             div_q = np.asarray(state["last_div_q"], dtype=float)
             v_in_src += float(np.sum(div_q[src] * vols[src])) * float(dt)
+            if src_spent.size:
+                v_in_spent += float(
+                    np.sum(div_q[src_spent] * vols[src_spent])) * float(dt)
+            if src_fresh.size:
+                v_in_fresh += float(
+                    np.sum(div_q[src_fresh] * vols[src_fresh])) * float(dt)
             # Source cells stay full while injecting, as in the cases.
             s = np.array(state["saturation"].value, copy=True)
             s[src] = 1.0
@@ -994,6 +1017,10 @@ def _run_step7_stages():
             "flow": dict(flow),
             "ledger": dict(ledger),
             "v_in_src": v_in_src,
+            "v_in_spent": v_in_spent,
+            "v_in_fresh": v_in_fresh,
+            "n_src_spent": int(src_spent.size),
+            "n_src_fresh": int(src_fresh.size),
             "stage_ledger_report": stage_ledger_report(state),
         })
 
@@ -1234,6 +1261,43 @@ class TestStep7StageClosureConservation(unittest.TestCase):
             float(porosity_to_permeability(np.array([floor]), params)[0]),
             k_law_at_floor,
         )
+
+
+    def test_cemented_pipe_length_stops_taking_grout(self):
+        """Self-regulation: the source does not need steering.
+
+        A perforated pipe keeps bleeding along its whole length, so after the
+        second pass most of the source sits in ground earlier passes already
+        cemented. Nothing has to close those perforations -- the closure has
+        dropped that ground's permeability by seven orders and raised its
+        start-up gradient by ~430x, so grout simply stops going there and the
+        pass delivers through the freshly drilled section instead.
+
+        This is why apply_stage_closure accepts an EXTENDING source mask and
+        does not need the source to be moved deeper by hand.
+        """
+        records = _run_step7_stages()
+        for rec in records[1:]:
+            self.assertGreater(
+                rec["n_src_spent"], 0,
+                "stage %d has no already-cemented pipe length to test"
+                    % rec["stage"],
+            )
+            self.assertGreater(rec["n_src_fresh"], 0)
+            total = rec["v_in_spent"] + rec["v_in_fresh"]
+            self.assertGreater(total, 0.0)
+            # Not merely small: measured at 1e-34 and 1e-39 of the fresh
+            # section's delivery, i.e. float noise. The cemented length is a
+            # complete barrier, not a partially blocked one, so the bound is
+            # set to match rather than to a forgiving percentage.
+            share = abs(rec["v_in_spent"]) / total
+            self.assertLess(
+                share, 1.0e-6,
+                msg="stage %d: %.3g of delivery still came from the "
+                    "cemented pipe length (%d cells spent, %d fresh)"
+                    % (rec["stage"], share,
+                       rec["n_src_spent"], rec["n_src_fresh"]),
+            )
 
     def test_remaining_capacity_decreases_monotonically(self):
         """Successive stages can only consume capacity, never restore it."""

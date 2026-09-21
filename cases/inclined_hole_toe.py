@@ -1,17 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-APPLICATION benchmark (NOT a verification-ladder test): inclined-hole grouting
-with a REALISTIC toe-segment bleed, into a gradient porosity field.
+APPLICATION benchmark (NOT a verification-ladder test): a deliberate
+source-geometry CONTROL for the line-source gradient case.
 
-Corrects outputs/inclined_hole_gradient.py: the real process seals the collar
-with an orifice pipe (e.g. Phi108x1500 mm + double-fluid plug), so grout does
-NOT bleed from the whole hole -- only from the deep toe / end-of-hole section.
-Here the hole geometry is unchanged (mouth (-15,1), dip 35 deg, length 17 m,
-toe (-1.07,10.75)) but ONLY the toe segment is a constant-pressure source:
+This is not the field process. Standard practice is a perforated grouting
+pipe that bleeds along its whole length, and the orifice pipe seals only the
+collar (the reference project: Phi108x1500 mm in a 2.0 m mouth) -- not the
+twelve metres of hole this case leaves un-injecting. inclined_hole_grouting
+and inclined_hole_gradient, which inject along the whole 17 m, are the
+engineering baseline.
+
+The point of restricting the source is that the 1.26 upward asymmetry of the
+line source could be an artifact of injecting along a dipping line. A compact
+toe patch is about as different a source geometry as this layout allows, and
+it still gives ~1.2, which leaves the porosity gradient as the cause. The
+less this case resembles the field, the better it does that job.
+
+Hole geometry is unchanged (mouth (-15,1), dip 35 deg, length 17 m,
+toe (-1.07,10.75)); only the source support differs:
 
     bleed segment = along-hole [HOLE_LEN - BLEED_LEN, HOLE_LEN]   (default 5 m)
-    cased segment = along-hole [0, HOLE_LEN - BLEED_LEN]          (no injection,
-                    ordinary rock that just participates in the seepage)
+    un-injecting  = along-hole [0, HOLE_LEN - BLEED_LEN]          (ordinary
+                    rock that still takes part in the seepage)
 
 Two cases for comparison (both toe-segment bleed):
   (A) gradient  : phi_bottom=0.12 -> phi_top=0.30
