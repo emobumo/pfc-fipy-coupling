@@ -39,9 +39,12 @@ $env:PYTHONPATH = $repoRoot
 
 # 2b) Linear solver backend. FiPy's default here is PySparse (PCG), whose
 #     native library crashed 3 of 5 long runs at 576 cells (segfault /
-#     "Fatal Python error", non-deterministic). scipy's LU direct solver ran
-#     clean, ~17% slower, and reproduces the line-source engineering results
+#     "Fatal Python error", non-deterministic). scipy ran
+#     clean and reproduces the line-source engineering results
 #     exactly; only the short-source toe control shifts (see cases/README.md).
+#     Within the scipy backend the solver CLASS is chosen by the
+#     "linear_solver" parameter (default "pcg": 1.3x pysparse on the test
+#     suite; scipy's LU default was 4.5x). See equations.get_linear_solver.
 #     Default to scipy; set $env:FIPY_SOLVERS yourself to override
 #     (e.g. "pysparse" to reproduce pre-2026-09-22 numbers).
 if (-not $env:FIPY_SOLVERS) { $env:FIPY_SOLVERS = "scipy" }

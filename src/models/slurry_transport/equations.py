@@ -858,6 +858,33 @@ def compute_total_face_flux(state):
     return div_q, q_normal, areas
 
 
+def get_linear_solver(params):
+    """
+    The linear solver handed to FiPy for each pressure solve, chosen by
+    params["linear_solver"] from whatever backend FIPY_SOLVERS selected:
+
+        "pcg"      LinearPCGSolver of the active backend (default). Under
+                   pysparse this IS FiPy's default there, so nothing changes;
+                   under scipy it replaces the LU default, which runs the
+                   verification ladder 4.5x slower (per-call factorisation
+                   overhead on thousands of tiny 1D systems) -- scipy PCG is
+                   within 1.3x of pysparse.
+        "lu"       LinearLUSolver (direct).
+        "default"  None: let FiPy pick its backend default.
+
+    Backend defaults for tolerance/iterations are kept, so the pysparse path
+    stays bit-identical to before this switch existed.
+    """
+    kind = params.get("linear_solver", "pcg")
+    if kind == "default":
+        return None
+    import fipy.solvers as backend
+    name = {"pcg": "LinearPCGSolver", "lu": "LinearLUSolver"}.get(kind)
+    if name is None:
+        raise ValueError("linear_solver must be pcg, lu or default; got %r" % (kind,))
+    return getattr(backend, name)()
+
+
 def _solve_pressure_once(state, dt):
     pressure = state["pressure"]
     storage = state["storage"]
@@ -908,7 +935,8 @@ def _solve_pressure_once(state, dt):
         )
 
     eq = TransientTerm(coeff=storage) == rhs
-    eq.solve(var=pressure, dt=dt)
+    eq.solve(var=pressure, dt=dt,
+             solver=get_linear_solver(get_slurry_parameters(state)))
 
 
 def solve_pressure_step(state, dt=0.01):

@@ -7,7 +7,7 @@ logs they generate go to `outputs/`, which stays untracked.
 
 The numbers quoted below are **regression anchors**: the cases are deterministic
 and a rerun reproduces them bit-for-bit (identical figures, byte for byte). If a
-number here moves, the engine changed. Anchors are for the **scipy LU** linear
+number here moves, the engine changed. Anchors are for the **scipy PCG** linear
 solver, the default `run_local.ps1` sets since 2026-09-22 (FiPy's own default,
 PySparse PCG, crashed 3 of 5 long 576-cell runs); the line-source and real-pack
 results are identical under both, the toe control is not — see its section.
@@ -97,8 +97,9 @@ still comes out above 1 against a uniform control below 1. The less this case
 resembles the field, the better it does that job — so keep it, and read it as a
 control rather than as a process model.
 
-Anchors below are for the scipy LU backend, the default since 2026-09-22
-(`FIPY_SOLVERS=scipy` in `run_local.ps1`). Under the previous PySparse PCG
+Anchors below are for the scipy backend with its PCG solver, the default since 2026-09-22
+(`FIPY_SOLVERS=scipy` in `run_local.ps1`, `linear_solver="pcg"`; scipy LU gives
+the same numbers). Under the previous PySparse PCG
 default the 5 m gradient run stalled earlier (step 220, t=406 s, 26 cells,
 6.86 / 5.63 m, up/down 1.22); the 3 m and 8 m sweep points and the uniform
 control were identical under both. See "Solver sensitivity" below.
@@ -270,7 +271,8 @@ enclosed void would need finer resolution or structure that wraps.
 ### Solver sensitivity of the toe control (2026-09-22)
 
 The toe case's gradient result is **linear-solver dependent**: 1.22 under FiPy's
-default PySparse PCG, **1.06** under `FIPY_SOLVERS=scipy` (LU), which stalls
+default PySparse PCG, **1.06** under `FIPY_SOLVERS=scipy` (its PCG at tolerance
+1e-15, or its LU — identical), which stalls
 later (364 vs 220 steps) and creeps further on both sides. The uniform control
 is bit-identical either way (0.97). The **line-source** gradient and uniform
 results — the engineering baseline and the 1.26 headline — are identical under

@@ -16,7 +16,8 @@ PFC2D + FiPy 耦合：恒压注浆条件下 Bingham 浆体在固定废石堆中�
   - 跑脚本：`powershell -File scripts\run_local.ps1 scripts\smoke_test_src.py`
   - 跑测试：`powershell -File scripts\run_local.ps1 -m unittest discover -s tests -v`
   - 该脚本自动定位 PFC 自带 Python、设置 `PYTHONPATH`，并将 FiPy 线性求解器后端默认为
-    **scipy**（`FIPY_SOLVERS=scipy`；FiPy 自带的 PySparse 在 ≥576 单元长时程下随机崩溃）；
+    **scipy**（`FIPY_SOLVERS=scipy`，求解器类由 `params["linear_solver"]` 选，默认 PCG；FiPy 自带的
+    PySparse 在 ≥576 单元长时程下随机崩溃）；
     PFC 装在别处时用
     `$env:PFC_PYTHON` 覆盖。
 - FiPy 侧可独立于 PFC 运行测试：`src/pfc_adapter/particle_writer.py` 与
@@ -136,4 +137,17 @@ PFC2D + FiPy 耦合：恒压注浆条件下 Bingham 浆体在固定废石堆中�
 
 原因：Picard 触顶的每一步都向外蠕一点，dx 减半 → dt 减半 → 同一物理时间两倍步数；小单元又更易触发"新单元过 0.5"，平台判据更难拦住。**2.5 m 的结果更接近解析可达域，是因为它步数少，不是因为它更准。当前求解器下分辨率不是可自由调的旋钮；唯一真正的出路仍是屈服边缘的 Picard 收敛。** 越界面积占比现在是量化这一问题的独立标尺。
 
-**线性求解器**：FiPy 默认 PySparse PCG。576 单元长时程运行 **5 次崩 3 次**（段错误 / Fatal Python error，非确定性，原生库问题）。`FIPY_SOLVERS=scipy`（切到 scipy LU 直接法）：2/2 未崩，慢约 17%；线源梯度与均质、1.25 m 均质均与 PySparse **逐字一致**；**但孔底对照（5 m 短源）的 up/down 从 1.22 变为 1.06**（220 → 364 步，蠕得更久），均质对照不变 0.97。屈服边缘的结果对线性求解器精度敏感，是 Picard 问题的又一侧面。**已于 2026-09-22 经用户批准切换默认后端为 scipy**（`run_local.ps1` 默认设 `FIPY_SOLVERS=scipy`，可用环境变量覆盖回 `pysparse` 复现旧值）。切换后全套 68 测试通过；真实堆、线源梯度/均质锚点逐字不变；孔底对照锚点更新为 1.06（`cases/README.md`）。
+**线性求解器**：FiPy 默认 PySparse PCG。576 单元长时程运行 **5 次崩 3 次**（段错误 / Fatal Python
+error，非确定性，原生库问题）。**已于 2026-09-22 经用户批准切换为 scipy 后端**（`run_local.ps1`
+默认设 `FIPY_SOLVERS=scipy`，可用环境变量覆盖回 `pysparse` 复现旧值），并在 `equations.py` 中
+按 `params["linear_solver"]`（默认 `"pcg"`）显式选求解器类：scipy 后端自带的默认是 LU 直接法，
+它在验证阶梯上慢 **4.5 倍**（成千上万次一维小矩阵的逐次分解开销），scipy PCG 只慢 1.3 倍
+（全套 677 s vs PySparse 514 s）。二维 576 单元长时程反过来：PCG 1532 s、LU 1009 s、PySparse 861 s，
+大二维算例可按算例设 `linear_solver="lu"`。
+
+切换后逐项复验：全套 68 测试通过；真实堆 8.50/8.91、线源梯度/均质 1.26/0.90 与扫描 1.22/1.26/1.35、
+通道 9 行、分段 9 行、孔底 3 m/8 m 与均质对照——**全部逐字不变**。唯一变化是**孔底对照 5 m 出浆段**：
+PySparse PCG 给 1.22，scipy（PCG 与 LU 一致）给 **1.06**（220 → 364 步，蠕得更久）。其两个扫描邻点
+（3 m 的 1.06、8 m 的 1.17）从未支持 1.22——它是 PySparse 较松容差下不精确线性解在屈服边缘早停的假象。
+锚点已更新（`cases/README.md`）；孔底算例定位为"仅确认方向"，解析可达域 1.28 为无求解器依赖的幅度。
+在 1.25 m 蠕动区三种求解器互不一致（越界 39~48 单元），是屈服边缘 Picard 问题的又一侧面。

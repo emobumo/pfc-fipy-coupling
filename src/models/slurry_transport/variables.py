@@ -112,6 +112,11 @@ def build_placeholder_slurry_parameters():
         "fill_accumulation_factor": 0.1,
         # filling_max [dimensionless]
         "filling_max": 1.0,
+        # Linear solver class per pressure solve, from the FIPY_SOLVERS backend:
+        # "pcg" (default; pysparse's own default, and 3.3x faster than scipy's
+        # LU default on the verification ladder), "lu", or "default" (backend's
+        # choice). See equations.get_linear_solver.
+        "linear_solver": "pcg",
         "picard_max_iters": 20,
         # Picard tolerance, RELATIVE to the step's first-iteration residual.
         "picard_tol": 1.0e-4,
