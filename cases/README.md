@@ -7,7 +7,10 @@ logs they generate go to `outputs/`, which stays untracked.
 
 The numbers quoted below are **regression anchors**: the cases are deterministic
 and a rerun reproduces them bit-for-bit (identical figures, byte for byte). If a
-number here moves, the engine changed.
+number here moves, the engine changed. Anchors are for the **scipy LU** linear
+solver, the default `run_local.ps1` sets since 2026-09-22 (FiPy's own default,
+PySparse PCG, crashed 3 of 5 long 576-cell runs); the line-source and real-pack
+results are identical under both, the toe control is not — see its section.
 
 Run with the PFC-bundled Python, like everything else:
 
@@ -90,32 +93,42 @@ process". It is not, and the case does not need that claim. Its job is to be a
 CONTROL: the 1.26 upward asymmetry of the line source could in principle be an
 artifact of injecting along a dipping line. Restricting the source to a compact
 toe patch is about as different a source geometry as this geometry allows, and it
-still gives ~1.2. The less this case resembles the field, the better it does that
-job — so keep it, and read it as a control rather than as a process model.
+still comes out above 1 against a uniform control below 1. The less this case
+resembles the field, the better it does that job — so keep it, and read it as a
+control rather than as a process model.
+
+Anchors below are for the scipy LU backend, the default since 2026-09-22
+(`FIPY_SOLVERS=scipy` in `run_local.ps1`). Under the previous PySparse PCG
+default the 5 m gradient run stalled earlier (step 220, t=406 s, 26 cells,
+6.86 / 5.63 m, up/down 1.22); the 3 m and 8 m sweep points and the uniform
+control were identical under both. See "Solver sensitivity" below.
 
 | | gradient phi 0.12->0.30 | uniform phi=0.18 |
 |---|---|---|
-| spread up (loose) / down (dense) | 6.86 m / 5.63 m | 6.86 m / 7.07 m |
-| **up/down** | **1.22** | **0.97** |
-| filled cells / stall step | 26 / 220 (t=406 s) | 31 / 278 (t=637 s) |
-| max radius from toe | 10.37 m | 11.13 m |
-| conservation drift (rel) | 8.0e-4 | 1.1e-3 |
+| spread up (loose) / down (dense) | 7.47 m / 7.07 m | 6.86 m / 7.07 m |
+| **up/down** | **1.06** | **0.97** |
+| filled cells / stall step | 35 / 364 (t=1006 s) | 31 / 278 (t=637 s) |
+| max radius from toe | 11.13 m | 11.13 m |
+| conservation drift (rel) | 8.1e-4 | 1.1e-3 |
 
 The spread collapses from a strip hugging the whole hole into a compact ellipse
 around the toe, well clear of the left and bottom boundaries. **The key result:
-pure-gradient asymmetry is 1.22 here, against 1.26 for the line source. Two
-completely different source geometries give the same ~1.2 upward bias, which rules
-out source geometry as the cause and leaves the porosity gradient as the physics.**
+the gradient turns a 0.97 downward bias into an upward one with a completely
+different source geometry, which rules out source geometry as the cause and
+leaves the porosity gradient as the physics.** Its magnitude here (1.06–1.22
+depending on solver, see below) is smaller than the line source's 1.26; the
+solver-free number is the analytic reach ratio, 1.28.
 
-Bleed-length sweep (gradient field): 3/5/8 m gives toe radius 8.90/10.37/13.45 m
-but up/down 1.06/1.22/1.17 — the bleed length sets the ellipse SIZE, the porosity
+Bleed-length sweep (gradient field): 3/5/8 m gives toe radius 8.90/11.13/13.45 m
+and up/down 1.06/1.06/1.17 — the bleed length sets the ellipse SIZE, the porosity
 gradient sets its ASYMMETRY. The two are decoupled.
 
 ### Known limits
 
 At 2.5 m cells an 8-10 m spread spans only 3-4 cells, so up/down ratios carry
-quantization noise: **treat 1.22 as +-0.1, not a precise number**. Refine to
-1.0 / 0.5 m before publishing quantitative values. The gradient field is
+quantization noise: **treat these ratios as +-0.1, not precise numbers**, and
+note that refining the mesh does NOT help under the current solver (creep grows
+with step count; see CLAUDE.md "分辨率与求解器实测"). The gradient field is
 analytic, not a real PFC structure — it demonstrates the mechanism, it does not
 reproduce a measured pile.
 
@@ -133,7 +146,7 @@ model fills every reachable cell, so a sealed domain cannot show a void that
 way. In the field the injection ends when the hole stops taking grout OR the
 budgeted volume is spent — and runaway is the second ending arriving first.
 Every structured run therefore gets the volume the uniform baseline needed to
-stall (46.14 m³/m) and stops at min(stall, quota). The design target is the
+stall (46.17 m³/m) and stops at min(stall, quota). The design target is the
 baseline's own stalled footprint (50 cells).
 
     powershell -File scripts\run_local.ps1 cases\inclined_hole_channel.py --set band|position|random|all --plot
@@ -142,13 +155,13 @@ Band at φ=0.45, one cell wide, full height, swept over POSITION:
 
 | band position | stop | t [s] | Q tail/peak | r_obs / r_equiv | target filled | reachable-unfilled |
 |---|---|---|---|---|---|---|
-| none (baseline) | stall | 1535 | 0.009 | 1.34 | — | 1 |
-| past the toe (x=+3.75) | quota | 556 | 0.064 | 1.26 | 90% | 11 |
+| none (baseline) | stall | 1540 | 0.009 | 1.34 | — | 1 |
+| past the toe (x=+3.75) | quota | 555 | 0.064 | 1.26 | 90% | 11 |
 | crossing the hole mid-length (x=−8.75) | quota | **96** | 0.074 | 2.50 | 70% | 27 |
 | **at the collar (x=−13.75)** | quota | **119** | **0.101** | **2.92** | **70%** | 21 |
 
 Position matters far more than band porosity (the φ sweep at the toe,
-0.30/0.45/0.60, gives 649/556/582 s and 94/90/92% — nearly flat). A band the
+0.30/0.45/0.60, gives 649/555/582 s and 94/90/92% — nearly flat). A band the
 hole ENTERS THROUGH — which is what a backfill/rock contact is — drains the
 quota 13× faster than the baseline, with the injection rate still an order of
 magnitude above the stall line, spread ~3× what the volume could fill
@@ -167,7 +180,7 @@ horizontal streaks), one per seed, same quota and target:
 | seed | stop | t [s] | V_in | Q tail/peak | target filled | of which UNREACHABLE | reachable-unfilled |
 |---|---|---|---|---|---|---|---|
 | 1 | quota | 445 | 46.2 | **0.137** | 78% | 20% | 7 |
-| 2 | **stall** | 1624 | **39.4** | 0.015 | 80% | 20% | 0 |
+| 2 | **stall** | 1628 | **39.4** | 0.015 | 80% | 20% | 0 |
 | 3 | quota | 411 | 46.2 | 0.043 | 86% | 12% | 6 |
 
 Still no bypass voids — but the realisations separate the two ways a target
@@ -203,13 +216,13 @@ field from the FULL hole — what one pass could have reached.
 
 | field / sequence | V used | t [s] | cells | of virgin reach | permanent residual |
 |---|---|---|---|---|---|
-| uniform / single | 46.14 | 1535 | 40 | **98%** | 1 |
-| uniform / 7 → 10 → 17 m | **41.64** (stalled, 4.5 unspent) | 1678 | 33 | **86%** | 7 |
-| uniform / 8.5 → 17 m | 41.64 | 1374 | 33 | 86% | 7 |
+| uniform / single | 46.15 | 1535 | 40 | **98%** | 1 |
+| uniform / 7 → 10 → 17 m | **41.66** (stalled, 4.5 unspent) | 1684 | 33 | **86%** | 7 |
+| uniform / 8.5 → 17 m | 41.66 | 1379 | 33 | 86% | 7 |
 | collar band / single | 46.68 | 119 | 30 | 66% | 21 |
 | collar band / 7 → 10 → 17 m | 46.44 | 254 | 23 | **54%** | 28 |
-| random seed 1 / single | 46.19 | 445 | 34 | 86% | 7 |
-| random seed 1 / 7 → 10 → 17 m | 46.28 | 1436 | 34 | 86% | 7 |
+| random seed 1 / single | 46.15 | 444 | 34 | 86% | 7 |
+| random seed 1 / 7 → 10 → 17 m | 46.27 | 1431 | 34 | 86% | 7 |
 
 Per stage, the reference sequence 7 → 10 → 17 m on uniform ground:
 

@@ -37,9 +37,19 @@ if (-not $pfcPython) {
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $env:PYTHONPATH = $repoRoot
 
+# 2b) Linear solver backend. FiPy's default here is PySparse (PCG), whose
+#     native library crashed 3 of 5 long runs at 576 cells (segfault /
+#     "Fatal Python error", non-deterministic). scipy's LU direct solver ran
+#     clean, ~17% slower, and reproduces the line-source engineering results
+#     exactly; only the short-source toe control shifts (see cases/README.md).
+#     Default to scipy; set $env:FIPY_SOLVERS yourself to override
+#     (e.g. "pysparse" to reproduce pre-2026-09-22 numbers).
+if (-not $env:FIPY_SOLVERS) { $env:FIPY_SOLVERS = "scipy" }
+
 # 3) Forward all arguments to the PFC Python.
 Write-Host "[run_local] python     : $pfcPython"
 Write-Host "[run_local] PYTHONPATH : $repoRoot"
+Write-Host "[run_local] FIPY_SOLVERS: $env:FIPY_SOLVERS"
 Write-Host "[run_local] args       : $($args -join ' ')"
 Write-Host ""
 & $pfcPython @args
