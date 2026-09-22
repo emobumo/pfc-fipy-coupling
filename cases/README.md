@@ -253,3 +253,15 @@ drains 40 m³ — the same volume ends up in the same streak, later.
 residual is a rim shadow, connected to open ground, not a sealed-in pocket.
 At 2.5 m cells a fill footprint spans 3–4 cells and stays convex; an
 enclosed void would need finer resolution or structure that wraps.
+
+### Solver sensitivity of the toe control (2026-09-22)
+
+The toe case's gradient result is **linear-solver dependent**: 1.22 under FiPy's
+default PySparse PCG, **1.06** under `FIPY_SOLVERS=scipy` (LU), which stalls
+later (364 vs 220 steps) and creeps further on both sides. The uniform control
+is bit-identical either way (0.97). The **line-source** gradient and uniform
+results — the engineering baseline and the 1.26 headline — are identical under
+both solvers (623 / 2100 s / 44 cells / 9 overshoot; 492–493 / 1535–1540 s).
+Read the toe control as "direction confirmed (>1 against 0.97), magnitude
+between 1.06 and 1.22"; the analytic reach ratio, 1.28, is the solver-free
+number. See CLAUDE.md "分辨率与求解器实测".
