@@ -36,6 +36,7 @@ Figures are written to outputs/ (untracked artifacts).
 """
 from __future__ import print_function
 import os
+import re
 import sys
 import math
 
@@ -53,6 +54,7 @@ from src.models.slurry_transport.variables import (
     build_placeholder_slurry_parameters,
     initialize_slurry_variables,
 )
+from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
 from src.models.slurry_transport.equations import (
     solve_transport_step,
     conservation_report,
@@ -61,6 +63,7 @@ from src.models.slurry_transport.equations import (
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # Figures are build artifacts: keep them out of the tracked case directory.
 _OUT = os.path.join(os.path.dirname(_HERE), "outputs")
+_CKPT_DIR = os.path.join(_OUT, "checkpoints")
 if not os.path.isdir(_OUT):
     os.makedirs(_OUT)
 
@@ -98,6 +101,8 @@ A_CAL = _MAT["calibrated_permeability_coefficient"]
 DT_CAP = 5.0
 MAX_STEPS = 3000      # v0.6 reach is 2.3x the old set: more steps to stall
 STALL_PATIENCE = 60
+# Crash-resilience: see src/analysis/run_checkpoint.py. 0 disables.
+CKPT_EVERY = 200
 
 
 # ===========================================================================
@@ -258,11 +263,10 @@ def front_metrics(state, mx, my, hcells):
     }
 
 
-def march(state, mx, my, hcells, vols, label):
+def march(state, mx, my, hcells, vols, label, keeper=None):
     phi = np.clip(np.asarray(state["porosity"].value, dtype=float), 1e-6, 1.0)
     hmask = np.zeros(mx.size, dtype=bool)
     hmask[hcells] = True
-    s0 = np.array(state["saturation"].value, copy=True)
 
     t = 0.0
     v_in_src = 0.0
@@ -270,9 +274,24 @@ def march(state, mx, my, hcells, vols, label):
     stall = 0
     count = 0
     v_store = 0.0
-    print("  [%s] marching ..." % label)
+    step0 = 0
+    # s0 is the stage's initial saturation and must survive a resume, or
+    # v_store would be measured from the middle of the run.
+    s0 = np.array(state["saturation"].value, copy=True)
+
+    resumed = keeper.restore(state) if keeper is not None else {}
+    if resumed:
+        step0 = int(resumed["step"])
+        t = float(resumed["t"])
+        v_in_src = float(resumed["v_in_src"])
+        best_count = int(resumed["best_count"])
+        stall = int(resumed["stall"])
+        s0 = np.array(resumed["s0"], copy=True)
+        print("  [%s] resuming at step %d (t=%.1f s)" % (label, step0, t))
+    else:
+        print("  [%s] marching ..." % label)
     sys.stdout.flush()
-    for step in range(MAX_STEPS):
+    for step in range(step0, MAX_STEPS):
         dt = solve_transport_step(state, dt_cap=DT_CAP)
         t += float(dt)
         div_q = np.asarray(state["last_div_q"], dtype=float)
@@ -292,16 +311,30 @@ def march(state, mx, my, hcells, vols, label):
             stall += 1
         if stall >= STALL_PATIENCE:
             break
+        if keeper is not None:
+            keeper.maybe_save(state, step=step + 1, t=t, v_in_src=v_in_src,
+                              best_count=best_count, stall=stall, s0=s0)
+    if keeper is not None:
+        keeper.finish()
     print("    -> stop at step %d, t=%.1f s, filled=%d, Vstore=%.3f, Vin=%.3f"
           % (step, t, count, v_store, v_in_src))
     sys.stdout.flush()
     return t, v_in_src, v_store
 
 
-def run_one(kind, label):
+def run_one(kind, label, ckpt_every=CKPT_EVERY):
     state, mx, my, nx, ny, phi, hcells, k = build_case(kind)
     vols = np.asarray(state["mesh"].cellVolumes, dtype=float)
-    t, v_in_src, v_store = march(state, mx, my, hcells, vols, label)
+    keeper = None
+    if ckpt_every > 0:
+        if not os.path.isdir(_CKPT_DIR):
+            os.makedirs(_CKPT_DIR)
+        tag = re.sub(r"[^A-Za-z0-9._-]+", "_", "toe_" + label)
+        keeper = Checkpointer(
+            os.path.join(_CKPT_DIR, tag), every=ckpt_every,
+            fingerprint=state_fingerprint(
+                state, "toe|%s|%s|bleed=%.3f" % (kind, label, BLEED_LEN)))
+    t, v_in_src, v_store = march(state, mx, my, hcells, vols, label, keeper=keeper)
     rep = conservation_report(state)
     fm = front_metrics(state, mx, my, hcells)
     s_grid = to_grid(np.asarray(state["saturation"].value, dtype=float), mx, my, nx, ny)

@@ -42,7 +42,9 @@ Two things the ladder's step 7 predicts and this case can test:
 Outputs under outputs/inclined_hole_staged/<field>/<run>/.
 """
 import imp
+import json
 import os
+import re
 import sys
 
 import numpy as np
@@ -51,6 +53,9 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO not in sys.path:
     sys.path.insert(0, REPO)
 
+from src.analysis.run_checkpoint import (
+    Checkpointer, state_fingerprint, STAGE_STATE_KEYS,
+)
 from src.models.slurry_transport.stage_update import (
     initialize_stage_ledger, apply_stage_closure, stage_ledger_report,
 )
@@ -74,6 +79,9 @@ DEPTHS_SPACED = (8.5, 17.0)   # NOTE: at 2.5 m cells 7.0 and 8.5 m select the sa
 SEQUENCES = (("staged_7_10_17", DEPTHS_REFERENCE), ("staged_8.5_17", DEPTHS_SPACED))
 
 OUT_ROOT = os.path.join(REPO, "outputs", "inclined_hole_staged")
+_CKPT_DIR = os.path.join(REPO, "outputs", "checkpoints")
+# Crash-resilience: see src/analysis/run_checkpoint.py. 0 disables.
+CKPT_EVERY = 200
 
 
 def hole_cells_to_depth(mx, my, nx, ny, depth):
@@ -118,7 +126,8 @@ def install_source(state, cells, p0):
     state["pressure"].setValue(np.where(mask > 0.5, float(p0), 0.0))
 
 
-def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot):
+def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot,
+                 ckpt_every=CKPT_EVERY):
     state, mx, my, nx, ny, phi_used, _, _ = C.build_from_phi(phi)
     vols = np.asarray(state["mesh"].cellVolumes, dtype=float)
     n0 = np.array(state["porosity"].value, copy=True)
@@ -130,8 +139,41 @@ def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot):
     t_offset = 0.0
     filled_by_stage = np.zeros(mx.size, dtype=int) - 1     # -1 = never
     src_prev = np.zeros(mx.size, dtype=bool)
+    k0 = 0
+
+    # The sequence checkpoint carries what between-stage solidification
+    # rewrites (porosity, permeability, mobilities, ledger) on top of the
+    # per-step state, so a crash in stage 3 resumes at stage 3 instead of
+    # replaying stages 1 and 2. The fingerprint is taken on the VIRGIN state,
+    # before any closure, so it identifies the sequence rather than a stage.
+    seq_keeper = None
+    if ckpt_every > 0:
+        if not os.path.isdir(_CKPT_DIR):
+            os.makedirs(_CKPT_DIR)
+        tag = re.sub(r"[^A-Za-z0-9._-]+", "_", "staged_" + label)
+        seq_keeper = Checkpointer(
+            os.path.join(_CKPT_DIR, tag + "_seq"), every=1,
+            also=STAGE_STATE_KEYS,
+            fingerprint=state_fingerprint(
+                state, "staged|%s|depths=%s|budget=%s" % (label, depths, budget)))
+        resumed = seq_keeper.restore(state)
+        if resumed:
+            k0 = int(resumed["stage"])
+            t_offset = float(resumed["t_offset"])
+            remaining = (None if budget is None else float(resumed["remaining"]))
+            filled_by_stage = np.array(resumed["filled_by_stage"], dtype=int)
+            src_prev = np.array(resumed["src_prev"], dtype=bool)
+            history_all = [(float(a), float(b), int(c))
+                           for a, b, c in np.atleast_2d(resumed["history_all"])]
+            stages = json.loads(str(resumed["stages_json"]))
+            state["stage_ledger"] = json.loads(str(resumed["ledger_json"]))
+            state["stage_history"] = json.loads(str(resumed["history_json"]))
+            print("  [%s] resuming after stage %d" % (label, k0))
+            sys.stdout.flush()
 
     for k, depth in enumerate(depths):
+        if k < k0:
+            continue                      # already done, restored from disk
         src = hole_cells_to_depth(mx, my, nx, ny, depth)
         src_mask = np.zeros(mx.size, dtype=bool)
         src_mask[src] = True
@@ -148,7 +190,16 @@ def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot):
         stage_label = "%s / stage %d (to %.1f m, %d src cells, %d buried)" % (
             label, k + 1, depth, src.size, buried)
         quota = None if remaining is None else (remaining if remaining > 0 else 1e-12)
-        m = C.march(state, src, vols, stage_label, v_quota=quota)
+        stage_keeper = None
+        if ckpt_every > 0:
+            tag = re.sub(r"[^A-Za-z0-9._-]+", "_",
+                         "staged_%s_stage%d" % (label, k + 1))
+            stage_keeper = Checkpointer(
+                os.path.join(_CKPT_DIR, tag), every=ckpt_every,
+                fingerprint=state_fingerprint(
+                    state, "staged|%s|stage=%d|depth=%.3f" % (label, k, depth)))
+        m = C.march(state, src, vols, stage_label, v_quota=quota,
+                    keeper=stage_keeper)
         for (t, q) in m["history"]:
             history_all.append((t_offset + t, q, k))
         t_offset += m["t"]
@@ -171,6 +222,16 @@ def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot):
         if k + 1 < len(depths):
             next_src = hole_cells_to_depth(mx, my, nx, ny, depths[k + 1])
         apply_stage_closure(state, source_mask=next_src)
+        src_prev = src_prev | src_mask
+        if seq_keeper is not None:
+            seq_keeper.save_now(
+                state, stage=k + 1, t_offset=t_offset,
+                remaining=(-1.0 if remaining is None else remaining),
+                filled_by_stage=filled_by_stage, src_prev=src_prev,
+                history_all=np.asarray(history_all, dtype=float),
+                stages_json=json.dumps(stages),
+                ledger_json=json.dumps(state["stage_ledger"]),
+                history_json=json.dumps(state["stage_history"]))
 
     # Cumulative fill = what set. Read it as a saturation for the classifier.
     n_final = np.asarray(state["porosity"].value, dtype=float)
@@ -189,6 +250,8 @@ def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot):
     unfilled_reach = (occupied < 0.5) & reach_virgin & np.logical_not(np.in1d(np.arange(mx.size), full_cells))
     shadowed = unfilled_reach & np.logical_not(reach_final)
     ledger = stage_ledger_report(state)
+    if seq_keeper is not None:
+        seq_keeper.finish()
 
     cat = cls["category"]
     row = {

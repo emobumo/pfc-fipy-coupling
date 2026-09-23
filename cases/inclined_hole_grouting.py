@@ -5,11 +5,11 @@ constant-pressure grouting of a Bingham cement slurry into a fixed waste-rock
 pile, on the validated FiPy IMPES fill-transport engine.
 
   - particles  : data/particles.csv  (x,y,radius; 36127 balls, vendored)
-  - domain     : x in [-15,15], y in [0,30], 2.5 m cells (12x12 = 144 cells)
+  - domain     : x in [-30,30], y in [0,60], 2.5 m cells (24x24 = 576 cells)
   - permeability: calibrated_power k = A phi^3/(1-phi)^2, A from v0.6  (NOT KC)
-  - injection  : inclined hole, mouth (-15,1), dip 35 deg, length 17 m, the
+  - injection  : inclined hole, dip 35 deg, length 17 m, the
                  cells the line passes through are pinned at p0=5 MPa (interior
-                 Dirichlet penalty) and held saturated (S=1)
+                 Dirichlet penalty) and held saturated (S=1); mouth (-30,21)
   - slurry     : parameter set v0.6 (variables.grout_material_v06), gravity ON
   - run        : IMPES fill transport to front stall; outputs 3 PNGs + report
 
@@ -22,6 +22,7 @@ Figures are written to outputs/ (untracked artifacts).
 """
 from __future__ import print_function
 import os
+import sys
 import math
 
 import numpy as np
@@ -38,6 +39,7 @@ from src.models.slurry_transport.variables import (
     build_placeholder_slurry_parameters,
     initialize_slurry_variables,
 )
+from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
 from src.models.slurry_transport.equations import (
     solve_transport_step,
     conservation_report,
@@ -46,6 +48,7 @@ from src.models.slurry_transport.equations import (
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # Figures are build artifacts: keep them out of the tracked case directory.
 _OUT = os.path.join(os.path.dirname(_HERE), "outputs")
+_CKPT_DIR = os.path.join(_OUT, "checkpoints")
 if not os.path.isdir(_OUT):
     os.makedirs(_OUT)
 # Particle export vendored into the repo (data/particles.csv) so the case is
@@ -84,6 +87,8 @@ MAX_STEPS = 3000      # v0.6 reach is 2.3x the old set: more steps to stall
 STALL_TOL_CELLS = 0      # stop when filled-cell count stops growing ...
 STALL_PATIENCE = 40      # ... for this many consecutive steps
 STALL_VSTORE_REL = 1.0e-4
+# Crash-resilience: see src/analysis/run_checkpoint.py. 0 disables.
+CKPT_EVERY = 200
 
 
 # ===========================================================================
@@ -277,19 +282,35 @@ def front_metrics(state, mx, my, hcells):
     }
 
 
-def march(state, mx, my, hcells, vols):
+def march(state, mx, my, hcells, vols, keeper=None):
     phi = np.clip(np.asarray(state["porosity"].value, dtype=float), 1e-6, 1.0)
     hmask = np.zeros(mx.size, dtype=bool)
     hmask[hcells] = True
-    s0 = np.array(state["saturation"].value, copy=True)
 
     t = 0.0
     v_in_src = 0.0           # cumulative slurry pumped OUT of the source cells
     last_count = -1
     stall = 0
     last_vstore = 0.0
+    v_store = 0.0
+    step0 = 0
+    # s0 is this run's initial saturation: restored on resume so that V_store
+    # keeps being measured from the start and not from the checkpoint.
+    s0 = np.array(state["saturation"].value, copy=True)
+
+    resumed = keeper.restore(state) if keeper is not None else {}
+    if resumed:
+        step0 = int(resumed["step"])
+        t = float(resumed["t"])
+        v_in_src = float(resumed["v_in_src"])
+        last_count = int(resumed["last_count"])
+        last_vstore = float(resumed["last_vstore"])
+        stall = int(resumed["stall"])
+        s0 = np.array(resumed["s0"], copy=True)
+        print("  -> resuming at step %d (t=%.3f s)" % (step0, t))
+        sys.stdout.flush()
     print("step   t[s]      dt[s]     filled  Vstore[m3/m]  Vin_src   front_perp(dn/up)[m]")
-    for step in range(MAX_STEPS):
+    for step in range(step0, MAX_STEPS):
         dt = solve_transport_step(state, dt_cap=DT_CAP)
         t += float(dt)
         # source outflow this step from the explicit flux divergence
@@ -323,6 +344,12 @@ def march(state, mx, my, hcells, vols):
         if stall >= STALL_PATIENCE:
             print("  -> stalled at step %d (t=%.3f s)" % (step, t))
             break
+        if keeper is not None:
+            keeper.maybe_save(state, step=step + 1, t=t, v_in_src=v_in_src,
+                              last_count=last_count, last_vstore=last_vstore,
+                              stall=stall, s0=s0)
+    if keeper is not None:
+        keeper.finish()
 
     return t, v_in_src, v_store
 
@@ -409,7 +436,14 @@ def main():
         print("  check k(phi=%.2f) = %.3e m^2" % (pp, kk))
 
     # --- task 5: march ---
-    t, v_in_src, v_store = march(state, mx, my, hcells, vols)
+    keeper = None
+    if CKPT_EVERY > 0:
+        if not os.path.isdir(_CKPT_DIR):
+            os.makedirs(_CKPT_DIR)
+        keeper = Checkpointer(
+            os.path.join(_CKPT_DIR, "grouting_realpack"), every=CKPT_EVERY,
+            fingerprint=state_fingerprint(state, "grouting|realpack"))
+    t, v_in_src, v_store = march(state, mx, my, hcells, vols, keeper=keeper)
 
     # --- conservation ---
     rep = conservation_report(state)

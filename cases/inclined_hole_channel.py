@@ -37,6 +37,7 @@ Outputs under outputs/inclined_hole_channel/<run>/ and a comparison table.
 import imp
 import math
 import os
+import re
 import sys
 
 import numpy as np
@@ -45,6 +46,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO not in sys.path:
     sys.path.insert(0, REPO)
 
+from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
 from src.models.slurry_transport.equations import solve_transport_step
 from src.structure.porosity_fields import uniform, where_band, random_correlated
 from src.analysis.fill_diagnostics import (
@@ -57,6 +59,11 @@ G = imp.load_source("inclined_hole_gradient",
                     os.path.join(REPO, "cases", "inclined_hole_gradient.py"))
 
 # --- structured fields ------------------------------------------------------
+_CKPT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         "outputs", "checkpoints")
+# Crash-resilience: see src/analysis/run_checkpoint.py. 0 disables.
+CKPT_EVERY = 200
+
 PHI_BASE = 0.18            # the uniform control of the baseline case
 # Band sweeps. A vertical through-going band one cell wide, full height.
 #   porosity sweep : band at BAND_X_TOE, past the toe, over BAND_PHIS
@@ -110,18 +117,35 @@ def field(kind, mx, my, seed=None, phi_band=None, band_x=BAND_X_TOE):
     raise ValueError(kind)
 
 
-def march(state, hcells, vols, label, v_quota=None):
+def march(state, hcells, vols, label, v_quota=None, keeper=None):
     """The baseline's march loop plus Q(t) recording and a volume quota."""
     phi = np.clip(np.asarray(state["porosity"].value, dtype=float), 1e-6, 1.0)
     hmask = np.zeros(vols.size, dtype=bool)
     hmask[hcells] = True
-    s0 = np.array(state["saturation"].value, copy=True)
     history = []
     t, v_in, best, stall, count, v_store = 0.0, 0.0, -1, 0, 0, 0.0
     reason = "max_steps"
-    print("  [%s] marching%s ..." % (label, "" if v_quota is None else " (quota %.2f)" % v_quota))
+    step0 = 0
+    # s0 and the Q(t) history are part of the run, not of the step: a resume
+    # that lost them would mis-measure V_store and hand a truncated curve to
+    # the injection-rate diagnostic.
+    s0 = np.array(state["saturation"].value, copy=True)
+
+    resumed = keeper.restore(state) if keeper is not None else {}
+    if resumed:
+        step0 = int(resumed["step"])
+        t = float(resumed["t"])
+        v_in = float(resumed["v_in"])
+        best = int(resumed["best"])
+        stall = int(resumed["stall"])
+        s0 = np.array(resumed["s0"], copy=True)
+        history = [(float(a), float(b)) for a, b in np.atleast_2d(resumed["history"])]
+        print("  [%s] resuming at step %d (t=%.1f s)" % (label, step0, t))
+    else:
+        print("  [%s] marching%s ..."
+              % (label, "" if v_quota is None else " (quota %.2f)" % v_quota))
     sys.stdout.flush()
-    for step in range(G.MAX_STEPS):
+    for step in range(step0, G.MAX_STEPS):
         dt = solve_transport_step(state, dt_cap=G.DT_CAP)
         t += float(dt)
         div_q = np.asarray(state["last_div_q"], dtype=float)
@@ -142,6 +166,12 @@ def march(state, hcells, vols, label, v_quota=None):
         if v_quota is not None and v_in >= v_quota:
             reason = "quota"
             break
+        if keeper is not None:
+            keeper.maybe_save(state, step=step + 1, t=t, v_in=v_in, best=best,
+                              stall=stall, s0=s0,
+                              history=np.asarray(history, dtype=float))
+    if keeper is not None:
+        keeper.finish()
     print("    -> %s at step %d, t=%.1f s, filled=%d, Vin=%.3f, Vstore=%.3f"
           % (reason, step, t, count, v_in, v_store))
     sys.stdout.flush()
@@ -149,10 +179,20 @@ def march(state, hcells, vols, label, v_quota=None):
             "reason": reason, "steps": step}
 
 
-def run(label, phi, v_quota=None, target_mask=None, plot=False):
+def run(label, phi, v_quota=None, target_mask=None, plot=False,
+        ckpt_every=CKPT_EVERY):
     state, mx, my, nx, ny, phi_used, hcells, k = build_from_phi(phi)
     vols = np.asarray(state["mesh"].cellVolumes, dtype=float)
-    m = march(state, hcells, vols, label, v_quota=v_quota)
+    keeper = None
+    if ckpt_every > 0:
+        if not os.path.isdir(_CKPT_DIR):
+            os.makedirs(_CKPT_DIR)
+        tag = re.sub(r"[^A-Za-z0-9._-]+", "_", "channel_" + label)
+        keeper = Checkpointer(
+            os.path.join(_CKPT_DIR, tag), every=ckpt_every,
+            fingerprint=state_fingerprint(
+                state, "channel|%s|quota=%s" % (label, v_quota)))
+    m = march(state, hcells, vols, label, v_quota=v_quota, keeper=keeper)
 
     reach = reachable_domain(state, hcells, p0=G.P0, use_gravity=True)
     cls = classify_unfilled(state, hcells, reach["reachable"], s_c=0.5,

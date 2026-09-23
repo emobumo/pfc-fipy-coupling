@@ -25,6 +25,7 @@ Figures are written to outputs/ (untracked artifacts).
 """
 from __future__ import print_function
 import os
+import re
 import sys
 import math
 
@@ -42,6 +43,7 @@ from src.models.slurry_transport.variables import (
     build_placeholder_slurry_parameters,
     initialize_slurry_variables,
 )
+from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
 from src.models.slurry_transport.equations import (
     solve_transport_step,
     conservation_report,
@@ -50,6 +52,7 @@ from src.models.slurry_transport.equations import (
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # Figures are build artifacts: keep them out of the tracked case directory.
 _OUT = os.path.join(os.path.dirname(_HERE), "outputs")
+_CKPT_DIR = os.path.join(_OUT, "checkpoints")
 if not os.path.isdir(_OUT):
     os.makedirs(_OUT)
 
@@ -91,6 +94,9 @@ A_CAL = _MAT["calibrated_permeability_coefficient"]
 DT_CAP = 5.0
 MAX_STEPS = 3000      # v0.6 reach is 2.3x the old set: more steps to stall
 STALL_PATIENCE = 60
+# This machine crashes at random under sustained load (CLAUDE.md), so a run is
+# checkpointed and resumes bit-identically; 0 disables it. See --help.
+CKPT_EVERY = 200
 
 
 # ===========================================================================
@@ -234,11 +240,10 @@ def front_metrics(state, mx, my, hcells):
     }
 
 
-def march(state, mx, my, hcells, vols, label):
+def march(state, mx, my, hcells, vols, label, keeper=None):
     phi = np.clip(np.asarray(state["porosity"].value, dtype=float), 1e-6, 1.0)
     hmask = np.zeros(mx.size, dtype=bool)
     hmask[hcells] = True
-    s0 = np.array(state["saturation"].value, copy=True)
 
     t = 0.0
     v_in_src = 0.0
@@ -246,9 +251,24 @@ def march(state, mx, my, hcells, vols, label):
     stall = 0
     count = 0
     v_store = 0.0
-    print("  [%s] marching ..." % label)
+    step0 = 0
+    # s0 is the stage's initial saturation and must survive a resume, or
+    # v_store would be measured from the middle of the run.
+    s0 = np.array(state["saturation"].value, copy=True)
+
+    resumed = keeper.restore(state) if keeper is not None else {}
+    if resumed:
+        step0 = int(resumed["step"])
+        t = float(resumed["t"])
+        v_in_src = float(resumed["v_in_src"])
+        best_count = int(resumed["best_count"])
+        stall = int(resumed["stall"])
+        s0 = np.array(resumed["s0"], copy=True)
+        print("  [%s] resuming at step %d (t=%.1f s)" % (label, step0, t))
+    else:
+        print("  [%s] marching ..." % label)
     sys.stdout.flush()
-    for step in range(MAX_STEPS):
+    for step in range(step0, MAX_STEPS):
         dt = solve_transport_step(state, dt_cap=DT_CAP)
         t += float(dt)
         div_q = np.asarray(state["last_div_q"], dtype=float)
@@ -269,16 +289,29 @@ def march(state, mx, my, hcells, vols, label):
             stall += 1
         if stall >= STALL_PATIENCE:
             break
+        if keeper is not None:
+            keeper.maybe_save(state, step=step + 1, t=t, v_in_src=v_in_src,
+                              best_count=best_count, stall=stall, s0=s0)
+    if keeper is not None:
+        keeper.finish()
     print("    -> stop at step %d, t=%.1f s, filled=%d, Vstore=%.3f, Vin=%.3f"
           % (step, t, count, v_store, v_in_src))
     sys.stdout.flush()
     return t, v_in_src, v_store
 
 
-def run_one(kind, label):
+def run_one(kind, label, ckpt_every=CKPT_EVERY):
     state, mx, my, nx, ny, phi, hcells, k = build_case(kind)
     vols = np.asarray(state["mesh"].cellVolumes, dtype=float)
-    t, v_in_src, v_store = march(state, mx, my, hcells, vols, label)
+    keeper = None
+    if ckpt_every > 0:
+        if not os.path.isdir(_CKPT_DIR):
+            os.makedirs(_CKPT_DIR)
+        tag = re.sub(r"[^A-Za-z0-9._-]+", "_", label)
+        keeper = Checkpointer(
+            os.path.join(_CKPT_DIR, tag), every=ckpt_every,
+            fingerprint=state_fingerprint(state, "gradient|%s|%s" % (kind, label)))
+    t, v_in_src, v_store = march(state, mx, my, hcells, vols, label, keeper=keeper)
     rep = conservation_report(state)
     fm = front_metrics(state, mx, my, hcells)
     s_grid = to_grid(np.asarray(state["saturation"].value, dtype=float), mx, my, nx, ny)
@@ -393,7 +426,38 @@ def report_one(res):
           % (res["v_in_src"], res["v_store"], drift_rel, res["v_clip"]))
 
 
-def main():
+USAGE = """inclined_hole_gradient.py [--only main|sweep|all] [--ckpt-every N]
+
+  --only main    A gradient + B uniform + the comparison figures (~1 h)
+  --only sweep   the phi_top 0.25 / 0.35 sweep points only (~1 h)
+  --only all     both (default)
+  --ckpt-every N checkpoint every N steps; 0 disables. Default %d.
+
+Runs are checkpointed and resume bit-identically after a crash, so an
+interrupted run costs one checkpoint interval and not the whole case; just
+launch the same command again. Checkpoints live in outputs/checkpoints/ and
+are deleted when a sub-run finishes cleanly.""" % CKPT_EVERY
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    which = "all"
+    ckpt_every = CKPT_EVERY
+    i = 0
+    while i < len(argv):
+        if argv[i] == "--only":
+            which = argv[i + 1]; i += 2
+        elif argv[i] == "--ckpt-every":
+            ckpt_every = int(argv[i + 1]); i += 2
+        elif argv[i] in ("-h", "--help"):
+            print(USAGE)
+            return
+        else:
+            i += 1
+    if which not in ("main", "sweep", "all"):
+        print(USAGE)
+        return
+
     print("=== gradient vs uniform inclined-hole grouting ===")
     print("local L_max=p0/lambda anchors (calibrated k A=%.3g, tau0=%.0f Pa):"
           % (A_CAL, TAU0))
@@ -409,16 +473,21 @@ def main():
     print("")
 
     sys.stdout.flush()
-    res_a = run_one("gradient", "A gradient 0.12->0.30")
-    res_b = run_one("uniform", "B uniform 0.18")
-    print("")
-    report_one(res_a)
-    report_one(res_b)
-    sys.stdout.flush()
 
-    make_comparison_figure(res_a, res_b)
-    make_front_overlay(res_a, res_b)
-    sys.stdout.flush()
+    if which in ("main", "all"):
+        res_a = run_one("gradient", "A gradient 0.12->0.30", ckpt_every=ckpt_every)
+        res_b = run_one("uniform", "B uniform 0.18", ckpt_every=ckpt_every)
+        print("")
+        report_one(res_a)
+        report_one(res_b)
+        sys.stdout.flush()
+
+        make_comparison_figure(res_a, res_b)
+        make_front_overlay(res_a, res_b)
+        sys.stdout.flush()
+
+    if which == "main":
+        return
 
     # optional gradient-strength sweep (guarded: a sweep failure must not lose
     # the main results above)
@@ -431,7 +500,8 @@ def main():
     try:
         for top in (0.25, 0.35):
             PHI_TOP = top
-            r = run_one("gradient", "sweep top=%.2f" % top)
+            r = run_one("gradient", "sweep top=%.2f" % top,
+                        ckpt_every=ckpt_every)
             fm = r["fm"]
             if fm:
                 ratio = fm["perp_up"] / max(fm["perp_down"], 1e-9)

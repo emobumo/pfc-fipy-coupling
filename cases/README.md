@@ -23,6 +23,21 @@ segfaulted on 09-23 with nothing else running. Treat any crash as a crash to
 retry, not as a result: the march is deterministic, so a completed rerun is the
 same run.
 
+Every case checkpoints itself (`src/analysis/run_checkpoint.py`), by default
+every 200 steps, into `outputs/checkpoints/`. **After a crash, re-run the same
+command**: the case finds its checkpoint, resumes bit-identically, and deletes
+it when the run finishes cleanly. A checkpoint whose fingerprint does not match
+the current geometry and parameters is ignored rather than resumed, so editing a
+case invalidates its checkpoints instead of silently continuing a run that never
+existed. `--ckpt-every 0` turns it off; `inclined_hole_gradient.py` also takes
+`--only main|sweep|all` to run its sub-cases as separate processes.
+
+Because silent corruption is possible and these cases are deterministic,
+**every number quoted here should be reproduced by a second independent run and
+compared bit-for-bit** before it goes into the thesis. Two identical runs make
+silent corruption implausible; a crash is the lucky case, because it announces
+itself.
+
 Run with the PFC-bundled Python, like everything else:
 
     powershell -File scripts\run_local.ps1 cases\inclined_hole_toe.py

@@ -65,7 +65,8 @@ PFC2D + FiPy 耦合：恒压注浆条件下 Bingham 浆体在固定废石堆中�
 | 7 | 段间凝固守恒：分段前进式，`n_{k+1} = max(n_k(1-S_k), floor)`，1D 30 单元、3 段；穿孔管全长出浆，源随孔延伸（非移动窗口），钻进增量 2.5 m 须大于 L_max≈2.1 m | 闭合规则逐单元 bit 精确；`Σ(n_k−n_{k+1})V + floor_clip == Σ n_k S_k V`（机器精度）；胶结体 λ/原生 λ >100（实测 428）；clip 永不生效；`occupied_cumulative + remaining_capacity == pore_capacity_initial`；段内 n 逐步 bit 不变；硬化体积 vs 流动实际送入相对差 <5%（实测 ≪）；剩余容量单调递减；已胶结管段输出量占比 <1e-6（实测 1e-34，完全屏蔽） | 通过 |
 
 状态取值：未开始 / 失败 / 通过。每完成或修改一个台阶，同步更新本表。
-验证阶梯：台阶 1/2/2b/3/4a/4b/7 全部通过，全套 68 测试零 skip（含 21 个充填诊断、7 个结构场测试）；工程算例见下节。
+验证阶梯：台阶 1/2/2b/3/4a/4b/7 全部通过，全套 80 测试零 skip（含 21 个充填诊断、7 个结构场、
+12 个检查点测试）；工程算例见下节。
 
 **胶结体本构（台阶 7 发现并已修复，2026-09-21）**：`permeability_clip_min` 原为 1.0e-10 m²。
 它在 φ<0.095 才生效，而所有原生废石场都在 0.12~0.45（真实堆最低 0.144），所以一直休眠；
@@ -85,6 +86,29 @@ PFC2D + FiPy 耦合：恒压注浆条件下 Bingham 浆体在固定废石堆中�
   退出活跃方程组而不是把它变刚。**该结论来自 30 单元一维夹具，二维多段算例需另行确认。**
 - 两个测试守这条线：`test_cemented_ground_resists_start_up_far_more_than_virgin`（方向）与
   `test_permeability_clip_never_binds_in_the_operating_range`（clip 必须始终低于律）。
+
+## 机器不稳定与检查点（2026-09-23）
+
+**这台机器在持续数值负载下会随机损坏内存**，证据见下节"线性求解器"段与
+`cases/README.md` 开头。CPU 微码为 **0x123**，早于 Intel 2024 年针对 Raptor Lake 的三次
+稳定性修复（0x125/0x129/0x12B），BIOS 为 2024-06 的 N0CN24WW。已临时把最高频率限到
+**4200 MHz**（`powercfg` 的 `PROCFREQMAX`/`PROCFREQMAX1`；百分比档位 `PROCTHROTTLEMAX`
+实测**完全无效**，设 90 与设 100 峰值都是 ~5.3 GHz）。代价实测 **慢 33%**（27 → 36 s）。
+
+由此定下两条工作规则：
+
+1. **长算例必须能续跑**。`src/analysis/run_checkpoint.py` 保存跨步携带的状态并逐位恢复；
+   五个工程算例全部接入，默认每 200 步存一次，崩溃后**重跑同一条命令**即可续上。
+   跨步携带的量是：`pressure`、`saturation`、**`mobility_face`（滞后的 Picard 迁移率）**、
+   **`last_div_q`（`compute_adaptive_dt` 读的上一步通量）**、`face_yield_latched`、
+   两个 `*_initial_for_ledger` 基线、三个体积台账、`flow_step_index`、`dt_last`。
+   分段算例另需 `STAGE_STATE_KEYS`（孔隙率、渗透率、四个迁移率别名、台账、
+   **`interior_dirichlet_mask`/`value`**）——**漏掉源掩码不会报错，只会让续跑从整根孔注浆，
+   得到一个能跑完但错误的结果**。存盘在两个槽位轮换 + 指针文件，写一半崩只丢一个间隔；
+   配置指纹不符（几何/参数/子算例变了）时拒绝续跑而不是静默续错。
+2. **静默损坏比崩溃更危险**。随机内存损坏不一定崩，可能只把某个浮点数改掉。算例是确定性的，
+   所以**凡是要写进论文的锚点数字，跑两遍逐位比对**；两次独立运行 bit 级一致即基本排除静默损坏。
+   崩溃是运气好的情况。
 
 ## 参数集 v0.6 与域放大（2026-09-22，`variables.grout_material_v06`）
 
