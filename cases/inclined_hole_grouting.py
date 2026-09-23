@@ -6,11 +6,11 @@ pile, on the validated FiPy IMPES fill-transport engine.
 
   - particles  : data/particles.csv  (x,y,radius; 36127 balls, vendored)
   - domain     : x in [-15,15], y in [0,30], 2.5 m cells (12x12 = 144 cells)
-  - permeability: calibrated_power k = A phi^3/(1-phi)^2, A=9.4e-8  (NOT KC)
+  - permeability: calibrated_power k = A phi^3/(1-phi)^2, A from v0.6  (NOT KC)
   - injection  : inclined hole, mouth (-15,1), dip 35 deg, length 17 m, the
                  cells the line passes through are pinned at p0=5 MPa (interior
                  Dirichlet penalty) and held saturated (S=1)
-  - slurry     : tau0=60 Pa, mu_p=0.1 Pa.s, rho=1820 kg/m^3, gravity ON
+  - slurry     : parameter set v0.6 (variables.grout_material_v06), gravity ON
   - run        : IMPES fill transport to front stall; outputs 3 PNGs + report
 
 Single-run 17 m case (the real process is staged 7/10/17 m; only the final
@@ -34,6 +34,7 @@ from fipy import CellVariable
 from src.fipy_adapter.mesh_init import build_mesh_for_domain
 from src.coupling.porosity_to_permeability import porosity_to_permeability
 from src.models.slurry_transport.variables import (
+    grout_material_v06,
     build_placeholder_slurry_parameters,
     initialize_slurry_variables,
 )
@@ -55,26 +56,31 @@ CSV_PATH = os.environ.get(
 )
 
 # --- domain / mesh ---------------------------------------------------------
-X_MIN, X_MAX = -15.0, 15.0
-Y_MIN, Y_MAX = 0.0, 30.0
+# Domain sized for the v0.6 parameter set: L_max ~18-20 m at phi 0.18-0.21
+# must fit in every direction from a 17 m hole, so 60 x 60 m at the 2.5 m
+# REV floor (576 cells; runs clean under the scipy backend). The hole enters
+# from the left wall (the drift is in host rock) at mid-height.
+X_MIN, X_MAX = -30.0, 30.0
+Y_MIN, Y_MAX = 0.0, 60.0
 CELL = 2.5
 PHI_CLIP = (0.05, 0.60)
 
 # --- inclined hole ---------------------------------------------------------
-MOUTH = (-15.0, 1.0)
+MOUTH = (-30.0, 21.0)
 DIP_DEG = 35.0
 HOLE_LEN = 17.0
 P0 = 5.0e6
 
-# --- slurry (PO 42.5, w/c=0.5) ---------------------------------------------
-TAU0 = 60.0
-MU_P = 0.1
-RHO = 1820.0
-A_CAL = 9.4e-8
+# --- slurry (PO 42.5, w/c=0.5): the v0.6 set, see grout_material_v06 -------
+_MAT = grout_material_v06()
+TAU0 = _MAT["yield_stress"]
+MU_P = _MAT["plastic_viscosity"]
+RHO = _MAT["slurry_density"]
+A_CAL = _MAT["calibrated_permeability_coefficient"]
 
 # --- march control ---------------------------------------------------------
 DT_CAP = 5.0
-MAX_STEPS = 1500
+MAX_STEPS = 3000      # v0.6 reach is 2.3x the old set: more steps to stall
 STALL_TOL_CELLS = 0      # stop when filled-cell count stops growing ...
 STALL_PATIENCE = 40      # ... for this many consecutive steps
 STALL_VSTORE_REL = 1.0e-4
@@ -175,7 +181,23 @@ def build_case():
 
     px, py, pr = load_particles(CSV_PATH)
     n_particles = int(np.asarray(px).size)
+    # The pack was exported on a 30 x 30 m block with the hole mouth at
+    # (-15, 1). Translate it with the mouth so hole and pack keep exactly the
+    # relationship the original 30 x 30 case had; the enlarged domain outside
+    # the block is padded with the pack's own mean porosity (it is a
+    # near-homogeneous pack, sigma 0.014, so the padding adds no structure).
+    px = px + (MOUTH[0] - (-15.0))
+    py = py + (MOUTH[1] - 1.0)
     phi, phi_grid = bin_porosity(px, py, pr, mx, my, nx, ny)
+    inside = ((mx >= px.min()) & (mx <= px.max()) &
+              (my >= py.min()) & (my <= py.max()))   # cell centres inside the block
+    pad = float(np.mean(phi[inside]))
+    phi = np.where(inside, phi, pad)
+    for n in range(mx.size):
+        if not inside[n]:
+            ix = int(round((mx[n] - X_MIN) / ((X_MAX - X_MIN) / nx) - 0.5))
+            iy = int(round((my[n] - Y_MIN) / ((Y_MAX - Y_MIN) / ny) - 0.5))
+            phi_grid[iy, ix] = pad
 
     params = build_placeholder_slurry_parameters()
     params.update({
@@ -413,7 +435,11 @@ def main():
               % (fm["perp_down"], fm["perp_up"]))
         print("  along-hole filled coordinate: [%.2f, %.2f] m (hole 0..%.1f)"
               % (fm["along_min"], fm["along_max"], HOLE_LEN))
-    print("  (reference uniform L_max at phi: 0.10->4.0 m, 0.25->12.0 m, 0.45->29.5 m)")
+    print("  (reference uniform L_max = p0/lambda at phi: %s)"
+          % ", ".join("%.2f->%.1f m"
+                      % (pp, P0 / (2.0 * TAU0 / math.sqrt(
+                          8.0 * (A_CAL * pp ** 3 / (1.0 - pp) ** 2) / pp)))
+                      for pp in (0.10, 0.25, 0.45)))
 
     make_figures(state, mx, my, nx, ny, phi, hcells, k)
 

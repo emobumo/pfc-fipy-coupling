@@ -289,3 +289,33 @@ def initialize_slurry_variables(mesh, params=None):
         "last_div_q": None,
     }
     return state
+
+
+def grout_material_v06():
+    """
+    The v0.6 constitutive set for PO 42.5 cement grout at w/c = 0.5, anchored
+    independently of any spread-radius observation (2026-09-21):
+
+        yield_stress      30 Pa       true (low-shear) yield stress, upper edge
+                                      of the 15-60 Pa literature band
+        plastic_viscosity 0.15 Pa.s   cement-grout literature range
+        slurry_density    1830 kg/m^3 w/c = 0.5 at cement SG 3.15; the
+                                      reference project's own "1.22 t cement
+                                      per m^3" gives the same figure
+        calibrated_permeability_coefficient
+                          1.25e-7 m^2 d50^2/180 at d50 = 0.15 m, reduced three
+                                      orders for throat control by fines --
+                                      NOT back-fitted from a spread radius
+
+    Closed forms under this set: sqrt(8A) = 1.000e-3 m, lambda(n) =
+    6.00e4 (1-n)/n Pa/m, L_max = 83.33 n/(1-n) m at p0 = 5 MPa. The earlier
+    case set (60 / 0.1 / 1820 / 9.4e-8, with A back-fitted from a 12 m design
+    radius) gives lambda 2.31x larger; it is the tau0 = 60 corner of the
+    sensitivity band, not a different physics.
+    """
+    return {
+        "yield_stress": 30.0,
+        "plastic_viscosity": 0.15,
+        "slurry_density": 1830.0,
+        "calibrated_permeability_coefficient": 1.25e-7,
+    }

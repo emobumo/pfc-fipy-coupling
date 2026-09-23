@@ -7,10 +7,17 @@ logs they generate go to `outputs/`, which stays untracked.
 
 The numbers quoted below are **regression anchors**: the cases are deterministic
 and a rerun reproduces them bit-for-bit (identical figures, byte for byte). If a
-number here moves, the engine changed. Anchors are for the **scipy PCG** linear
-solver, the default `run_local.ps1` sets since 2026-09-22 (FiPy's own default,
-PySparse PCG, crashed 3 of 5 long 576-cell runs); the line-source and real-pack
-results are identical under both, the toe control is not — see its section.
+number here moves, the engine changed. Anchors are for the **v0.6 parameter set**
+on the 60x60 m domain (`variables.grout_material_v06`), under the **scipy PCG**
+linear solver that `run_local.ps1` has set as default since 2026-09-22. Anchors
+for the previous parameter set survive only where a heading says so.
+
+**Long 576-cell runs can die of a segmentation fault under either backend.** That
+was the reason for leaving PySparse (3 of 5 runs), but the real-pack case also
+segfaulted once under scipy, at step ~1225, while two other cases were running
+concurrently; re-run alone it reproduced the earlier steps bit-for-bit and ran to
+a clean stall at step 2298. Treat it as a crash to retry, not as a result: the
+march is deterministic, so a completed rerun is the same run.
 
 Run with the PFC-bundled Python, like everything else:
 
@@ -27,53 +34,83 @@ claim only holds *because* the second exists as a control — keep all three.
 | `inclined_hole_gradient.py` | whole 17 m line | analytic gradient | the gradient flips the gravity bias |
 | `inclined_hole_toe.py` | toe segment only | analytic gradient | the flip is physics, not source geometry |
 
-Shared setup: domain x[-15,15] y[0,30], 2.5 m cells (the REV floor for this pack).
-Hole mouth (-15, 1) on the left boundary near the bottom, dip 35 deg, length 17 m,
-toe (-1.07, 10.75). The Phi90 mm bore is far below mesh resolution and is
+Shared setup: domain x[-30,30] y[0,60], 2.5 m cells (the REV floor for this pack).
+Hole mouth (-30, 21) on the left boundary, dip 35 deg, length 17 m, toe
+(-16.07, 30.75). The Phi90 mm bore is far below mesh resolution and is
 represented as constant-pressure cells — acceptable because L_max = p0/lambda
-barely depends on r0. Slurry (PO 42.5, w/c=0.5): tau0=60 Pa, mu_p=0.1 Pa.s,
-rho=1820 kg/m^3, p0=5 MPa constant, gravity on. Permeability uses the
-`calibrated_power` law k = 9.4e-8 * phi^3/(1-phi)^2, **not** Kozeny-Carman: KC
-overestimates the flow-controlling permeability of decimetre waste rock by ~3
-orders, which makes the yield stall dynamically inactive. Saturation transport is
-enabled case-locally; the engineering-case defaults in `src/` are untouched.
+barely depends on r0. Slurry parameters are the **v0.6 set**
+(`variables.grout_material_v06`): tau0=30 Pa, mu_p=0.15 Pa.s, rho=1830 kg/m^3,
+p0=5 MPa constant, gravity on. Permeability uses the `calibrated_power` law
+k = 1.25e-7 * phi^3/(1-phi)^2, **not** Kozeny-Carman: KC overestimates the
+flow-controlling permeability of decimetre waste rock by ~3 orders, which makes
+the yield stall dynamically inactive. Saturation transport is enabled
+case-locally; the engineering-case defaults in `src/` are untouched.
 
-Local anchors under this law (tau0=60): phi=0.12 -> lambda=1.02e6 Pa/m,
-L_max=4.93 m; phi=0.18 -> 6.30e5, 7.93 m; phi=0.30 -> 3.23e5, 15.49 m. So a
-0.12->0.30 porosity span is a 24.7x span in k and a 3.14x span in local L_max.
+Local anchors under this law (v0.6): phi=0.12 -> lambda=4.40e5 Pa/m,
+L_max=11.36 m; phi=0.18 -> 2.73e5, 18.29 m; phi=0.30 -> 1.40e5, 35.71 m. So a
+0.12->0.30 porosity span is a 24.7x span in k and a 3.14x span in local L_max —
+both ratios are parameter-set invariants, only the absolute scale moved.
+
+**The domain was enlarged with the parameter set** (30x30 -> 60x60 m): v0.6
+roughly doubles every L_max, and the old box could not hold the plume. The mouth
+now sits ON the left boundary, which changes what that boundary means: it is the
+exposed face the hole is collared on, not a far-field wall. A real face would
+bleed; a no-flow face traps grout that reaches it, so every quota-consumption
+time quoted below is **conservative** (see "Known limits" of each case).
 
 ## inclined_hole_grouting.py — baseline on the real pack
 
 Reads `data/particles.csv` (36127 balls, vendored into the repo so the case is
 self-contained; the original export lives at
 `D:/PFC item/pfc_fipy_model1/particles.csv`, and `PARTICLES_CSV` overrides the
-path). Bins it to areal porosity: mean 0.184, std 0.014 —
-a near-homogeneous random pack with no zoning, so no heterogeneity signature is
-expected or seen. The whole 17 m line is a 5 MPa source.
+path). Bins it to areal porosity: **mean 0.1839, std 0.0136, range
+0.1438–0.2118** over the 144 cells the pack covers — a near-homogeneous random
+pack with no zoning, so no heterogeneity signature is expected or seen. The whole
+17 m line is a 5 MPa source.
 
-**Result: spread 8.50 / 8.91 m against an analytic L_max = p0/lambda ~ 8.2 m at the
-actual phi ~ 0.18.** That agreement is the point of this case: it shows the chain
-calibrated k -> per-cell lambda -> FiPy solve -> stall is self-consistent. Note it
-lands at 8 m, not the 12 m of the calibration anchor (phi=0.25) — the real pack is
-denser, so lambda is larger and the spread shorter. Getting 12 m here would have
-meant something was wrong.
+**The pack does not fill the enlarged domain.** It was exported on a 30x30 m
+block, which is 144 of the 576 cells; the block is translated with the mouth so
+hole and pack keep exactly the relationship the original case had, and the
+remaining 432 cells are padded with the pack's own mean (0.1839). Padding adds no
+structure, but it is not measured ground: of the 140 reachable cells, **100 (71%)
+lie in the real pack and 40 (29%) in the padding**. Under v0.6 the plume outgrows
+the block that was measured — read this case as "the chain is self-consistent on
+real binned porosity", not as a prediction for 30 m of surveyed pile.
+
+**Result: spread 19.36 / 17.92 m against an analytic L_max = p0/lambda = 18.79 m
+at the actual phi = 0.184.** That agreement is the point of this case: it shows
+the chain calibrated k -> per-cell lambda -> FiPy solve -> stall is
+self-consistent. Stall at step 2298 (t=8119 s), 167 filled cells, conservation
+drift 1.1e-3 relative. Unlike the previous parameter set, A is anchored
+geometrically (d50^2/180) and never saw the case mine's 12 m design radius, so
+this agreement is a check on the chain rather than on a fitted constant.
 
 ## inclined_hole_gradient.py — the gradient flips the gravity bias
 
 Replaces the binned porosity with an analytic dense-bottom / loose-top gradient
-phi(y) = phi_bottom + (phi_top - phi_bottom) * y/30, against a uniform phi=0.18
+phi(y) = phi_bottom + (phi_top - phi_bottom) * y/H, against a uniform phi=0.18
 control. Source is still the whole line.
 
 | | gradient 0.12->0.30 | uniform 0.18 |
 |---|---|---|
-| spread up (loose) / down (dense) | 8.91 m / 7.07 m | 7.68 m / 8.50 m |
-| **up/down** | **1.26** | **0.90** |
-| conservation drift (rel) | 9.5e-4 | 1.3e-3 |
+| spread up (loose) / down (dense) | 22.63 m / 19.56 m | 16.48 m / 18.13 m |
+| **up/down (filled)** | **1.16** | **0.91** |
+| **up/down (analytic reach)** | **1.26** | **0.87** |
+| filled cells / stall step | 199 / 2177 (t=6550 s) | 145 / 1481 (t=4320 s) |
+| conservation drift (rel) | 9.1e-4 | 1.2e-3 |
 
-The uniform pack sags downward (0.90 — gravity wins). Adding the gradient turns it
-into a 1.26 upward bias: **the slurry would rather climb against gravity into the
+The uniform pack sags downward (0.91 — gravity wins). Adding the gradient turns it
+into a 1.16 upward bias: **the slurry would rather climb against gravity into the
 loose, low-lambda region.** Gradient-strength sweep (phi_bottom=0.12 fixed):
-phi_top 0.25/0.30/0.35 -> up/down 1.22/1.26/1.35, monotone.
+phi_top 0.25/0.30/0.35 -> up/down 1.11/1.16/1.24, monotone.
+
+**Quote the analytic reach ratio, not the filled one.** The reachable domain is a
+pure path integral (`fill_diagnostics.reachable_domain`, no solver, no time
+stepping) and it gives 1.26 here against 1.28 under the previous parameter set —
+i.e. the asymmetry is a property of the porosity field and is nearly invariant to
+the grout parameters. The filled ratio comes out lower (1.16) because yield-edge
+creep expands the front isotropically and dilutes the asymmetry; it is the
+solver's number, not the physics'.
 
 Asymmetry (1.26) is far milder than the local-L_max ratio (3.14) because spread is
 a **path integral** of yield resistance along the way, not the endpoint local
@@ -90,48 +127,56 @@ project used Phi108x1500 mm in a 2.0 m mouth), not twelve metres of hole.
 
 An earlier version of this file claimed the toe bleed was "the physically correct
 process". It is not, and the case does not need that claim. Its job is to be a
-CONTROL: the 1.26 upward asymmetry of the line source could in principle be an
+CONTROL: the upward asymmetry of the line source could in principle be an
 artifact of injecting along a dipping line. Restricting the source to a compact
 toe patch is about as different a source geometry as this geometry allows, and it
 still comes out above 1 against a uniform control below 1. The less this case
 resembles the field, the better it does that job — so keep it, and read it as a
 control rather than as a process model.
 
-Anchors below are for the scipy backend with its PCG solver, the default since 2026-09-22
-(`FIPY_SOLVERS=scipy` in `run_local.ps1`, `linear_solver="pcg"`; scipy LU gives
-the same numbers). Under the previous PySparse PCG
-default the 5 m gradient run stalled earlier (step 220, t=406 s, 26 cells,
-6.86 / 5.63 m, up/down 1.22); the 3 m and 8 m sweep points and the uniform
-control were identical under both. See "Solver sensitivity" below.
+Anchors below are for the v0.6 parameter set on the 60x60 m domain, scipy backend
+with its PCG solver (`FIPY_SOLVERS=scipy` in `run_local.ps1`,
+`linear_solver="pcg"`). The solver-sensitivity note at the end of this file
+records what the previous parameter set did under PySparse, and why that made the
+5 m point unreliable; under v0.6 the sweep is smooth and the issue does not recur.
 
 | | gradient phi 0.12->0.30 | uniform phi=0.18 |
 |---|---|---|
-| spread up (loose) / down (dense) | 7.47 m / 7.07 m | 6.86 m / 7.07 m |
-| **up/down** | **1.06** | **0.97** |
-| filled cells / stall step | 35 / 364 (t=1006 s) | 31 / 278 (t=637 s) |
-| max radius from toe | 11.13 m | 11.13 m |
-| conservation drift (rel) | 8.1e-4 | 1.1e-3 |
+| spread up (loose) / down (dense) | 19.97 m / 17.51 m | 15.87 m / 16.08 m |
+| **up/down** | **1.14** | **0.99** |
+| filled cells / stall step | 159 / 1367 (t=3284 s) | 125 / 1235 (t=3516 s) |
+| max radius from toe | 21.21 m | 19.81 m |
+| conservation drift (rel) | 8.3e-4 | 1.1e-3 |
 
 The spread collapses from a strip hugging the whole hole into a compact ellipse
-around the toe, well clear of the left and bottom boundaries. **The key result:
-the gradient turns a 0.97 downward bias into an upward one with a completely
-different source geometry, which rules out source geometry as the cause and
-leaves the porosity gradient as the physics.** Its magnitude here (1.06–1.22
-depending on solver, see below) is smaller than the line source's 1.26; the
-solver-free number is the analytic reach ratio, 1.28.
+around the toe. **The key result: the gradient turns a 0.99 downward bias into an
+upward one with a completely different source geometry, which rules out source
+geometry as the cause and leaves the porosity gradient as the physics.** The
+uniform control landing on 0.99 rather than the line source's 0.91 is itself
+informative: a compact source has no dipping line to bias it, so gravity and the
+uniform yield threshold very nearly cancel. Magnitude here (1.14) is milder than
+the line source's analytic 1.26, as expected for a source that samples less of
+the gradient.
 
-Bleed-length sweep (gradient field): 3/5/8 m gives toe radius 8.90/11.13/13.45 m
-and up/down 1.06/1.06/1.17 — the bleed length sets the ellipse SIZE, the porosity
-gradient sets its ASYMMETRY. The two are decoupled.
+Bleed-length sweep (gradient field): 3/5/8 m gives toe radius 20.02/21.21/23.30 m
+and up/down 1.14/1.14/1.16 — the bleed length sets the ellipse SIZE, the porosity
+gradient sets its ASYMMETRY. The two are decoupled, and under v0.6 the sweep is
+monotone with no outlier.
 
 ### Known limits
 
-At 2.5 m cells an 8-10 m spread spans only 3-4 cells, so up/down ratios carry
+At 2.5 m cells a 17-22 m spread spans 7-9 cells, so up/down ratios still carry
 quantization noise: **treat these ratios as +-0.1, not precise numbers**, and
 note that refining the mesh does NOT help under the current solver (creep grows
 with step count; see CLAUDE.md "分辨率与求解器实测"). The gradient field is
 analytic, not a real PFC structure — it demonstrates the mechanism, it does not
 reproduce a measured pile.
+
+Under v0.6 the toe plume reaches the collar face (fill bbox starts at the leftmost
+cell column, x=-28.8). That face is a no-flow boundary, so it confines the plume
+instead of bleeding it. This is a property of the geometry — the hole is collared
+on the face — not of the box size, and it cannot be removed by enlarging the
+domain to the left, which would mean inventing rock behind the face.
 
 ## inclined_hole_channel.py — runaway and bypass voids from through-going structure
 
@@ -147,8 +192,8 @@ model fills every reachable cell, so a sealed domain cannot show a void that
 way. In the field the injection ends when the hole stops taking grout OR the
 budgeted volume is spent — and runaway is the second ending arriving first.
 Every structured run therefore gets the volume the uniform baseline needed to
-stall (46.17 m³/m) and stops at min(stall, quota). The design target is the
-baseline's own stalled footprint (50 cells).
+stall (166.15 m³/m) and stops at min(stall, quota). The design target is the
+baseline's own stalled footprint (155 cells).
 
     powershell -File scripts\run_local.ps1 cases\inclined_hole_channel.py --set band|position|random|all --plot
 
@@ -156,20 +201,33 @@ Band at φ=0.45, one cell wide, full height, swept over POSITION:
 
 | band position | stop | t [s] | Q tail/peak | r_obs / r_equiv | target filled | reachable-unfilled |
 |---|---|---|---|---|---|---|
-| none (baseline) | stall | 1540 | 0.009 | 1.34 | — | 1 |
-| past the toe (x=+3.75) | quota | 555 | 0.064 | 1.26 | 90% | 11 |
-| crossing the hole mid-length (x=−8.75) | quota | **96** | 0.074 | 2.50 | 70% | 27 |
-| **at the collar (x=−13.75)** | quota | **119** | **0.101** | **2.92** | **70%** | 21 |
+| none (baseline) | stall | 4319 | 0.017 | 1.10 | — | 4 |
+| past the toe (x=−11.25) | quota | 1736 | 0.084 | 1.91 | 75% | 110 |
+| crossing the hole mid-length (x=−23.75) | quota | **434** | 0.059 | 1.94 | 69% | 90 |
+| **at the collar (x=−28.75)** | quota | **554** | 0.045 | **2.24** | **67%** | 69 |
 
-Position matters far more than band porosity (the φ sweep at the toe,
-0.30/0.45/0.60, gives 649/555/582 s and 94/90/92% — nearly flat). A band the
-hole ENTERS THROUGH — which is what a backfill/rock contact is — drains the
-quota 13× faster than the baseline, with the injection rate still an order of
-magnitude above the stall line, spread ~3× what the volume could fill
-uniformly, and the hole's intended zone 30% short. That is the reference
-project's runaway mechanism ("充填体与原岩的交界面…贯通空隙") reproduced from
-structure alone, with no open boundary: the grout has nowhere to escape and it
-still starves the target.
+A band the hole ENTERS THROUGH — which is what a backfill/rock contact is —
+drains the quota 8–10× faster than the baseline, spreads the grout to 2.2× what
+that volume could fill uniformly, and leaves the hole's intended zone a third
+short. That is the reference project's runaway mechanism ("充填体与原岩的交界面…
+贯通空隙") reproduced from structure alone, with no open boundary: the grout has
+nowhere to escape and it still starves the target.
+
+Position still dominates: at fixed φ=0.45 it spans 434–1736 s (4×), while at
+fixed position the φ sweep spans 1521–2469 s (1.6×). But **the "band porosity
+barely matters" reading of the previous parameter set does not survive v0.6.**
+That sweep (φ 0.30/0.45/0.60 past the toe) was 649/555/582 s and 94/90/92%
+filled — flat and non-monotone. Under v0.6 it is 2469/1736/1521 s and
+90/75/66% — monotone in both. Report it as "position matters several times more
+than porosity", not as "porosity does not matter".
+
+**The Q(t) criterion discriminates less well under v0.6.** The collar band's tail
+ratio is 0.045, below the 0.05 stall line, even though it burned the quota in an
+eighth of the baseline's time. With a lower yield stress the rate decays further
+within the quota, so timing and spread ratio carry the runaway signal and Q(t)
+alone would miss this case. In the field Q(t) is read against a pumping record,
+not a stall threshold, so this is a limit of the automated flag, not of the
+diagnostic.
 
 No bypass voids in any band run: an unfilled reachable region stays connected
 to open ground in these fields. Enclosed voids need structure that wraps —
@@ -180,19 +238,25 @@ horizontal streaks), one per seed, same quota and target:
 
 | seed | stop | t [s] | V_in | Q tail/peak | target filled | of which UNREACHABLE | reachable-unfilled |
 |---|---|---|---|---|---|---|---|
-| 1 | quota | 445 | 46.2 | **0.137** | 78% | 20% | 7 |
-| 2 | **stall** | 1628 | **39.4** | 0.015 | 80% | 20% | 0 |
-| 3 | quota | 411 | 46.2 | 0.043 | 86% | 12% | 6 |
+| 1 | quota | 1457 | 166.2 | 0.014 | 77% | **19%** | 10 |
+| 2 | **stall** | 1427 | **121.8** | 0.080 | 62% | 6% | **80** |
+| 3 | quota | 1962 | 166.3 | 0.009 | 79% | **14%** | 28 |
 
-Still no bypass voids — but the realisations separate the two ways a target
-can go unfilled. Seed 1 hits a loose streak and drains the quota with the
-rate still high (runaway signature), yet most of its 22% target shortfall is
-ground the path integral says is unreachable at 5 MPa. Seed 2 is the mirror
-image: tight ground, the hole stalls at 39 m³ before the quota is spent, and
-the whole 20% shortfall is unreachable — a **design shortfall** (pressure or
-spacing insufficient for this ground), with zero fill defect. The same
-"80% filled" reads as runaway in one field and as under-pressure in the other,
-and only the reachable domain tells them apart.
+Still no bypass voids — and the realisations still separate the two ways a
+target can go unfilled, though v0.6 assigns the roles differently. Seeds 1 and 3
+spend the whole quota and finish with almost nothing reachable left unfilled
+(10 and 28 cells): their 21–23% target shortfall is overwhelmingly ground the
+path integral says is **unreachable** at 5 MPa — a **design shortfall**
+(pressure or spacing insufficient), not a fill defect. Only the reachable domain
+separates that from a fill defect, which is the point of the case.
+
+**Seed 2 is stop-rule sensitive and should not be quoted as a result yet.** It
+reports "stall" with 80 reachable cells unfilled and a tail ratio of 0.080 —
+above the stall line — which is self-contradictory: a genuinely stalled Bingham
+run fills every reachable cell. The stall detector is "60 consecutive steps with
+no newly filled cell" (`STALL_PATIENCE`), and under v0.6 the front can take
+longer than that to cross a cell while still advancing. Pending a re-run with a
+larger patience, read seed 2 as a detector artifact, not as tight ground.
 
 **Bypass voids did not appear in any single-stage run** — nine structured
 fields, none. At this resolution and structure strength a single injection
@@ -209,7 +273,7 @@ The hole is drilled in passes; at stage k the perforated pipe bleeds along the
 whole hole so far, [0, DEPTH_k]; when the stage stops the grout sets
 (`stage_update.apply_stage_closure`) and the next pass drills deeper. Single
 and staged runs inject the SAME total budget (the uniform baseline's stalled
-46.14 m³/m), unused quota carried forward. Cumulative fill (what set,
+166.15 m³/m), unused quota carried forward. Cumulative fill (what set,
 `(n₀−n_final)/n₀`) is classified against the reachable domain of the VIRGIN
 field from the FULL hole — what one pass could have reached.
 
@@ -217,66 +281,70 @@ field from the FULL hole — what one pass could have reached.
 
 | field / sequence | V used | t [s] | cells | of virgin reach | permanent residual |
 |---|---|---|---|---|---|
-| uniform / single | 46.15 | 1535 | 40 | **98%** | 1 |
-| uniform / 7 → 10 → 17 m | **41.66** (stalled, 4.5 unspent) | 1684 | 33 | **86%** | 7 |
-| uniform / 8.5 → 17 m | 41.66 | 1379 | 33 | 86% | 7 |
-| collar band / single | 46.68 | 119 | 30 | 66% | 21 |
-| collar band / 7 → 10 → 17 m | 46.44 | 254 | 23 | **54%** | 28 |
-| random seed 1 / single | 46.15 | 444 | 34 | 86% | 7 |
-| random seed 1 / 7 → 10 → 17 m | 46.27 | 1431 | 34 | 86% | 7 |
+| uniform / single | 166.15 | 4319 | 145 | **97%** | 4 |
+| uniform / 7 → 10 → 17 m | **106.15** (stalled, 60 unspent) | 4046 | 87 | **68%** | 46 |
+| uniform / 8.5 → 17 m | 106.15 | 3741 | 87 | 68% | 46 |
+| collar band / single | 166.36 | 981 | 116 | 50% | 128 |
+| collar band / 7 → 10 → 17 m | 130.36 | 4363 | 85 | **37%** | 159 |
+| random seed 1 / single | 166.24 | 1457 | 131 | 93% | 10 |
+| random seed 1 / 7 → 10 → 17 m | 166.19 | 2137 | 121 | 87% | 20 |
 
 Per stage, the reference sequence 7 → 10 → 17 m on uniform ground:
 
 | pass | source cells | of which buried in earlier cement | stop | V | newly filled |
 |---|---|---|---|---|---|
-| 1, to 7 m | 5 | 0 | stall 683 s | 21.26 | 18 |
-| **2, to 10 m** | 6 | **6** | stall 304 s | **0.00** | **0** |
-| 3, to 17 m | 10 | 8 | stall 691 s | 20.37 | 18 |
+| 1, to 7 m | 5 | 0 | stall 3440 s | 106.15 | 92 |
+| **2, to 10 m** | 6 | **6** | stall 301 s | **0.00** | **0** |
+| **3, to 17 m** | 10 | **10** | stall 305 s | **0.00** | **0** |
 
-**A drilling increment shorter than L_max is a wasted pass — measured in 2D on
-all three fields.** The 3 m advance to 10 m puts every new source cell inside
-the first pass's cemented zone (6 of 6 buried): the pass injects 0.00 m³,
-Q collapses to 1e-11, and the crew pumps for 300 s into nothing. The reference
-project's 7 → 10 → 17.5 m has exactly this increment. Removing that pass
-(8.5 → 17 m) changes nothing — the two sequences are identical on this grid,
-because 7.0 and 8.5 m select the same five 2.5 m source cells and the 10 m
-pass delivered nothing anyway.
+**Under v0.6 the whole sequence after the first pass is dead — on all three
+fields.** L_max at phi=0.18 is 18.3 m, longer than the 17 m hole, so the first
+pass to 7 m cements the ground along every metre the hole will ever occupy:
+stage 2 finds 6 of 6 source cells buried, stage 3 finds 10 of 10, and both
+inject 0.00 m³ while the crew pumps for 300 s into nothing. The previous
+parameter set (L_max 7.9 m) buried only the 3 m increment and let the 8.5 m
+advance still deliver; the same case now says a 17 m hole should not be staged
+at all with this grout. The reference project's 7 → 10 → 17.5 m sequence has
+exactly the increment that cannot work.
 
-**Staging costs reach on uniform ground.** Two short sources each fill a
-smaller stadium than the full hole does, and by the time the last pass runs,
-the first pass's cement stands between its two fresh cells and the outer rim.
-Same hole, same grout: 86% of the reachable zone instead of 98%, and the
-sequence stalls with 4.5 m³ of the budget it cannot place. The seven lost rim
-cells are a **permanent residual** — after a full-depth sequence the hole is
-cemented all round, so no further pass from it can reach them (the `shadow`
-column, reachable in the virgin field and unreachable from the last pass in
-the cemented field, equals the shortfall for every full-depth run).
+**Staging costs reach on uniform ground, and v0.6 makes the cost much larger.**
+68% of the reachable zone instead of 97%, with 60 m³/m of the budget it cannot
+place (the previous set lost 12 points; this loses 30). The 46 lost rim cells
+are a **permanent residual** — after a full-depth sequence the hole is cemented
+all round, so no further pass from it can reach them (the `shadow` column,
+reachable in the virgin field and unreachable from the last pass in the cemented
+field, equals the shortfall for every full-depth run).
 
 **Staging cannot fix a collar runaway.** The interface band sits at the mouth,
-so it is in every pass's source: the first pass drains the whole quota in
-254 s and the later passes get 0.00 and 0.07 m³. Staged fills 54% of the
-reachable zone against 66% for the single pass. The remedy for a
-through-going contact is to seal it (the reference project's double-fluid
-collar/bottom sealing), not to stage the injection.
+so it is in every pass's source: the first pass stalls at 130 m³ and the later
+passes get 0.00 m³. Staged fills 37% of the reachable zone against 50% for the
+single pass. The remedy for a through-going contact is to seal it (the reference
+project's double-fluid collar/bottom sealing), not to stage the injection.
 
-**On the random field staging is neutral** (86% either way): the first pass
-stalls early in tight ground at 6.2 m³, the third hits the loose streak and
-drains 40 m³ — the same volume ends up in the same streak, later.
+**On the random field staging costs a little** (87% against 93%): the first pass
+spends the whole quota before the deeper passes exist, so the sequence is
+effectively a single shorter-hole pass.
 
 **No enclosed bypass voids in any run, single or staged.** The sequence's
 residual is a rim shadow, connected to open ground, not a sealed-in pocket.
-At 2.5 m cells a fill footprint spans 3–4 cells and stays convex; an
-enclosed void would need finer resolution or structure that wraps.
+Eighteen structured runs across the two cases under v0.6, on top of the
+eighteen under the previous parameter set, and not one enclosed void. At 2.5 m
+cells a fill footprint spans 7–9 cells and stays convex; an enclosed void would
+need finer resolution or structure that wraps. Write this as "did not appear",
+never as "cannot occur".
 
-### Solver sensitivity of the toe control (2026-09-22)
+### Solver sensitivity of the toe control — previous parameter set (2026-09-22)
 
-The toe case's gradient result is **linear-solver dependent**: 1.22 under FiPy's
+Kept as a record of how the yield edge can make a result solver-dependent. All
+numbers here are for the **previous** parameter set (tau0=60, 30x30 m domain),
+not for the tables above.
+
+The toe case's gradient result was **linear-solver dependent**: 1.22 under FiPy's
 default PySparse PCG, **1.06** under `FIPY_SOLVERS=scipy` (its PCG at tolerance
-1e-15, or its LU — identical), which stalls
-later (364 vs 220 steps) and creeps further on both sides. The uniform control
-is bit-identical either way (0.97). The **line-source** gradient and uniform
-results — the engineering baseline and the 1.26 headline — are identical under
-both solvers (623 / 2100 s / 44 cells / 9 overshoot; 492–493 / 1535–1540 s).
-Read the toe control as "direction confirmed (>1 against 0.97), magnitude
-between 1.06 and 1.22"; the analytic reach ratio, 1.28, is the solver-free
-number. See CLAUDE.md "分辨率与求解器实测".
+1e-15, or its LU — identical), which stalled later (364 vs 220 steps) and crept
+further on both sides. The uniform control was bit-identical either way (0.97).
+The **line-source** gradient and uniform results — the engineering baseline and
+the 1.26 headline — were identical under both solvers (623 / 2100 s / 44 cells /
+9 overshoot; 492–493 / 1535–1540 s). The lesson generalises past the parameter
+change: where a result sits on the yield edge, quote the analytic reach ratio,
+which no solver touches. See CLAUDE.md "分辨率与求解器实测".

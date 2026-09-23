@@ -33,7 +33,8 @@ Two things the ladder's step 7 predicts and this case can test:
   - a drilling increment shorter than the local L_max leaves the new hole
     section inside the previous pass's cemented zone, so the pass delivers
     little (the reference project's 7 -> 10 -> 17.5 m has increments of 3
-    and 7.5 m against a ~8 m stall length);
+    and 7.5 m against a stall length of ~8 m under the old parameter set and
+    ~18-20 m under v0.6);
   - the cemented pipe length self-blocks, so no packer is needed.
 
     powershell -File scripts\run_local.ps1 cases\inclined_hole_staged.py [--field base|collar|random] [--plot]
@@ -65,9 +66,11 @@ G = C.G
 # Drilling passes, along-hole depth [m]. The reference project's proportions
 # (7 / 10 / 17.5 on a 17.5 m hole) mapped onto this 17 m hole.
 DEPTHS_REFERENCE = (7.0, 10.0, 17.0)
-# A two-pass alternative whose one increment (8.5 m) exceeds the ~8 m stall
-# length of the uniform ground, so the second pass starts in fresh ground.
-DEPTHS_SPACED = (8.5, 17.0)
+# A two-pass alternative. Under the old parameter set its 8.5 m increment
+# exceeded the ~8 m stall length; under v0.6 (L_max ~18-20 m) NO increment
+# on a 17 m hole can, which is itself the point to measure.
+
+DEPTHS_SPACED = (8.5, 17.0)   # NOTE: at 2.5 m cells 7.0 and 8.5 m select the same source cells
 SEQUENCES = (("staged_7_10_17", DEPTHS_REFERENCE), ("staged_8.5_17", DEPTHS_SPACED))
 
 OUT_ROOT = os.path.join(REPO, "outputs", "inclined_hole_staged")
@@ -121,7 +124,7 @@ def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot):
     n0 = np.array(state["porosity"].value, copy=True)
     initialize_stage_ledger(state)
 
-    remaining = float(budget)
+    remaining = float(budget) if budget is not None else None
     stages = []
     history_all = []
     t_offset = 0.0
@@ -144,11 +147,13 @@ def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot):
 
         stage_label = "%s / stage %d (to %.1f m, %d src cells, %d buried)" % (
             label, k + 1, depth, src.size, buried)
-        m = C.march(state, src, vols, stage_label, v_quota=remaining if remaining > 0 else 1e-12)
+        quota = None if remaining is None else (remaining if remaining > 0 else 1e-12)
+        m = C.march(state, src, vols, stage_label, v_quota=quota)
         for (t, q) in m["history"]:
             history_all.append((t_offset + t, q, k))
         t_offset += m["t"]
-        remaining -= m["v_in"]
+        if remaining is not None:
+            remaining -= m["v_in"]
 
         s_end = np.asarray(state["saturation"].value, dtype=float)
         newly = (s_end >= 0.5) & (filled_by_stage < 0) & np.logical_not(src_mask)
@@ -187,7 +192,8 @@ def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot):
 
     cat = cls["category"]
     row = {
-        "label": label, "stages": stages, "v_total": float(budget) - remaining,
+        "label": label, "stages": stages,
+        "v_total": sum(st["v_in"] for st in stages),
         "t_total": t_offset,
         "filled": int(np.sum((occupied >= 0.5) & ~np.in1d(np.arange(mx.size), full_cells))),
         "reach_virgin": int(np.sum(reach_virgin)),
@@ -287,9 +293,12 @@ def main(argv):
     ny = int(round((G.Y_MAX - G.Y_MIN) / G.CELL))
     full_cells = np.asarray(G.hole_cells(mx, my, nx, ny), dtype=int)
 
-    # Budget: the uniform baseline's stalled volume (a fixed number, so the
-    # baseline need not be re-run here).
-    budget = 46.143
+    # Budget: the uniform baseline's stalled volume. The baseline single pass
+    # runs first with no quota; what it took to stall is the budget for the
+    # staged runs on that field (and for the structured fields too, so every
+    # sequence injects the same grout as the uniform baseline).
+
+    budget = None
 
     all_rows = []
     for fld in fields:
@@ -301,8 +310,17 @@ def main(argv):
         sys.stdout.flush()
 
         rows = []
-        rows.append(run_sequence("%s/single" % fld, phi, (G.HOLE_LEN,), budget,
-                                 reach_virgin, full_cells, plot))
+        if budget is None:
+            # First field's single pass runs to stall and sets the budget.
+            base_row = run_sequence("%s/single" % fld, phi, (G.HOLE_LEN,), None,
+                                    reach_virgin, full_cells, plot)
+            budget = base_row["v_total"]
+            print("  budget for every later run = V(single pass at stall) = %.3f m^3/m" % budget)
+            sys.stdout.flush()
+            rows.append(base_row)
+        else:
+            rows.append(run_sequence("%s/single" % fld, phi, (G.HOLE_LEN,), budget,
+                                     reach_virgin, full_cells, plot))
         for name, depths in SEQUENCES:
             rows.append(run_sequence("%s/%s" % (fld, name), phi, depths, budget,
                                      reach_virgin, full_cells, plot))

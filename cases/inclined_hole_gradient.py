@@ -14,10 +14,10 @@ Runs two cases for comparison:
   (A) gradient  : phi_bottom=0.12 (dense) -> phi_top=0.30 (loose)
   (B) uniform   : phi = 0.18 everywhere  (the previous benchmark's mean)
 
-Permeability: calibrated_power k = A phi^3/(1-phi)^2, A=9.4e-8 (already in src).
+Permeability: calibrated_power k = A phi^3/(1-phi)^2, A from grout_material_v06().
 Injection : inclined hole, mouth (-15,1), dip 35 deg, length 17 m, source cells
             pinned at p0=5 MPa, held S=1 (interior Dirichlet penalty).
-Slurry    : tau0=60 Pa, mu_p=0.1 Pa.s, rho=1820 kg/m^3, gravity ON.
+Slurry    : parameter set v0.6 (see variables.grout_material_v06), gravity ON.
 
 Py2.7 / 3 compatible.
 Run: powershell -File scripts\\run_local.ps1 cases\\inclined_hole_gradient.py
@@ -38,6 +38,7 @@ from fipy import CellVariable
 from src.fipy_adapter.mesh_init import build_mesh_for_domain
 from src.coupling.porosity_to_permeability import porosity_to_permeability
 from src.models.slurry_transport.variables import (
+    grout_material_v06,
     build_placeholder_slurry_parameters,
     initialize_slurry_variables,
 )
@@ -53,9 +54,13 @@ if not os.path.isdir(_OUT):
     os.makedirs(_OUT)
 
 # --- domain / mesh ---------------------------------------------------------
-X_MIN, X_MAX = -15.0, 15.0
-Y_MIN, Y_MAX = 0.0, 30.0
-H = 30.0
+# Domain sized for the v0.6 parameter set: L_max ~18-20 m at phi 0.18-0.21
+# must fit in every direction from a 17 m hole, so 60 x 60 m at the 2.5 m
+# REV floor (576 cells; runs clean under the scipy backend). The hole enters
+# from the left wall (the drift is in host rock) at mid-height.
+X_MIN, X_MAX = -30.0, 30.0
+Y_MIN, Y_MAX = 0.0, 60.0
+H = 60.0
 CELL = 2.5
 PHI_CLIP = (0.05, 0.60)
 
@@ -65,16 +70,17 @@ PHI_TOP = 0.30        # loose top
 PHI_UNIFORM = 0.18    # homogeneous control
 
 # --- inclined hole ---------------------------------------------------------
-MOUTH = (-15.0, 1.0)
+MOUTH = (-30.0, 21.0)
 DIP_DEG = 35.0
 HOLE_LEN = 17.0
 P0 = 5.0e6
 
-# --- slurry (PO 42.5, w/c=0.5) ---------------------------------------------
-TAU0 = 60.0
-MU_P = 0.1
-RHO = 1820.0
-A_CAL = 9.4e-8
+# --- slurry (PO 42.5, w/c=0.5): the v0.6 set, see grout_material_v06 -------
+_MAT = grout_material_v06()
+TAU0 = _MAT["yield_stress"]
+MU_P = _MAT["plastic_viscosity"]
+RHO = _MAT["slurry_density"]
+A_CAL = _MAT["calibrated_permeability_coefficient"]
 
 # --- march control ---------------------------------------------------------
 # Stall = the S>=0.5 front (filled-cell count) stops advancing for PATIENCE
@@ -83,7 +89,7 @@ A_CAL = 9.4e-8
 # once no new cell crosses S=0.5; count-plateau captures that without grinding
 # through the asymptotic tail.)
 DT_CAP = 5.0
-MAX_STEPS = 800
+MAX_STEPS = 3000      # v0.6 reach is 2.3x the old set: more steps to stall
 STALL_PATIENCE = 60
 
 
@@ -336,7 +342,8 @@ def make_comparison_figure(res_a, res_b):
     for ax in axes[1]:
         ax.set_xlabel("x [m]")
     fig.suptitle("Inclined-hole grouting: gradient (top) vs uniform (bottom) "
-                 "porosity  [p0=5 MPa, tau0=60 Pa, rho=1820, gravity ON]",
+                 "porosity  [p0=%.1f MPa, tau0=%.0f Pa, rho=%.0f, gravity ON]"
+                 % (P0 / 1e6, TAU0, RHO),
                  fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.97])
     out = os.path.join(_OUT, "grout_gradient_compare.png")
@@ -388,7 +395,8 @@ def report_one(res):
 
 def main():
     print("=== gradient vs uniform inclined-hole grouting ===")
-    print("local L_max=p0/lambda anchors (calibrated k, tau0=60):")
+    print("local L_max=p0/lambda anchors (calibrated k A=%.3g, tau0=%.0f Pa):"
+          % (A_CAL, TAU0))
     for pp in (0.12, 0.18, 0.30):
         k = kc_like(pp)
         lm = lam_of(pp)

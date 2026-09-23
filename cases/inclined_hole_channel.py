@@ -35,6 +35,7 @@ this volume were expected to fill".
 Outputs under outputs/inclined_hole_channel/<run>/ and a comparison table.
 """
 import imp
+import math
 import os
 import sys
 
@@ -63,11 +64,18 @@ PHI_BASE = 0.18            # the uniform control of the baseline case
 #                    enters the fill THROUGH the contact -- the reference
 #                    project traced its runaway to that interface), crossing
 #                    the hole mid-length, and past the toe
-BAND_X_TOE = 3.75          # cell-centre column just past the toe (toe x = -1.07)
+# Cell-centre columns, placed relative to the hole so they follow the domain:
+# the collar column is the first cell inside the left wall, "midhole" is 5 m
+# in, and "toe" is the second cell-centre column past the toe x.
+_TOE_X = G.MOUTH[0] + G.HOLE_LEN * math.cos(math.radians(G.DIP_DEG))
+_COL = lambda x: G.X_MIN + (math.floor((x - G.X_MIN) / G.CELL) + 0.5) * G.CELL
+BAND_X_COLLAR = _COL(G.MOUTH[0] + 0.5 * G.CELL)
+BAND_X_MID = _COL(G.MOUTH[0] + 2.5 * G.CELL)
+BAND_X_TOE = _COL(_TOE_X + 2.0 * G.CELL)
 BAND_HALF_WIDTH = 1.25     # one 2.5 m cell
 BAND_PHIS = (0.30, 0.45, 0.60)
 BAND_PHI_POS = 0.45
-BAND_POSITIONS = (("collar", -13.75), ("midhole", -8.75), ("toe", BAND_X_TOE))
+BAND_POSITIONS = (("collar", BAND_X_COLLAR), ("midhole", BAND_X_MID), ("toe", BAND_X_TOE))
 RANDOM_SEEDS = (1, 2, 3)
 RANDOM_STD = 0.06
 RANDOM_CORR = (7.5, 2.5)   # (x, y) correlation lengths [m]: horizontal streaks

@@ -27,8 +27,8 @@ Two cases for comparison (both toe-segment bleed):
   (A) gradient  : phi_bottom=0.12 -> phi_top=0.30
   (B) uniform   : phi = 0.18
 
-Permeability calibrated_power k=A phi^3/(1-phi)^2, A=9.4e-8. Slurry tau0=60 Pa,
-mu_p=0.1, rho=1820, gravity ON. Same engine / time-stepping as the line-source
+Permeability calibrated_power k=A phi^3/(1-phi)^2 with the v0.6 parameter set
+(variables.grout_material_v06), gravity ON. Same engine / time-stepping as the line-source
 version. Py2.7 / 3 compatible.
 
 Run: powershell -File scripts\\run_local.ps1 cases\\inclined_hole_toe.py
@@ -49,6 +49,7 @@ from fipy import CellVariable
 from src.fipy_adapter.mesh_init import build_mesh_for_domain
 from src.coupling.porosity_to_permeability import porosity_to_permeability
 from src.models.slurry_transport.variables import (
+    grout_material_v06,
     build_placeholder_slurry_parameters,
     initialize_slurry_variables,
 )
@@ -64,9 +65,13 @@ if not os.path.isdir(_OUT):
     os.makedirs(_OUT)
 
 # --- domain / mesh ---------------------------------------------------------
-X_MIN, X_MAX = -15.0, 15.0
-Y_MIN, Y_MAX = 0.0, 30.0
-H = 30.0
+# Domain sized for the v0.6 parameter set: L_max ~18-20 m at phi 0.18-0.21
+# must fit in every direction from a 17 m hole, so 60 x 60 m at the 2.5 m
+# REV floor (576 cells; runs clean under the scipy backend). The hole enters
+# from the left wall (the drift is in host rock) at mid-height.
+X_MIN, X_MAX = -30.0, 30.0
+Y_MIN, Y_MAX = 0.0, 60.0
+H = 60.0
 CELL = 2.5
 PHI_CLIP = (0.05, 0.60)
 
@@ -76,21 +81,22 @@ PHI_TOP = 0.30
 PHI_UNIFORM = 0.18
 
 # --- inclined hole + toe-segment bleed -------------------------------------
-MOUTH = (-15.0, 1.0)
+MOUTH = (-30.0, 21.0)
 DIP_DEG = 35.0
 HOLE_LEN = 17.0
 BLEED_LEN = 5.0       # toe-segment bleed length [m]; cased = HOLE_LEN-BLEED_LEN
 P0 = 5.0e6
 
-# --- slurry (PO 42.5, w/c=0.5) ---------------------------------------------
-TAU0 = 60.0
-MU_P = 0.1
-RHO = 1820.0
-A_CAL = 9.4e-8
+# --- slurry (PO 42.5, w/c=0.5): the v0.6 set, see grout_material_v06 -------
+_MAT = grout_material_v06()
+TAU0 = _MAT["yield_stress"]
+MU_P = _MAT["plastic_viscosity"]
+RHO = _MAT["slurry_density"]
+A_CAL = _MAT["calibrated_permeability_coefficient"]
 
 # --- march control ---------------------------------------------------------
 DT_CAP = 5.0
-MAX_STEPS = 800
+MAX_STEPS = 3000      # v0.6 reach is 2.3x the old set: more steps to stall
 STALL_PATIENCE = 60
 
 
@@ -362,7 +368,8 @@ def make_comparison_figure(res_a, res_b):
     for ax in axes[1]:
         ax.set_xlabel("x [m]")
     fig.suptitle("Toe-segment bleed (%.0f m) grouting: gradient (top) vs uniform "
-                 "(bottom)  [p0=5 MPa, tau0=60 Pa, rho=1820, gravity ON]" % BLEED_LEN,
+                 "(bottom)  [p0=%.1f MPa, tau0=%.0f Pa, rho=%.0f, gravity ON]"
+                 % (BLEED_LEN, P0 / 1e6, TAU0, RHO),
                  fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.97])
     out = os.path.join(_OUT, "grout_toe_compare.png")
@@ -426,12 +433,12 @@ def main():
           % (MOUTH[0], MOUTH[1], toe[0], toe[1],
              ("(%.2f,%.2f)" % bs), ("(%.2f,%.2f)" % toe)))
     phi_toe = PHI_BOTTOM + (PHI_TOP - PHI_BOTTOM) * (toe[1] / H)
-    print("local anchors (calibrated k, tau0=60):")
+    print("local anchors (calibrated k A=%.3g, tau0=%.0f Pa):" % (A_CAL, TAU0))
     for pp, tag in ((0.12, "bottom"), (phi_toe, "toe(gradient)"),
                     (0.18, "uniform"), (0.30, "top")):
         print("  phi=%.3f (%s): lambda=%.3e Pa/m  L_max=%.2f m"
               % (pp, tag, lam_of(pp), P0 / lam_of(pp)))
-    print("  (line-source previous run gave up/down=1.26 for the gradient field)")
+    print("  (line-source run on the same field gave up/down=1.16)")
     print("")
     sys.stdout.flush()
 
