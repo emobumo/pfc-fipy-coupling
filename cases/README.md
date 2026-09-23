@@ -12,12 +12,16 @@ on the 60x60 m domain (`variables.grout_material_v06`), under the **scipy PCG**
 linear solver that `run_local.ps1` has set as default since 2026-09-22. Anchors
 for the previous parameter set survive only where a heading says so.
 
-**Long 576-cell runs can die of a segmentation fault under either backend.** That
-was the reason for leaving PySparse (3 of 5 runs), but the real-pack case also
-segfaulted once under scipy, at step ~1225, while two other cases were running
-concurrently; re-run alone it reproduced the earlier steps bit-for-bit and ran to
-a clean stall at step 2298. Treat it as a crash to retry, not as a result: the
-march is deterministic, so a completed rerun is the same run.
+**Long runs on this machine die of segmentation faults and of Windows
+bugchecks, and the cause is very likely the machine, not FiPy.** Two blue
+screens on 2026-09-22/23 with *different* stop codes (0xFC
+ATTEMPTED_EXECUTE_OF_NOEXECUTE_MEMORY and 0x20001 HYPERVISOR_ERROR), a
+corrected WHEA hardware error, and repeated user-mode segfaults in the
+PFC-bundled Python, all under sustained numerical load. An earlier note here
+blamed concurrency for the scipy segfault; that is wrong -- the gradient case
+segfaulted on 09-23 with nothing else running. Treat any crash as a crash to
+retry, not as a result: the march is deterministic, so a completed rerun is the
+same run.
 
 Run with the PFC-bundled Python, like everything else:
 
