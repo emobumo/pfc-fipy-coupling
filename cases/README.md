@@ -114,7 +114,7 @@ control. Source is still the whole line.
 |---|---|---|
 | spread up (loose) / down (dense) | 22.63 m / 19.56 m | 16.48 m / 18.13 m |
 | **up/down (filled)** | **1.16** | **0.91** |
-| **up/down (analytic reach)** | **1.26** | **0.87** |
+| **up/down (analytic reach)** | **1.175** (1.179 at 1.25 m) | **0.888** (0.897) |
 | filled cells / stall step | 199 / 2177 (t=6550 s) | 145 / 1481 (t=4320 s) |
 | conservation drift (rel) | 9.1e-4 | 1.2e-3 |
 
@@ -123,15 +123,24 @@ into a 1.16 upward bias: **the slurry would rather climb against gravity into th
 loose, low-lambda region.** Gradient-strength sweep (phi_bottom=0.12 fixed):
 phi_top 0.25/0.30/0.35 -> up/down 1.11/1.16/1.24, monotone.
 
-**Quote the analytic reach ratio, not the filled one.** The reachable domain is a
-pure path integral (`fill_diagnostics.reachable_domain`, no solver, no time
-stepping) and it gives 1.26 here against 1.28 under the previous parameter set —
-i.e. the asymmetry is a property of the porosity field and is nearly invariant to
-the grout parameters. The filled ratio comes out lower (1.16) because yield-edge
-creep expands the front isotropically and dilutes the asymmetry; it is the
-solver's number, not the physics'.
+**Two independent routes agree, and that agreement is the result to quote.**
+The reachable domain is a pure path integral (`fill_diagnostics.reachable_domain`:
+no solver, no time stepping). It gives 1.175 for the gradient field and 0.888
+for the uniform one; the solver's filled front gives 1.16 and 0.91. Two methods
+that share nothing but the porosity field land within about 0.02 of each other.
 
-Asymmetry (1.26) is far milder than the local-L_max ratio (3.14) because spread is
+*Correction, 2026-09-24.* An earlier version of this section quoted the analytic
+ratio as 1.26 (and 1.28 under the previous parameter set) and explained the gap
+to the solver's 1.16 as "yield-edge creep diluting the asymmetry". Both the
+number and the explanation were wrong. The reachable domain was then a shortest
+path on the four face neighbours, which measures |dx|+|dy| and under-states
+reach by 41% on diagonals -- a bias that does not shrink with refinement and
+that inflated the ratio. With a 16-neighbour stencil (worst metric error 2.7%)
+the ratio converges to 1.175/1.179 at 2.5/1.25 m, and the gap to the solver
+closes. The direction of the result survives every stencil and both meshes;
+only its magnitude came down.
+
+The asymmetry is far milder than the local-L_max ratio (3.14) because spread is
 a **path integral** of yield resistance along the way, not the endpoint local
 lambda. This matters for reading every heterogeneous result that follows.
 
@@ -173,9 +182,16 @@ upward one with a completely different source geometry, which rules out source
 geometry as the cause and leaves the porosity gradient as the physics.** The
 uniform control landing on 0.99 rather than the line source's 0.91 is itself
 informative: a compact source has no dipping line to bias it, so gravity and the
-uniform yield threshold very nearly cancel. Magnitude here (1.14) is milder than
-the line source's analytic 1.26, as expected for a source that samples less of
-the gradient.
+uniform yield threshold very nearly cancel. Magnitude here (1.14) is close to
+the line source's (1.16 filled, 1.175 analytic).
+
+**Under v0.6 this control discriminates less than it used to.** L_max (18-35 m)
+now far exceeds the 17 m hole, so the reachable envelope is set by the far field
+and barely depends on where along the hole the grout leaves: the toe-only reach
+is 229 cells against 232 for the full line, with the same analytic up/down
+(1.175). The solver fills the two differently (159 vs 199 cells), so the control
+still says the flip is not an artefact of injecting along a dipping line; but
+it no longer compares two genuinely different reach geometries.
 
 Bleed-length sweep (gradient field): 3/5/8 m gives toe radius 20.02/21.21/23.30 m
 and up/down 1.14/1.14/1.16 — the bleed length sets the ellipse SIZE, the porosity
@@ -186,8 +202,10 @@ monotone with no outlier.
 
 At 2.5 m cells a 17-22 m spread spans 7-9 cells, so up/down ratios still carry
 quantization noise: **treat these ratios as +-0.1, not precise numbers**, and
-note that refining the mesh does NOT help under the current solver (creep grows
-with step count; see CLAUDE.md "分辨率与求解器实测"). The gradient field is
+note that refining the mesh is safe: the "creep grows with refinement" finding
+recorded earlier was the reach metric's own bias showing up on finer cells, not
+solver creep (see CLAUDE.md, the metric correction under "充填诊断"). The
+gradient field is
 analytic, not a real PFC structure — it demonstrates the mechanism, it does not
 reproduce a measured pile.
 
@@ -362,8 +380,10 @@ The toe case's gradient result was **linear-solver dependent**: 1.22 under FiPy'
 default PySparse PCG, **1.06** under `FIPY_SOLVERS=scipy` (its PCG at tolerance
 1e-15, or its LU — identical), which stalled later (364 vs 220 steps) and crept
 further on both sides. The uniform control was bit-identical either way (0.97).
-The **line-source** gradient and uniform results — the engineering baseline and
-the 1.26 headline — were identical under both solvers (623 / 2100 s / 44 cells /
-9 overshoot; 492–493 / 1535–1540 s). The lesson generalises past the parameter
-change: where a result sits on the yield edge, quote the analytic reach ratio,
-which no solver touches. See CLAUDE.md "分辨率与求解器实测".
+The **line-source** gradient and uniform results — the engineering baseline —
+were identical under both solvers (623 / 2100 s / 44 cells; 492–493 /
+1535–1540 s). The lesson that generalises: where a result sits on the yield
+edge, check it against the reachable domain, which no solver touches -- and
+make sure the reachable domain uses a metric that approaches the Euclidean one
+(the "9 overshoot" once listed here was measured against the old 4-neighbour
+reach and is not a solver property).
