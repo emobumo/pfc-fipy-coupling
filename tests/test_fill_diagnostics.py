@@ -183,6 +183,163 @@ class TestReachableDomain(unittest.TestCase):
         self.assertGreater(along, 3)
 
 
+# --- the graph metric ------------------------------------------------------
+
+def _xy_index(nx, i):
+    """(ix, iy) of FiPy cell i on an nx-wide Grid2D (x varies fastest)."""
+    return i % nx, i // nx
+
+
+class TestReachMetric(unittest.TestCase):
+    """
+    The stall condition integrates lambda along STRAIGHT rays, so the exact
+    reach of a point source in uniform ground is a disc. A 4-neighbour
+    shortest path measures |dx|+|dy| instead and returns a diamond -- 60% of
+    the disc, at every mesh size -- and that bias was read for days as solver
+    'overshoot'. These tests pin the metric, and the one thing a wider
+    stencil could break: tunnelling through thin cemented walls.
+    """
+
+    PHI = 0.18
+    CEMENT = 1.0e-3        # the stage_porosity_floor: lambda ~430x virgin
+
+    def _uniform(self, n, dx):
+        return _state(n, n, dx, self.PHI, p0=1.0e9)
+
+    def test_legacy_stencil_is_the_manhattan_metric(self):
+        """stencil=4 prices a cell at lambda*(|dx|+|dy|) exactly: the bias,
+        stated as a fact so nobody mistakes it for the continuum again."""
+        n, dx = 9, 0.5
+        st = self._uniform(n, dx)
+        c = (n * n) // 2
+        r = reachable_domain(st, [c], use_gravity=False, stencil=4)
+        x = np.asarray(st["x"], float)
+        y = np.asarray(st["y"], float)
+        manhattan = _lambda(self.PHI) * (np.abs(x - x[c]) + np.abs(y - y[c]))
+        np.testing.assert_allclose(r["cost"], manhattan, rtol=1e-12)
+
+    def test_default_stencil_tracks_the_straight_line(self):
+        """Never below the straight-line cost (a lattice path cannot beat the
+        line, so reach is only ever under-stated) and at most 2.7% above."""
+        n, dx = 15, 0.5
+        st = self._uniform(n, dx)
+        c = (n * n) // 2
+        r = reachable_domain(st, [c], use_gravity=False)
+        self.assertEqual(r["stencil"], 16)
+        x = np.asarray(st["x"], float)
+        y = np.asarray(st["y"], float)
+        line = _lambda(self.PHI) * np.hypot(x - x[c], y - y[c])
+        away = line > 0
+        ratio = r["cost"][away] / line[away]
+        self.assertGreaterEqual(ratio.min(), 1.0 - 1e-12)
+        self.assertLessEqual(ratio.max(), 1.0275)
+
+    def test_disc_is_recovered_at_every_mesh_size(self):
+        """The exact reach is a disc of radius R = p0/lambda. Stated so that
+        cell quantization at the rim cannot make it flaky: every cell within
+        R/1.0275 is reachable (the stencil's worst metric error) and no cell
+        beyond R is. Checked at two mesh sizes -- a metric error does not
+        shrink with refinement, so this confirms refinement is not what is
+        doing the work. The legacy stencil fails the inner bound badly."""
+        R_cells = 10
+        n = 2 * R_cells + 5
+        for dx in (0.5, 0.25):
+            st = self._uniform(n, dx)
+            c = (n * n) // 2
+            R = R_cells * dx
+            p0 = _lambda(self.PHI) * R
+            x = np.asarray(st["x"], float)
+            y = np.asarray(st["y"], float)
+            dist = np.hypot(x - x[c], y - y[c])
+            inner = dist <= R / 1.0275
+            outer = dist > R * (1.0 + 1e-9)
+            new = reachable_domain(st, [c], p0=p0, use_gravity=False)["reachable"]
+            old = reachable_domain(st, [c], p0=p0, use_gravity=False,
+                                   stencil=4)["reachable"]
+            self.assertTrue(np.all(new[inner]),
+                            "dx=%g: a cell inside the disc is unreachable" % dx)
+            self.assertFalse(np.any(new[outer]),
+                             "dx=%g: a cell outside the disc is reachable" % dx)
+            disc = float(np.sum(dist <= R + 1e-9))
+            self.assertGreater(np.sum(new) / disc, 0.95)
+            self.assertLess(np.sum(old[inner]) / float(np.sum(inner)), 0.70,
+                            "the legacy diamond should miss much of the disc")
+
+    def test_diagonal_reach_matches_axis_reach(self):
+        n, dx = 25, 0.5
+        st = self._uniform(n, dx)
+        c = (n * n) // 2
+        p0 = _lambda(self.PHI) * 10 * dx
+        r = reachable_domain(st, [c], p0=p0, use_gravity=False)
+        x = np.asarray(st["x"], float)
+        y = np.asarray(st["y"], float)
+        reach = r["reachable"]
+        on_axis = reach & (np.abs(y - y[c]) < 1e-9)
+        on_diag = reach & (np.abs((x - x[c]) - (y - y[c])) < 1e-9)
+        axis_r = np.max(np.abs(x[on_axis] - x[c]))
+        diag_r = np.max(np.hypot(x[on_diag] - x[c], y[on_diag] - y[c]))
+        self.assertGreaterEqual(diag_r / axis_r, 0.97)
+
+    def _walled(self, n, dx, wall):
+        """wall(ix, iy) -> True where the ground is cemented."""
+        phi = np.zeros(n * n) + self.PHI
+        for i in range(n * n):
+            if wall(*_xy_index(n, i)):
+                phi[i] = self.CEMENT
+        return _state(n, n, dx, phi, p0=1.0e9)
+
+    def test_long_edges_cannot_tunnel_a_one_cell_wall(self):
+        """A single column of cemented cells across the whole domain. A
+        knight-move edge priced at its end points would hop straight over
+        it; priced along its segment it pays the cement and stops."""
+        n, dx, w = 15, 0.5, 7
+        p0 = _lambda(self.PHI) * 12 * dx     # ample: would reach far past w
+        src = [0 * n + 1]                    # (ix=1, iy=0), left of the wall
+        right = np.array([_xy_index(n, i)[0] > w for i in range(n * n)])
+
+        open_ground = self._uniform(n, dx)
+        r0 = reachable_domain(open_ground, src, p0=p0, use_gravity=False)
+        self.assertTrue(np.any(r0["reachable"] & right),
+                        "control: without the wall the far side is reachable")
+
+        st = self._walled(n, dx, lambda ix, iy: ix == w)
+        r = reachable_domain(st, src, p0=p0, use_gravity=False)
+        self.assertFalse(np.any(r["reachable"] & right),
+                         "grout crossed a sealed cemented wall")
+
+    def test_a_diagonal_wall_seals_its_corners(self):
+        """Cemented cells on the diagonal ix == iy touch only at corners. A
+        diagonal edge through such a corner touches neither side cell; it
+        must still be refused, because both of its detours are cemented."""
+        n, dx = 15, 0.5
+        p0 = _lambda(self.PHI) * 20 * dx
+        st = self._walled(n, dx, lambda ix, iy: ix == iy)
+        src = [0 * n + (n - 1)]              # (ix=n-1, iy=0): below the wall
+        r = reachable_domain(st, src, p0=p0, use_gravity=False)
+        above = np.array([_xy_index(n, i)[1] > _xy_index(n, i)[0]
+                          for i in range(n * n)])
+        self.assertFalse(np.any(r["reachable"] & above),
+                         "grout squeezed through a corner between cemented cells")
+
+    def test_one_open_side_keeps_a_corner_passable(self):
+        """The corner rule must not over-block: with only ONE side cell
+        cemented the grout goes round the open side, so the diagonal step
+        costs what it costs in open ground."""
+        n, dx = 5, 0.5
+        c = 2 * n + 2
+        lam = _lambda(self.PHI)
+        one = self._walled(n, dx, lambda ix, iy: (ix, iy) == (3, 2))
+        r = reachable_domain(one, [c], use_gravity=False)
+        d = 3 * n + 3                        # (3, 3): diagonal of (2, 2)
+        self.assertAlmostEqual(r["cost"][d] / (lam * math.sqrt(2.0) * dx), 1.0,
+                               places=9)
+
+        both = self._walled(n, dx, lambda ix, iy: (ix, iy) in ((3, 2), (2, 3)))
+        r2 = reachable_domain(both, [c], use_gravity=False)
+        self.assertGreater(r2["cost"][d], 1.5 * lam * math.sqrt(2.0) * dx,
+                           "both detours cemented, yet the corner stayed cheap")
+
+
 # --- classification --------------------------------------------------------
 
 def _ring_state(n=21, dx=0.5, r_in=2.0, r_out=4.0, gap=False):

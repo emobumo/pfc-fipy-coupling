@@ -38,8 +38,37 @@ applies, otherwise Bellman-Ford takes over (a round trip always costs
 2*lambda*ds > 0, so there are no negative cycles).
 
 This is the same path-integral argument that explains why a 3.14x span in
-local L_max produces only a 1.26x asymmetry: the reach is set by the
+local L_max produces a much milder asymmetry: the reach is set by the
 resistance along the way, not at the destination.
+
+THE GRAPH METRIC MUST APPROACH THE EUCLIDEAN ONE (2026-09-24)
+-------------------------------------------------------------
+The continuum stall condition integrates lambda along STRAIGHT rays. A
+shortest path restricted to the four face neighbours can only move in axis
+steps, so it measures |dx| + |dy|: 41% too long on a diagonal. The reach it
+returns is a diamond where the truth is a disc -- 60% of the area for an
+isotropic point source, at EVERY mesh size (a metric error does not shrink
+with refinement). That bias was read for days as solver "overshoot" and
+"yield-edge creep".
+
+The default is therefore a 16-neighbour stencil (axis, diagonal and
+knight-move edges: headings 0, 26.6, 45, 63.4, 90 degrees), whose worst
+metric error is 2.7%: every cell within R/1.0275 of the exact disc is reached,
+and only cells in that thin rim can be missed. Any lattice
+path is at least as long as the straight line, so the stencil only ever
+UNDER-states reach, by at most that 2.7%.
+
+Long edges must not tunnel. A knight-move edge passes through cells its
+endpoints do not own, and a single-cell cemented wall (lambda 400x virgin)
+would be skipped if the edge were priced at its endpoints. Each edge is
+therefore priced as the straight segment it is: split at every face it
+crosses, each face charged the solver's own face lambda (harmonic k,
+arithmetic phi) over the segment length on either side of it. A pure
+diagonal passes exactly through a cell CORNER, touching neither side cell;
+it is charged as the cheaper of the two axis detours around that corner,
+each detour priced at its more expensive face -- so the corner is blocked
+only when BOTH side cells are, which is when grout really could not pass.
+stencil=4 keeps the original face-graph code path bit for bit.
 
 RUNAWAY UNDER CONSTANT PRESSURE
 -------------------------------
@@ -139,17 +168,165 @@ def face_start_gradient(state):
 
 # --- reachable domain ------------------------------------------------------
 
-def reachable_domain(state, source_cells, p0=None, use_gravity=True):
+# Edge offsets, in cells. 16 = axis + diagonal + knight move.
+_AXIS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+_DIAG = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+_KNIGHT = [(a, b) for a in (-2, -1, 1, 2) for b in (-2, -1, 1, 2)
+           if abs(a) != abs(b)]
+STENCILS = {4: _AXIS, 8: _AXIS + _DIAG, 16: _AXIS + _DIAG + _KNIGHT}
+DEFAULT_STENCIL = 16
+
+
+def _grid_index(mesh):
+    """(ix, iy, nx, ny, dx, dy, index_of[ix, iy]) for a uniform 2D grid."""
+    c = np.asarray(mesh.cellCenters.value, dtype=float)
+    x, y = c[0], c[1]
+    ux = np.unique(np.round(x, 9))
+    uy = np.unique(np.round(y, 9))
+    dx = float(ux[1] - ux[0]) if ux.size > 1 else 1.0
+    dy = float(uy[1] - uy[0]) if uy.size > 1 else 1.0
+    for u, h in ((ux, dx), (uy, dy)):
+        if u.size > 2 and np.max(np.abs(np.diff(u) - h)) > 1.0e-6 * h:
+            raise ValueError("stencil > 4 needs a uniform grid; use stencil=4")
+    ix = np.rint((x - ux[0]) / dx).astype(int)
+    iy = np.rint((y - uy[0]) / dy).astype(int)
+    nx, ny = int(ix.max()) + 1, int(iy.max()) + 1
+    index_of = -np.ones((nx, ny), dtype=int)
+    index_of[ix, iy] = np.arange(x.size)
+    return ix, iy, nx, ny, dx, dy, index_of
+
+
+def _segment_crossings(a, b, dx, dy):
+    """
+    Walk the straight segment from the centre of cell (0, 0) to the centre of
+    cell (a, b). Returns its length and a list of crossings, each
+
+        ("face",   (p, q), weight)          p, q adjacent cell offsets
+        ("corner", (p, q, s1, s2), weight)  through the corner between p and
+                                            q; s1, s2 are the two side cells
+
+    weight = segment length charged to that crossing: half of each interior
+    piece on either side, the whole of the first and last pieces. For a
+    uniform lambda the weights sum to the segment length, so the cost is
+    exactly lambda * length.
+    """
+    length = float(np.hypot(a * dx, b * dy))
+    events = []
+    for k in range(abs(a)):
+        events.append(((k + 0.5) / abs(a), "x"))
+    for k in range(abs(b)):
+        events.append(((k + 0.5) / abs(b), "y"))
+    events.sort()
+    merged = []                    # (t, set of kinds); x and y together = corner
+    for t, kind in events:
+        if merged and abs(merged[-1][0] - t) < 1.0e-12:
+            merged[-1][1].add(kind)
+        else:
+            merged.append((t, set([kind])))
+
+    sx = 1 if a > 0 else -1
+    sy = 1 if b > 0 else -1
+    cell = (0, 0)
+    t_prev = 0.0
+    pieces = []                    # (cell, length of segment inside it)
+    kinds = []
+    for t, ks in merged:
+        pieces.append((cell, (t - t_prev) * length))
+        kinds.append(ks)
+        cell = (cell[0] + (sx if "x" in ks else 0),
+                cell[1] + (sy if "y" in ks else 0))
+        t_prev = t
+    pieces.append((cell, (1.0 - t_prev) * length))
+
+    crossings = []
+    last = len(pieces) - 1
+    for m, ks in enumerate(kinds):
+        p, lp = pieces[m]
+        q, lq = pieces[m + 1]
+        w = (lp if m == 0 else 0.5 * lp) + (lq if m + 1 == last else 0.5 * lq)
+        if len(ks) == 2:
+            s1 = (q[0], p[1])      # detour stepping in x first
+            s2 = (p[0], q[1])      # detour stepping in y first
+            crossings.append(("corner", (p, q, s1, s2), w))
+        else:
+            crossings.append(("face", (p, q), w))
+    return length, crossings
+
+
+def _pair_lambda(tau0, k, phi, i, j):
+    """Face lambda between adjacent cells i, j, built as the solver builds it."""
+    kf = np.maximum(2.0 * k[i] * k[j] / np.maximum(k[i] + k[j], 1.0e-300), 1.0e-30)
+    pf = np.clip(0.5 * (phi[i] + phi[j]), 1.0e-6, 1.0 - 1.0e-6)
+    return 2.0 * tau0 / np.maximum(np.sqrt(8.0 * kf / pf), 1.0e-20)
+
+
+def _stencil_edges(state, stencil, use_gravity):
+    """(rows, cols, weights) for the stencil graph; see the module notes."""
+    mesh = state["mesh"]
+    params = state["slurry_parameters"]
+    tau0 = float(params.get("yield_stress", 50.0))
+    k = np.maximum(_to_array(state["permeability"]), 1.0e-30)
+    phi = np.clip(_to_array(state["porosity"]), 1.0e-6, 1.0 - 1.0e-6)
+    ix, iy, nx, ny, dx, dy, index_of = _grid_index(mesh)
+    y = np.asarray(mesh.cellCenters.value, dtype=float)[1]
+    rho = float(params.get("slurry_density", 2000.0))
+    g = abs(float(params.get("gravity_y", -9.81))) if use_gravity else 0.0
+
+    rows, cols, data = [], [], []
+    for a, b in STENCILS[stencil]:
+        jx, jy = ix + a, iy + b
+        ok = (jx >= 0) & (jx < nx) & (jy >= 0) & (jy < ny)
+        if not np.any(ok):
+            continue
+        bx, by = ix[ok], iy[ok]
+        i = index_of[bx, by]
+        j = index_of[jx[ok], jy[ok]]
+        _, crossings = _segment_crossings(a, b, dx, dy)
+        cost = np.zeros(i.size)
+        for kind, cells, w in crossings:
+            # Every cell a segment touches lies inside the bounding box of its
+            # two end cells, so these lookups stay on the grid.
+            if kind == "face":
+                p, q = cells
+                lam = _pair_lambda(tau0, k, phi,
+                                   index_of[bx + p[0], by + p[1]],
+                                   index_of[bx + q[0], by + q[1]])
+            else:
+                p, q, s1, s2 = cells
+                ip = index_of[bx + p[0], by + p[1]]
+                iq = index_of[bx + q[0], by + q[1]]
+                i1 = index_of[bx + s1[0], by + s1[1]]
+                i2 = index_of[bx + s2[0], by + s2[1]]
+                via1 = np.maximum(_pair_lambda(tau0, k, phi, ip, i1),
+                                  _pair_lambda(tau0, k, phi, i1, iq))
+                via2 = np.maximum(_pair_lambda(tau0, k, phi, ip, i2),
+                                  _pair_lambda(tau0, k, phi, i2, iq))
+                lam = np.minimum(via1, via2)
+            cost += lam * w
+        cost += rho * g * (y[j] - y[i])
+        rows.append(i)
+        cols.append(j)
+        data.append(cost)
+    return np.concatenate(rows), np.concatenate(cols), np.concatenate(data)
+
+
+def reachable_domain(state, source_cells, p0=None, use_gravity=True,
+                     stencil=DEFAULT_STENCIL):
     """
     Cells the grout can reach from the source under the stall condition.
 
-    Cost to cross a face from cell i to cell j:
+    Cost of a straight step from cell i to cell j:
 
-        lambda_f * |x_j - x_i|  +  rho*g*(y_j - y_i)        [Pa]
+        integral of lambda along the segment  +  rho*g*(y_j - y_i)   [Pa]
 
     A cell is reachable when the cheapest path from any source cell costs no
     more than p0. The gravity term is signed, so descending is cheaper and
-    climbing dearer, exactly as Phi = p + rho*g*y says.
+    climbing dearer, exactly as Phi = p + rho*g*y says; it depends only on
+    the end points, so it is exact on any stencil.
+
+    stencil: 16 (default; <= 2.7% metric error), 8 (<= 8%), or 4 (the
+    original face graph, kept bit for bit for comparison -- 41% metric error
+    on diagonals; see the module notes before trusting it in 2D).
 
     Returns a dict:
         cost            min path cost per cell [Pa]  (inf if disconnected)
@@ -157,6 +334,7 @@ def reachable_domain(state, source_cells, p0=None, use_gravity=True):
         budget          p0 used
         negative_edges  how many directed edges had cost < 0 (Pi_g >= 1)
         solver          "dijkstra" or "bellman_ford"
+        stencil         the stencil used
     """
     mesh = state["mesh"]
     params = state["slurry_parameters"]
@@ -165,24 +343,13 @@ def reachable_domain(state, source_cells, p0=None, use_gravity=True):
     if p0 is None:
         p0 = float(state.get("interior_dirichlet_value",
                              params.get("inlet_pressure_core_value", 0.0)))
+    if stencil not in STENCILS:
+        raise ValueError("stencil must be one of %s" % sorted(STENCILS))
 
-    faces, a, b, dist = interior_face_pairs(mesh)
-    lam = face_start_gradient(state)[faces]
-    yield_cost = lam * dist
-
-    if use_gravity:
-        rho = float(params.get("slurry_density", 2000.0))
-        g = abs(float(params.get("gravity_y", -9.81)))
-        y = np.asarray(mesh.cellCenters.value, dtype=float)[1]
-        climb = rho * g * (y[b] - y[a])
+    if stencil == 4:
+        rows, cols, data = _face_graph_edges(state, use_gravity)
     else:
-        climb = np.zeros_like(yield_cost)
-
-    w_ab = yield_cost + climb      # a -> b
-    w_ba = yield_cost - climb      # b -> a
-    rows = np.concatenate([a, b])
-    cols = np.concatenate([b, a])
-    data = np.concatenate([w_ab, w_ba])
+        rows, cols, data = _stencil_edges(state, stencil, use_gravity)
     negative = int(np.sum(data < 0.0))
 
     graph = csr_matrix((data, (rows, cols)), shape=(n, n))
@@ -200,7 +367,32 @@ def reachable_domain(state, source_cells, p0=None, use_gravity=True):
         "budget": float(p0),
         "negative_edges": negative,
         "solver": solver,
+        "stencil": stencil,
     }
+
+
+def _face_graph_edges(state, use_gravity):
+    """The original 4-neighbour face graph, unchanged (stencil=4)."""
+    mesh = state["mesh"]
+    params = state["slurry_parameters"]
+    faces, a, b, dist = interior_face_pairs(mesh)
+    lam = face_start_gradient(state)[faces]
+    yield_cost = lam * dist
+
+    if use_gravity:
+        rho = float(params.get("slurry_density", 2000.0))
+        g = abs(float(params.get("gravity_y", -9.81)))
+        y = np.asarray(mesh.cellCenters.value, dtype=float)[1]
+        climb = rho * g * (y[b] - y[a])
+    else:
+        climb = np.zeros_like(yield_cost)
+
+    w_ab = yield_cost + climb      # a -> b
+    w_ba = yield_cost - climb      # b -> a
+    rows = np.concatenate([a, b])
+    cols = np.concatenate([b, a])
+    data = np.concatenate([w_ab, w_ba])
+    return rows, cols, data
 
 
 # --- classify what is unfilled --------------------------------------------
