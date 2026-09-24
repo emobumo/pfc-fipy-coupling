@@ -225,8 +225,10 @@ backfill/host-rock contact, or a persistent gap), and anisotropic correlated
 random fields. Diagnostics from `src/analysis/fill_diagnostics.py`.
 
 **Stop rule is stall OR volume quota.** Run to full stall and the Bingham
-model fills every reachable cell, so a sealed domain cannot show a void that
-way. In the field the injection ends when the hole stops taking grout OR the
+model fills the reachable domain out to its rim -- in the continuum every
+reachable cell; numerically about 83-86%, the rest a front shortfall still
+connected to open ground -- so a sealed domain cannot show an enclosed void
+that way. In the field the injection ends when the hole stops taking grout OR the
 budgeted volume is spent — and runaway is the second ending arriving first.
 Every structured run therefore gets the volume the uniform baseline needed to
 stall (166.15 m³/m) and stops at min(stall, quota). The design target is the
@@ -238,10 +240,15 @@ Band at φ=0.45, one cell wide, full height, swept over POSITION:
 
 | band position | stop | t [s] | Q tail/peak | r_obs / r_equiv | target filled | reachable-unfilled |
 |---|---|---|---|---|---|---|
-| none (baseline) | stall | 4319 | 0.017 | 1.10 | — | 4 |
-| past the toe (x=−11.25) | quota | 1736 | 0.084 | 1.91 | 75% | 110 |
-| crossing the hole mid-length (x=−23.75) | quota | **434** | 0.059 | 1.94 | 69% | 90 |
-| **at the collar (x=−28.75)** | quota | **554** | 0.045 | **2.24** | **67%** | 69 |
+| none (baseline) | stall | 4319 | 0.017 | 1.10 | — | 32 |
+| past the toe (x=−11.25) | quota | 1736 | 0.084 | 1.91 | 76% | 122 |
+| crossing the hole mid-length (x=−23.75) | quota | **434** | 0.059 | 1.94 | 69% | 111 |
+| **at the collar (x=−28.75)** | quota | **554** | 0.045 | **2.24** | **67%** | 97 |
+
+*Diagnostic columns re-computed 2026-09-24 with the corrected 16-neighbour
+reach (see the metric note under the gradient case); every solver column --
+stop, time, volume, fill count, Q, spread, wall -- reproduced the 09-22 runs
+bit for bit, which doubles as the second independent run of these anchors.*
 
 A band the hole ENTERS THROUGH — which is what a backfill/rock contact is —
 drains the quota 8–10× faster than the baseline, spreads the grout to 2.2× what
@@ -249,6 +256,12 @@ that volume could fill uniformly, and leaves the hole's intended zone a third
 short. That is the reference project's runaway mechanism ("充填体与原岩的交界面…
 贯通空隙") reproduced from structure alone, with no open boundary: the grout has
 nowhere to escape and it still starves the target.
+
+**The whole of that missing third is ground the grout could have reached.** With
+the corrected reach every band run has a design shortfall of 0%: the target is
+short because the quota went down the band, not because 5 MPa could not get
+there. Runaway here is a pure fill defect. (The old 4-neighbour reach booked
+3-6% of it as "unreachable".)
 
 Position still dominates: at fixed φ=0.45 it spans 434–1736 s (4×), while at
 fixed position the φ sweep spans 1521–2469 s (1.6×). But **the "band porosity
@@ -275,22 +288,28 @@ horizontal streaks), one per seed, same quota and target:
 
 | seed | stop | t [s] | V_in | Q tail/peak | target filled | of which UNREACHABLE | reachable-unfilled |
 |---|---|---|---|---|---|---|---|
-| 1 | quota | 1457 | 166.2 | 0.014 | 77% | **19%** | 10 |
-| 2 | **stall** | 1427 | **121.8** | 0.080 | 62% | 6% | **80** |
-| 3 | quota | 1962 | 166.3 | 0.009 | 79% | **14%** | 28 |
+| 1 | quota | 1457 | 166.2 | 0.014 | 77% | **15%** | 35 |
+| 2 | **stall** | 1427 | **121.8** | 0.080 | 62% | 1% | **121** |
+| 3 | quota | 1962 | 166.3 | 0.009 | 79% | **10%** | 60 |
 
-Still no bypass voids — and the realisations still separate the two ways a
-target can go unfilled, though v0.6 assigns the roles differently. Seeds 1 and 3
-spend the whole quota and finish with almost nothing reachable left unfilled
-(10 and 28 cells): their 21–23% target shortfall is overwhelmingly ground the
-path integral says is **unreachable** at 5 MPa — a **design shortfall**
-(pressure or spacing insufficient), not a fill defect. Only the reachable domain
-separates that from a fill defect, which is the point of the case.
+Still no bypass voids, and the realisations still separate the two ways a target
+can go unfilled -- but in mixed proportions, not the clean split recorded before.
+Seed 1 is short 23 points of its target, 15 of them ground the path integral says
+is **unreachable** at 5 MPa (a **design shortfall**: pressure or spacing) and the
+rest reachable but not reached. Seed 3 is short 21 points, about half each. Only
+the reachable domain can make that split, which is the point of the case.
+
+*Correction, 2026-09-24:* this paragraph used to say the shortfall of seeds 1
+and 3 was "overwhelmingly" unreachable (19% and 14%). That leaned on the old
+4-neighbour reach, which under-stated what 5 MPa can reach.
 
 **Seed 2 is stop-rule sensitive and should not be quoted as a result yet.** It
-reports "stall" with 80 reachable cells unfilled and a tail ratio of 0.080 —
-above the stall line — which is self-contradictory: a genuinely stalled Bingham
-run fills every reachable cell. The stall detector is "60 consecutive steps with
+reports "stall" with a tail ratio of 0.080 -- above the 0.05 stall line -- and
+leaves 121 of its 223 reachable cells (54%) unfilled, against 17% for the uniform
+baseline's undisputed stall. (An earlier version called this self-contradictory
+because "a stalled Bingham run fills every reachable cell"; with the corrected
+reach even true stalls leave a 14-17% rim, so the argument rests on the rate and
+on the size of the gap, not on the gap existing.) The stall detector is "60 consecutive steps with
 no newly filled cell" (`STALL_PATIENCE`), and under v0.6 the front can take
 longer than that to cross a cell while still advancing. Pending a re-run with a
 larger patience, read seed 2 as a detector artifact, not as tight ground.
@@ -318,13 +337,19 @@ field from the FULL hole — what one pass could have reached.
 
 | field / sequence | V used | t [s] | cells | of virgin reach | permanent residual |
 |---|---|---|---|---|---|
-| uniform / single | 166.15 | 4319 | 145 | **97%** | 4 |
-| uniform / 7 → 10 → 17 m | **106.15** (stalled, 60 unspent) | 4046 | 87 | **68%** | 46 |
-| uniform / 8.5 → 17 m | 106.15 | 3741 | 87 | 68% | 46 |
-| collar band / single | 166.36 | 981 | 116 | 50% | 128 |
-| collar band / 7 → 10 → 17 m | 130.36 | 4363 | 85 | **37%** | 159 |
-| random seed 1 / single | 166.24 | 1457 | 131 | 93% | 10 |
-| random seed 1 / 7 → 10 → 17 m | 166.19 | 2137 | 121 | 87% | 20 |
+| uniform / single | 166.15 | 4319 | 145 | **83%** | 32 |
+| uniform / 7 → 10 → 17 m | **106.15** (stalled, 60 unspent) | 4046 | 87 | **52%** | 90 |
+| uniform / 8.5 → 17 m | 106.15 | 3741 | 87 | 52% | 90 |
+| collar band / single | 166.36 | 981 | 116 | 49% | 134 |
+| collar band / 7 → 10 → 17 m | 130.36 | 4363 | 85 | **37%** | 165 |
+| random seed 1 / single | 166.24 | 1457 | 131 | 80% | 35 |
+| random seed 1 / 7 → 10 → 17 m | 166.19 | 2137 | 121 | 74% | 45 |
+
+*The two right-hand columns were re-computed 2026-09-24 against the corrected
+16-neighbour reach; all solver quantities, stage by stage, reproduced the 09-22
+runs bit for bit. The true reachable zone is larger than the old reach said, so
+every "of virgin reach" share dropped -- even a single pass run to stall fills
+only 83% of it -- while every comparison between rows kept its sign and size.*
 
 Per stage, the reference sequence 7 → 10 → 17 m on uniform ground:
 
@@ -345,8 +370,8 @@ at all with this grout. The reference project's 7 → 10 → 17.5 m sequence has
 exactly the increment that cannot work.
 
 **Staging costs reach on uniform ground, and v0.6 makes the cost much larger.**
-68% of the reachable zone instead of 97%, with 60 m³/m of the budget it cannot
-place (the previous set lost 12 points; this loses 30). The 46 lost rim cells
+52% of the reachable zone instead of 83%, with 60 m³/m of the budget it cannot
+place -- a loss of 31 points (the previous set lost 12). The 90 unfilled cells
 are a **permanent residual** — after a full-depth sequence the hole is cemented
 all round, so no further pass from it can reach them (the `shadow` column,
 reachable in the virgin field and unreachable from the last pass in the cemented
@@ -354,11 +379,11 @@ field, equals the shortfall for every full-depth run).
 
 **Staging cannot fix a collar runaway.** The interface band sits at the mouth,
 so it is in every pass's source: the first pass stalls at 130 m³ and the later
-passes get 0.00 m³. Staged fills 37% of the reachable zone against 50% for the
+passes get 0.00 m³. Staged fills 37% of the reachable zone against 49% for the
 single pass. The remedy for a through-going contact is to seal it (the reference
 project's double-fluid collar/bottom sealing), not to stage the injection.
 
-**On the random field staging costs a little** (87% against 93%): the first pass
+**On the random field staging costs a little** (74% against 80%): the first pass
 spends the whole quota before the deeper passes exist, so the sequence is
 effectively a single shorter-hole pass.
 
