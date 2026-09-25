@@ -25,6 +25,10 @@ and the differences between them are the findings:
     reachable \ filled    fill shortfall    -- it could, and did not
         enclosed by filled cells    bypass void   (the real defect)
         connected to open ground    front shortfall (time, or numerics)
+    target \ reachable, but sealed inside the grout body
+                          enclosed unreachable -- a dense inclusion; looks
+                                               like a void on site, is a design
+                                               shortfall by cause (needs solid_phi)
 
 REACHABLE DOMAIN IS A SHORTEST PATH, NOT A CIRCLE
 -------------------------------------------------
@@ -91,6 +95,8 @@ UNREACHABLE = 1        # outside the reachable domain: not a defect
 FRONT_SHORTFALL = 2    # reachable, unfilled, connected to open ground
 BYPASS_VOID = 3        # reachable, unfilled, enclosed by filled cells
 OVERSHOOT = 4          # filled, but outside the reachable domain
+ENCLOSED_UNREACHABLE = 5   # unreachable pore space sealed inside the grout
+                           # (a dense inclusion); only with solid_phi given
 
 CATEGORY_NAMES = {
     FILLED: "filled",
@@ -98,6 +104,7 @@ CATEGORY_NAMES = {
     FRONT_SHORTFALL: "front_shortfall",
     BYPASS_VOID: "bypass_void",
     OVERSHOOT: "overshoot",
+    ENCLOSED_UNREACHABLE: "enclosed_unreachable",
 }
 
 
@@ -397,7 +404,8 @@ def _face_graph_edges(state, use_gravity):
 
 # --- classify what is unfilled --------------------------------------------
 
-def classify_unfilled(state, source_cells, reachable, s_c=0.5, target_mask=None):
+def classify_unfilled(state, source_cells, reachable, s_c=0.5, target_mask=None,
+                      solid_phi=None):
     """
     Label every cell as filled / unreachable / front_shortfall / bypass_void.
 
@@ -419,6 +427,18 @@ def classify_unfilled(state, source_cells, reachable, s_c=0.5, target_mask=None)
     (a cell or so, growing with run time); in a channelled field it would
     mean the reach model is missing a path. Either way it is worth seeing.
 
+    solid_phi (optional) switches on the treatment of SOLIDS: cells with
+    porosity <= solid_phi (host rock, boulders, cement from an earlier stage)
+    are not pore space. They are never part of a void and they wall pockets
+    off just as grout does. An unfilled pocket of pore space that touches no
+    exterior face is then sealed inside the grout body, and its cells are
+    split by reach: reachable ones are BYPASS_VOID, unreachable ones are
+    ENCLOSED_UNREACHABLE -- a dense inclusion (e.g. compacted fines under a
+    boulder) that 5 MPa cannot enter. To the field it looks like a void in
+    the grouted body; by cause it is a design shortfall. Left at None, the
+    classification is the original one, bit for bit, and the new category
+    stays empty.
+
     Returns a dict with per-cell `category`, component `labels` (-1 for
     filled), and area/fraction tables keyed by category name.
     """
@@ -432,10 +452,15 @@ def classify_unfilled(state, source_cells, reachable, s_c=0.5, target_mask=None)
     filled = s >= float(s_c)
     filled[src] = True
     unfilled = np.logical_not(filled)
+    if solid_phi is None:
+        solid = np.zeros(n, dtype=bool)
+    else:
+        solid = _to_array(state["porosity"]) <= float(solid_phi)
+    pore = unfilled & np.logical_not(solid)
 
-    # Components of the unfilled set, connected through interior faces.
+    # Components of the unfilled pore set, connected through interior faces.
     _, a, b, _ = interior_face_pairs(mesh)
-    keep = unfilled[a] & unfilled[b]
+    keep = pore[a] & pore[b]
     adj = csr_matrix(
         (np.ones(int(np.sum(keep))), (a[keep], b[keep])), shape=(n, n)
     )
@@ -447,11 +472,16 @@ def classify_unfilled(state, source_cells, reachable, s_c=0.5, target_mask=None)
     category[filled & np.logical_not(reach)] = OVERSHOOT
     category[unfilled & np.logical_not(reach)] = UNREACHABLE
     category[unfilled & reach] = FRONT_SHORTFALL
-    for c in np.unique(comp[unfilled]):
-        members = unfilled & (comp == c)
-        enclosed = np.all(reach[members]) and not np.any(touches_exterior[members])
-        if enclosed:
-            category[members] = BYPASS_VOID
+    for c in np.unique(comp[pore]):
+        members = pore & (comp == c)
+        if np.any(touches_exterior[members]):
+            continue
+        if solid_phi is None:
+            if np.all(reach[members]):
+                category[members] = BYPASS_VOID
+        else:
+            category[members & reach] = BYPASS_VOID
+            category[members & np.logical_not(reach)] = ENCLOSED_UNREACHABLE
 
     def _table(mask):
         total = float(np.sum(vols[mask]))
@@ -468,6 +498,7 @@ def classify_unfilled(state, source_cells, reachable, s_c=0.5, target_mask=None)
         "labels": labels,
         "n_components": int(n_comp),
         "n_bypass_voids": int(len(np.unique(comp[category == BYPASS_VOID]))),
+        "n_enclosed_unreachable": int(len(np.unique(comp[category == ENCLOSED_UNREACHABLE]))),
         "over_reachable": _table(reach),
         "over_domain": _table(np.ones(n, dtype=bool)),
     }

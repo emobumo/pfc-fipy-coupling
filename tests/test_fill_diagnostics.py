@@ -21,6 +21,7 @@ from src.models.slurry_transport.equations import solve_transport_step
 from src.coupling.porosity_to_permeability import porosity_to_permeability
 from src.analysis.fill_diagnostics import (
     FILLED, UNREACHABLE, FRONT_SHORTFALL, BYPASS_VOID, OVERSHOOT,
+    ENCLOSED_UNREACHABLE,
     face_start_gradient,
     interior_face_pairs,
     reachable_domain,
@@ -418,6 +419,65 @@ class TestClassifyUnfilled(unittest.TestCase):
                                          "bypass_void", "overshoot"))
         self.assertAlmostEqual(parts, t["area"], places=9)
         self.assertGreater(t["overshoot"], 0.0)
+
+    # --- solids and dense inclusions (solid_phi) ---------------------------
+
+    def test_without_solid_phi_the_new_category_never_appears(self):
+        """Default stays the original classification: an enclosed pocket that
+        is partly unreachable is NOT a bypass void, and nothing is labelled
+        enclosed_unreachable."""
+        st, src, d = _ring_state()
+        reach = (d >= 1.0) & (d <= 5.5)        # the hole's core is unreachable
+        res = classify_unfilled(st, src, reach, s_c=0.5)
+        cat = res["category"]
+        self.assertFalse(np.any(cat == ENCLOSED_UNREACHABLE))
+        self.assertEqual(res["n_enclosed_unreachable"], 0)
+        self.assertTrue(np.all(cat[d < 1.0] == UNREACHABLE))
+        self.assertTrue(np.all(cat[(d >= 1.0) & (d < 2.0)] == FRONT_SHORTFALL))
+
+    def test_unreachable_pocket_sealed_in_grout_is_a_dense_inclusion(self):
+        st, src, d = _ring_state()
+        reach = (d >= 2.0) & (d <= 5.5)        # the whole hole is unreachable
+        res = classify_unfilled(st, src, reach, s_c=0.5, solid_phi=1.0e-2)
+        cat = res["category"]
+        self.assertTrue(np.all(cat[d < 2.0] == ENCLOSED_UNREACHABLE))
+        self.assertEqual(res["n_enclosed_unreachable"], 1)
+        self.assertEqual(res["n_bypass_voids"], 0)
+        self.assertTrue(np.all(cat[d > 5.5] == UNREACHABLE))   # open ground stays
+
+    def test_mixed_pocket_splits_by_reach(self):
+        st, src, d = _ring_state()
+        reach = (d >= 1.0) & (d <= 5.5)
+        res = classify_unfilled(st, src, reach, s_c=0.5, solid_phi=1.0e-2)
+        cat = res["category"]
+        self.assertTrue(np.all(cat[d < 1.0] == ENCLOSED_UNREACHABLE))
+        self.assertTrue(np.all(cat[(d >= 1.0) & (d < 2.0)] == BYPASS_VOID))
+        t = res["over_domain"]
+        parts = sum(t[name] for name in ("filled", "unreachable", "front_shortfall",
+                                         "bypass_void", "overshoot", "enclosed_unreachable"))
+        self.assertAlmostEqual(parts, t["area"], places=9)
+
+    def test_solid_plug_closes_the_gap_and_is_never_a_void(self):
+        """Cut the ring open, then plug the cut with rock: with solid_phi the
+        rock walls the hole off (a bypass void again); the rock itself is
+        not pore space and is never labelled a void. Without solid_phi the
+        plugged hole still counts as open (the original behaviour)."""
+        st, src, d = _ring_state(gap=True)
+        c = np.asarray(st["mesh"].cellCenters.value, dtype=float)
+        n = 21
+        cx, cy = c[0, (n * n) // 2], c[1, (n * n) // 2]
+        plug = (c[0] > cx) & (np.abs(c[1] - cy) < 0.75 * 0.5) & (d >= 2.0) & (d <= 4.0)
+        phi = np.where(plug, 1.0e-3, 0.30)
+        st["porosity"].setValue(phi)
+        reach = (d <= 5.5) & np.logical_not(plug)
+        hole = d < 2.0
+        old = classify_unfilled(st, src, reach, s_c=0.5)
+        self.assertTrue(np.all(old["category"][hole] == FRONT_SHORTFALL))
+        res = classify_unfilled(st, src, reach, s_c=0.5, solid_phi=1.0e-2)
+        cat = res["category"]
+        self.assertTrue(np.all(cat[hole] == BYPASS_VOID))
+        self.assertTrue(np.all(cat[plug] == UNREACHABLE))
+        self.assertEqual(res["n_bypass_voids"], 1)
 
     def test_fill_ratio_ladder_is_monotone_in_threshold(self):
         """Raising S_c can only move cells out of 'filled'."""
