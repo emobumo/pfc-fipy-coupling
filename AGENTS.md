@@ -35,7 +35,8 @@ Ask before changing:
 - Python files in that case may share runtime context and should not be modularized prematurely.
 
 - The particle skeleton is rigid; do not add fluid-driven particle deformation.
-- Porosity is transferred only once at initialization; do not add later porosity updates.
+- Porosity is transferred only once at initialization; do not add later porosity updates
+  (sole approved exception: between-stage solidification in `stage_update.py`, see CLAUDE.md).
 - The particle model is fixed; do not add automatic particle-model adaptation unless explicitly requested.
 
 ## Modeling constraints for code generation
@@ -44,7 +45,7 @@ When modifying this repository, keep the following assumptions unless the user e
 
 - Treat the waste-rock skeleton as fixed.
 - Do not introduce fluid-driven particle motion.
-- Do not update porosity dynamically after initialization.
+- Do not update porosity dynamically after initialization (except between stages, see CLAUDE.md).
 - Treat the slurry transport process as variable-saturation continuum transport.
 - Use a generalized nonlinear Darcy-type framework rather than a simple saturated linear Darcy law.
 - Do not automatically switch to a standard Richards–van Genuchten soil-water model.

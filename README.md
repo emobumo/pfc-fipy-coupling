@@ -1,67 +1,55 @@
-# PFC2D + FiPy Coupling for Waste-Rock Slurry Transport
+# PFC2D + FiPy：废石散体恒压注浆的 Bingham 浆体变饱和迁移
 
-This repository develops a coupled PFC2D + FiPy workflow for engineering-scale slurry transport in a fixed waste-rock pile, with application to underground mine grouting/backfilling scenarios.
+博士论文《废石散体灌浆充填渗流规律及其胶结充填体力学承载机制研究与应用》第 4 章的数值模型。
+废石骨架刚性固定、结构以等效孔隙率场输入（可来自 PFC2D 颗粒模型），FiPy 求解广义非线性
+Darcy + Bingham 屈服的变饱和浆体迁移，支持分段前进式注浆的段间凝固。
 
-## Project goal
+## 从哪里读起
 
-The target problem is constant-pressure slurry injection through a grouting borehole located at the top of a waste-rock pile, and the subsequent migration of slurry through the pile.
+| 想知道 | 看 |
+|---|---|
+| 硬约束、控制方程、验证阶梯、现行结论速查 | `CLAUDE.md` |
+| 各专题的实验记录、推翻过程与局限 | `docs/results_log.md` |
+| 工程算例的设定与回归锚点数字 | `cases/README.md` |
+| 充填闭合（IMPES）的设计与被否方案 | `docs/saturation_design.md` |
+| 开发规则（与 CLAUDE.md 互补） | `AGENTS.md` |
 
-The final objective is **not** to directly copy a rainfall infiltration case. Instead, this project builds a dedicated slurry-transport model with the following role split:
+## 目录
 
-- **PFC2D** provides waste-rock structure and porosity-related information.
-- **FiPy** solves the continuum-scale fluid field.
-- Fluid results may be written back to particle extra variables for visualization and statistics.
+| 路径 | 内容 |
+|---|---|
+| `src/models/slurry_transport/` | 控制方程与时间推进（`equations.py`）、变量与参数（`variables.py`）、段间凝固（`stage_update.py`） |
+| `src/coupling/` | 孔隙率 → 渗透率律（`porosity_to_permeability.py`）；PFC 耦合驱动（`driver.py`） |
+| `src/fipy_adapter/`、`src/pfc_adapter/` | 网格构建；PFC 颗粒读写（`itasca` 惰性导入，无 PFC 时自动跳过） |
+| `src/structure/` | 结构孔隙率场（梯度、贯通带、随机场） |
+| `src/analysis/` | 充填诊断（可达域 / 三层评价域 / 空区分类）与检查点续跑 |
+| `cases/` | 工程算例：真实颗粒堆、梯度场、孔底出浆、通道跑浆、分段序列、招金断面、块石绕流空区 |
+| `scripts/` | 扫描、对照与后处理：诊断出图、Picard 扫描、招金筛选与求解、黏度时变界定、无重力对照、参数敏感性、分段试算、出图 |
+| `tests/` | 100 个测试（验证阶梯、充填、重力、渗透率、结构场、诊断、检查点、招金断面） |
+| `pfc/` | PFC 端入口（在 PFC 中 restore 模型后 `call` 运行） |
+| `data/particles.csv` | 真实颗粒数据 |
+| `reference_cases/` | 降雨入渗参考算例（只读，不引用进新代码） |
+| `docs/archive/` | 早期设计文档（已过期，仅作历史记录） |
+| `outputs/` | 运行结果（不进版本管理） |
 
-## Current first-version modeling assumptions
+## 运行
 
-The current baseline model uses the following assumptions:
+运行时是 PFC 5.0 自带的 CPython 2.7.9（捆绑 numpy/scipy/fipy），不需要也不允许 `pip install`；
+所有代码须兼容 Python 2.7。`run_local.ps1` 自动定位该解释器并设置 `PYTHONPATH`（PFC 装在别处时
+用 `$env:PFC_PYTHON` 覆盖），线性求解器后端默认 scipy。
 
-- The waste-rock skeleton is fixed and does not deform under fluid action.
-- Porosity is transferred from PFC to FiPy only once at initialization.
-- The process is treated as **variable-saturation slurry migration**, not as a fully saturated seepage problem.
-- The continuum formulation is a **generalized nonlinear Darcy-type model** rather than a simple saturated linear Darcy law.
-- Slurry rheology should account for **Bingham-type yield behavior** in the first version.
-- **Clogging is neglected** in the current baseline because the waste-rock structure is assumed to be relatively coarse.
-- The model does **not** directly adopt the standard Richards–van Genuchten soil-water formulation unless explicitly re-evaluated later.
+```powershell
+# 全套测试（约 15 分钟）
+powershell -File scripts\run_local.ps1 -m unittest discover -s tests -v
+# 跑一个算例或脚本
+powershell -File scripts\run_local.ps1 cases\inclined_hole_gradient.py --only main
+powershell -File scripts\run_local.ps1 scripts\gravity_control.py
+```
 
-## Repository intent
+长算例都带检查点：崩溃后重跑同一条命令即从断点续上。
 
-This repository prioritizes a **minimal, verifiable first version** before introducing more complex mechanisms such as clogging, dynamic porosity update, skeleton deformation, or more advanced rheology.
+## 专利线
 
-## Documentation
-
-Detailed physical assumptions and modeling scope are described in:
-
-- `docs/physical_model.md`
-
-## Environment & running
-
-This project runs inside **PFC 5.0's bundled CPython 2.7.9** (which ships numpy,
-scipy, and fipy). There is no separate install step — do not `pip install`. All
-`src/` code must stay **Python 2.7 compatible**. See `requirements.txt` for the
-documented runtime versions.
-
-The FiPy side decouples from PFC: the PFC write-back imports `itasca` lazily and
-skips when it is absent, so the continuum solve can run and be tested without
-launching PFC, using PFC's bundled interpreter.
-
-- Run a script:
-  `powershell -File scripts\run_local.ps1 scripts\smoke_test_src.py`
-- Run the tests:
-  `powershell -File scripts\run_local.ps1 -m unittest discover -s tests -v`
-
-`scripts\run_local.ps1` auto-locates the bundled Python and sets `PYTHONPATH`;
-override the interpreter with `$env:PFC_PYTHON` if PFC is installed elsewhere.
-
-## Current design principles
-
-Implementation work in this repository should follow these principles:
-
-- keep the PFC side focused on geometry / porosity export,
-- keep the FiPy side focused on continuum field solving,
-- avoid silently switching back to classical saturated water-infiltration assumptions,
-- preserve clean extension points for future upgrades.
-
-## Status
-
-This repository is under iterative development. The current model description is a working baseline for implementation and validation, not a final claim that the physical model is complete.
+面连通强度的专利原型已于 2026-09 冻结：代码状态见 tag `patent-prototype-v1` 与
+`patent-prototype-v1-figures`；附图脚本、证据数据与打包成品已迁出到本机
+`D:\work\patent-archive\`（独立目录，按其 README 可重新生成附图）。
