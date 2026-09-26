@@ -340,8 +340,8 @@ field from the FULL hole — what one pass could have reached.
 | uniform / single | 166.15 | 4319 | 145 | **83%** | 32 |
 | uniform / 7 → 10 → 17 m | **106.15** (stalled, 60 unspent) | 4046 | 87 | **52%** | 90 |
 | uniform / 8.5 → 17 m | 106.15 | 3741 | 87 | 52% | 90 |
-| collar band / single | 166.36 | 981 | 116 | 49% | 134 |
-| collar band / 7 → 10 → 17 m | 130.36 | 4363 | 85 | **37%** | 165 |
+| collar band / single † | 166.36 | 981 | 116 | 49% | 134 |
+| collar band / 7 → 10 → 17 m † | 130.36 | 4363 | 85 | **37%** | 165 |
 | random seed 1 / single | 166.24 | 1457 | 131 | 80% | 35 |
 | random seed 1 / 7 → 10 → 17 m | 166.19 | 2137 | 121 | 74% | 45 |
 
@@ -376,6 +376,14 @@ are a **permanent residual** — after a full-depth sequence the hole is cemente
 all round, so no further pass from it can reach them (the `shadow` column,
 reachable in the virgin field and unreachable from the last pass in the cemented
 field, equals the shortfall for every full-depth run).
+
+† *Correction 2026-09-27:* this "collar band" is `make_field("collar")`, x = −13.75 — the collar column of
+the OLD 30 × 30 m domain. On the v0.6 domain it lies about 1 m past the toe (no hole cell inside), so these
+rows and the next paragraph describe a **near-toe channel**. The real collar channel is `collar_v06`
+(x = −28.75, identical to `band_collar_x-28.75`); its anchors (scripts/stage_supplement.py p1, 2.5 m,
+two runs bit-identical): ideal full hole quota 554 s, target 67%; staged 7→10→17 and 8.5→17 identical,
+first pass takes the whole quota at 914 s, target 54% (same-metric), 100 shadowed cells; pre-plug
+h = 2.5 m quota 2187 s, target 83%; h = 10 m quota 3876 s, target 92%. The old numbers stay as recorded.
 
 **Staging cannot fix a collar runaway.** The interface band sits at the mouth,
 so it is in every pass's source: the first pass stalls at 130 m³ and the later

@@ -96,7 +96,9 @@ def main(argv):
     if not os.path.isdir(OUT):
         os.makedirs(OUT)
     with open(os.path.join(OUT, "results%s.json" % sfx), "w") as fh:
-        json.dump(rows, fh, indent=1, default=float)
+        # run() rows carry arrays (filled_mask); keep the scalars and lists
+        json.dump([dict((k, v) for k, v in r.items() if not isinstance(v, np.ndarray)) for r in rows],
+                  fh, indent=1, default=float)
     for r in rows:
         print("%-26s patience %3d: %-5s t=%.0f s V_in=%.2f filled=%d Qtail/peak=%.3f tgt=%s dsf=%s shortfall=%d"
               % (r["label"], r["patience"], r["reason"], r["t"], r["v_in"], r["filled_cells"], r["q_decay"],

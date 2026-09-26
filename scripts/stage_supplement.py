@@ -120,7 +120,10 @@ def p1(hs, pass2=False):
         staged.append(S.run_sequence("collar_v06/%s%s" % (name, sfx), phi, depths, QUOTA,
                                      reach_virgin, hole, False))
     with open(os.path.join(OUT, "p1_results%s.json" % sfx), "w") as fh:
-        json.dump({"single": rows, "staged": staged}, fh, indent=1, default=float)
+        # run() rows carry arrays (filled_mask); keep the scalars and lists
+        scal = lambda r: dict((k, v) for k, v in r.items() if not isinstance(v, np.ndarray))
+        json.dump({"single": [scal(r) for r in rows], "staged": [scal(r) for r in staged]},
+                  fh, indent=1, default=float)
     return rows, staged
 
 
@@ -173,9 +176,14 @@ def table_and_plot(hs, sfx=""):
         order = np.lexsort((mx, my))
         ext = [G.X_MIN, G.X_MAX, G.Y_MIN, G.Y_MAX]
         ax.imshow(g(f[order]), origin="lower", extent=ext, cmap="Reds", vmin=0, vmax=1, interpolation="nearest")
-        ax.imshow(np.ma.masked_where(~g(band[order]), g(band[order])), origin="lower", extent=ext,
+        ax.imshow(np.ma.masked_where(g(band[order]) < 0.5, g(band[order])), origin="lower", extent=ext,
                   cmap=ListedColormap(["#86b6ef"]), alpha=0.35, interpolation="nearest")
         xs, ys = np.unique(mx), np.unique(my)
+        if sub.startswith("preplug_h"):
+            h = float(sub[len("preplug_h"):].replace(sfx, "") if sfx else sub[len("preplug_h"):])
+            plug = plugged(phi, band, hole, my, h)[1]
+            ax.imshow(np.ma.masked_where(g(plug[order]) < 0.5, g(plug[order])), origin="lower", extent=ext,
+                      cmap=ListedColormap(["#404040"]), interpolation="nearest")
         ax.contour(xs, ys, g(target[order].astype(float)), levels=[0.5], colors="k", linewidths=0.8, linestyles="--")
         ax.contour(xs, ys, g(reach[order].astype(float)), levels=[0.5], colors="#2a78d6", linewidths=0.9)
         end, d, nrm = G.hole_geometry()
@@ -183,7 +191,7 @@ def table_and_plot(hs, sfx=""):
         ax.set_title(title, fontsize=9)
         ax.set_aspect("equal")
         ax.tick_params(labelsize=6)
-    fig.text(0.5, 0.02, u"红：浆体（充填饱和度或胶结占据率）；浅蓝：通道带；黑虚线：设计目标域；蓝实线：可达域；黑线：钻孔",
+    fig.text(0.5, 0.02, u"红：浆体（充填饱和度或胶结占据率）；浅蓝：通道带；深灰：预置封堵；黑虚线：设计目标域；蓝实线：可达域；黑线：钻孔",
              ha="center", fontsize=8)
     fig.suptitle(u"孔口通道：理想整孔、分段与预置封堵的对照", fontsize=11)
     fig.tight_layout(rect=[0, 0.05, 1, 0.93])
