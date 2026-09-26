@@ -341,6 +341,59 @@ class TestReachMetric(unittest.TestCase):
                            "both detours cemented, yet the corner stayed cheap")
 
 
+class TestConicReach(unittest.TestCase):
+    """
+    Uniform ground with gravity: the straight-ray stall condition
+    lambda r <= p0 - rho g r sin(theta) makes the reach of a point source the
+    conic r(theta) = L_max / (1 + Pi_g sin theta) with the source at its
+    focus (an ellipse, eccentricity Pi_g = rho g / lambda). The only 2D
+    analytic check with gravity: the metric error acts on the lambda term
+    alone (the climb is path independent), so the under-statement bound
+    becomes 2.75% / (1 + Pi_g sin theta) -- larger downward.
+    """
+
+    PHI = 0.18
+
+    def _radius(self, cost, xs, ys, x0, y0, th, p0, dr):
+        g = cost.reshape(len(ys), len(xs))
+        pr, pc, r = 0.0, 0.0, dr
+        while True:
+            px, py = x0 + r * math.cos(th), y0 + r * math.sin(th)
+            i, j = np.searchsorted(xs, px) - 1, np.searchsorted(ys, py) - 1
+            tx = (px - xs[i]) / (xs[i + 1] - xs[i])
+            ty = (py - ys[j]) / (ys[j + 1] - ys[j])
+            c = ((1 - tx) * (1 - ty) * g[j, i] + tx * (1 - ty) * g[j, i + 1]
+                 + (1 - tx) * ty * g[j + 1, i] + tx * ty * g[j + 1, i + 1])
+            if c >= p0:
+                return pr + (p0 - pc) / (c - pc) * (r - pr)
+            pr, pc, r = r, c, r + dr
+
+    def test_point_source_reach_is_the_focal_ellipse(self):
+        n, dx, p0 = 49, 1.25, 5.0e6
+        st = _state(n, n, dx, self.PHI, gravity_on=True, p0=p0)
+        c = (n * n) // 2
+        cost = np.asarray(reachable_domain(st, [c], p0=p0, use_gravity=True)["cost"], float)
+        x = np.asarray(st["x"], float)
+        y = np.asarray(st["y"], float)
+        xs, ys = np.unique(x), np.unique(y)
+        order = np.lexsort((x, y))                 # rows of constant y, x ascending
+        cost = cost[order]
+        lam = _lambda(self.PHI)
+        L, pig = p0 / lam, RHO * 9.81 / lam
+        for k in range(36):
+            th = 2 * math.pi * (k + 0.5) / 36
+            rm = self._radius(cost, xs, ys, x[c], y[c], th, p0, dx / 20.0)
+            ra = L / (1 + pig * math.sin(th))
+            err = rm / ra - 1.0
+            bound = 0.0275 / (1 + pig * math.sin(th))
+            self.assertLessEqual(err, 0.005, "reach over-stated at %.0f deg" % math.degrees(th))
+            self.assertGreaterEqual(err, -bound - 0.005, "reach beyond the metric bound at %.0f deg"
+                                    % math.degrees(th))
+        for th, ra in ((math.pi / 2, L / (1 + pig)), (-math.pi / 2, L / (1 - pig)), (0.0, L)):
+            rm = self._radius(cost, xs, ys, x[c], y[c], th, p0, dx / 20.0)
+            self.assertAlmostEqual(rm / ra, 1.0, delta=0.005)   # axis rays are exact
+
+
 # --- classification --------------------------------------------------------
 
 def _ring_state(n=21, dx=0.5, r_in=2.0, r_out=4.0, gap=False):
