@@ -76,6 +76,23 @@ ARRIVAL_RUNS = [
 ]
 ARRIVAL_CAP = 300.0            # m3/m: ~6x the largest design volume
 
+# The ORIGINAL design (in force when the runaway happened): stop at 28.6 m3/m
+# and book the 22 m layer, in every zone. Same ground, same channels, same
+# 35 deg, no seal as A-D -- only the design intent differs (--design original).
+RUNS_ORIGINAL = [
+    ("A3", "z2 45%, contacts, no seal -- original design", dict(zone="z2_cuts6-10", contacts=True, seal=False)),
+    ("B3", "z1 10%, contacts, no seal -- original design", dict(zone="z1_cuts1-6", contacts=True, seal=False)),
+    ("C3", "z3 25%, contacts, no seal -- original design", dict(zone="z3_cuts10-15", contacts=True, seal=False)),
+    ("D3", "z1 10%, NO contacts -- original design", dict(zone="z1_cuts1-6", contacts=False, seal=False)),
+]
+# Optional check: the seal runs at the changed design's elevation (15-25 deg).
+RUNS_SEAL20 = [
+    ("E20", "z2 45%, contacts, SEAL, 20 deg (remedy)", dict(zone="z2_cuts6-10", contacts=True, seal=True, hole_angle=20.0)),
+]
+ARRIVAL_SEAL20 = [
+    ("E2_20", "z2 45%, contacts, SEAL, 20 deg -- to arrival", dict(zone="z2_cuts6-10", contacts=True, seal=True, hole_angle=20.0)),
+]
+
 DT_CAP = 5.0
 MAX_STEPS = 60000
 STALL_WINDOW = 400            # steps
@@ -83,8 +100,9 @@ STALL_REL = 1.0e-5            # V_in growth over the window, relative to the quo
 RECORD_EVERY = 50
 
 
-def groups(mx, my, region, hcells, cfg):
-    layer = float(Z.ZONES[cfg["zone"]]["layer"])
+def groups(mx, my, region, hcells, cfg, layer=None):
+    if layer is None:
+        layer = float(Z.ZONES[cfg["zone"]]["layer"])
     grout = (region == Z.FILL) | (region == Z.CONTACT) | (region == Z.ORE) | (region == Z.OUTLET)
     not_src = np.ones(mx.size, dtype=bool)
     not_src[hcells] = False
@@ -102,7 +120,7 @@ def _snapshot(g, phi, s, vols, t, v_in, step):
     return vg
 
 
-def run_one(tag, label, overrides, cell, arrival=False):
+def run_one(tag, label, overrides, cell, arrival=False, design="changed", pass2=False):
     """
     arrival=False: stop at the zone's design volume (the quota).
     arrival=True:  the site's stop rule -- keep going until the grout reaches
@@ -111,17 +129,25 @@ def run_one(tag, label, overrides, cell, arrival=False):
     """
     cfg = Z.config(**dict(COMMON, **overrides))
     quota = float(Z.ZONES[cfg["zone"]]["grout_per_m"])
+    layer = None
+    if design == "original":
+        quota = float(Z.ORIGINAL_DESIGN["grout_per_m"])
+        layer = float(Z.ORIGINAL_DESIGN["layer"])
+    sfx = "_pass2" if pass2 else ""
     stop_volume = ARRIVAL_CAP if arrival else quota
     state, mx, my, phi, region, hc = Z.build_state(cfg, cell)
     vols = np.asarray(state["mesh"].cellVolumes, dtype=float)
     hm = np.zeros(mx.size, dtype=bool)
     hm[hc] = True
-    g = groups(mx, my, region, hc, cfg)
+    g = groups(mx, my, region, hc, cfg, layer=layer)
     tg = Z.targets(mx, my, region, cfg)
     design_capacity = float(np.sum(phi[g["design"]] * vols[g["design"]]))
 
-    keeper = Checkpointer(os.path.join(OUT, "ckpt_" + tag), every=500,
-                          fingerprint=state_fingerprint(state, "zhaojin|%s|%r" % (tag, sorted(cfg.items()))))
+    fp = "zhaojin|%s|%r" % (tag, sorted(cfg.items()))
+    if design != "changed":
+        fp += "|design=%s" % design       # never resume a run of the other design
+    keeper = Checkpointer(os.path.join(OUT, "ckpt_" + tag + sfx), every=500,
+                          fingerprint=state_fingerprint(state, fp))
     t, v_in, step0 = 0.0, 0.0, 0
     t_ore = t_out = -1.0
     series = []
@@ -182,7 +208,7 @@ def run_one(tag, label, overrides, cell, arrival=False):
     s = np.asarray(state["saturation"].value, dtype=float)
     vg = dict((k, float(np.sum(phi[m] * s[m] * vols[m]))) for k, m in g.items())
     stored = vg["design"] + vg["above"] + vg["below"]
-    np.savez(os.path.join(OUT, "final_%s.npz" % tag), s=s, phi=phi, region=region,
+    np.savez(os.path.join(OUT, "final_%s%s.npz" % (tag, sfx)), s=s, phi=phi, region=region,
              x=mx, y=my, hole=hc, series=np.asarray(series, dtype=float))
     return {
         "tag": tag, "label": label, "zone": cfg["zone"], "reason": reason,
@@ -191,6 +217,8 @@ def run_one(tag, label, overrides, cell, arrival=False):
         "below_share": vg["below"] / stored if stored > 0 else 0.0,
         "design_fill": vg["design"] / design_capacity if design_capacity > 0 else 0.0,
         "t_ore": t_ore, "t_out": t_out, "snaps": snaps,
+        "design_mode": design, "design_capacity": design_capacity,
+        "layer": layer if layer is not None else float(Z.ZONES[cfg["zone"]]["layer"]),
     }
 
 
@@ -198,6 +226,9 @@ def main(argv):
     only = None
     cell = 1.0
     arrival = False
+    design = "changed"
+    pass2 = False
+    seal20 = False
     i = 0
     while i < len(argv):
         if argv[i] == "--only":
@@ -206,11 +237,17 @@ def main(argv):
             cell = float(argv[i + 1]); i += 2
         elif argv[i] == "--arrival":
             arrival = True; i += 1
+        elif argv[i] == "--design":
+            design = argv[i + 1]; i += 2
+        elif argv[i] == "--pass2":
+            pass2 = True; i += 1          # second independent run: separate files, then compare
+        elif argv[i] == "--seal20":
+            seal20 = True; i += 1
         else:
             i += 1
     if not os.path.isdir(OUT):
         os.makedirs(OUT)
-    done_path = os.path.join(OUT, "results.jsonl")
+    done_path = os.path.join(OUT, "results_pass2.jsonl" if pass2 else "results.jsonl")
     done = set()
     if os.path.exists(done_path):
         for line in open(done_path):
@@ -219,13 +256,19 @@ def main(argv):
             except ValueError:
                 pass
 
-    for tag, label, overrides in (ARRIVAL_RUNS if arrival else RUNS):
+    if seal20:
+        todo = ARRIVAL_SEAL20 if arrival else RUNS_SEAL20
+    elif design == "original":
+        todo = RUNS_ORIGINAL
+    else:
+        todo = ARRIVAL_RUNS if arrival else RUNS
+    for tag, label, overrides in todo:
         if only is not None and tag not in only:
             continue
         if tag in done:
             print("  [%s] done already, skipped" % tag)
             continue
-        r = run_one(tag, label, overrides, cell, arrival=arrival)
+        r = run_one(tag, label, overrides, cell, arrival=arrival, design=design, pass2=pass2)
         handle = open(done_path, "a")
         try:
             handle.write(json.dumps(r) + "\n")

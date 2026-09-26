@@ -91,6 +91,14 @@ ZONES = {
     "z3_cuts10-15": {"phi": 0.25, "width": 6.5, "layer": 12.0, "grout_per_m": 6.5 * 12 * 0.25},
 }
 RUNAWAY_CUTS = {"z1_cuts1-6": ["5#"], "z2_cuts6-10": ["7#", "9#"], "z3_cuts10-15": ["15#"]}
+# The ORIGINAL design -- the one in force when the runaway happened (single
+# fluid, 35 deg, no seal): one 22 m layer above the grouting level (-26 to
+# -4 m), 20% porosity assumed throughout, 86 x 6.5 x 22 x 0.2 = 2460 m3 of
+# grout, i.e. 2460 / 86 = 28.6 m3 per metre of strike in every zone. ZONES
+# above is the CHANGED design, written after the runaway; its porosities are
+# the document's estimates back-calculated from grout takes, and they remain
+# the best description of the GROUND in every run.
+ORIGINAL_DESIGN = {"layer": 22.0, "phi": 0.20, "width": 6.5, "grout_per_m": 6.5 * 22.0 * 0.20}
 
 # --- material surrogates ----------------------------------------------------
 NO_GROUT_PHI = 1.0e-3          # granite, unmined ore, cement: see module notes
