@@ -82,6 +82,17 @@ def one(label, phi, patience, quota, target):
 
 def main(argv):
     sfx = "_pass2" if "--pass2" in argv else ""
+    if "--counts" in argv:
+        # re-run only seed 2 at 600 to record the filled-cell count per step
+        C.OUT_ROOT = os.path.join(OUT, "runs_counts")
+        C.march = march_counting
+        _, x, y, _, _ = G.build_mesh_for_domain(G.X_MIN, G.X_MAX, G.Y_MIN, G.Y_MAX, G.CELL)
+        mx, my = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
+        r = one("random_seed2_p600_counts", C.field("random", mx, my, seed=2), 600, QUOTA, target_mask(mx, my))
+        np.savetxt(os.path.join(OUT, "seed2_p600_counts.csv"), np.asarray(r["counts"], dtype=int),
+                   fmt="%d", header="filled cells after each step (step 1 = first row)")
+        print("counts recorded: %d steps, final %d" % (len(r["counts"]), r["counts"][-1]))
+        return 0
     C.OUT_ROOT = os.path.join(OUT, "runs" + sfx)
     C.march = march_counting
     _, x, y, _, _ = G.build_mesh_for_domain(G.X_MIN, G.X_MAX, G.Y_MIN, G.Y_MAX, G.CELL)
