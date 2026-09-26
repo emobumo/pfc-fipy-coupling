@@ -24,7 +24,7 @@ Darcy + Bingham 屈服的变饱和浆体迁移，支持分段前进式注浆的�
 | `src/structure/` | 结构孔隙率场（梯度、贯通带、随机场） |
 | `src/analysis/` | 充填诊断（可达域 / 三层评价域 / 空区分类）与检查点续跑 |
 | `cases/` | 工程算例：真实颗粒堆、梯度场、孔底出浆、通道跑浆、分段序列、招金断面、块石绕流空区 |
-| `scripts/` | 扫描、对照与后处理：诊断出图、Picard 扫描、招金筛选与求解、黏度时变界定、无重力对照、参数敏感性、分段试算、出图 |
+| `scripts/` | 扫描、对照与后处理：诊断出图、Picard 扫描、招金筛选与求解、黏度时变界定、无重力对照、参数敏感性、分段试算、出图；不跑求解器的解析估算（`forchheimer_penetration`、`param_window`、`real_param_selfcheck`、`model1_checkup`、`bin_porosity_csv`）；台阶 4a 的 Roache GCI（`gci_4a`，验证阶梯表中的 GCI 数字只由它复现） |
 | `tests/` | 100 个测试（验证阶梯、充填、重力、渗透率、结构场、诊断、检查点、招金断面） |
 | `pfc/` | PFC 端入口（在 PFC 中 restore 模型后 `call` 运行） |
 | `data/particles.csv` | 真实颗粒数据 |
