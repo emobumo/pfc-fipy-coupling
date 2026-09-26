@@ -71,8 +71,14 @@ def extent_report():
     for phi_v in PHIS:
         for name, depths in PLANS:
             p = os.path.join(S.OUT_ROOT, "phi%.2f" % phi_v, name, "cells.csv")
+            for sub in (("c%g" % G.CELL,), ("pass2", "c%g" % G.CELL), ("pass2",)):
+                if not os.path.exists(p):
+                    p = os.path.join(*((S.OUT_ROOT,) + sub + ("phi%.2f" % phi_v, name, "cells.csv")))
             if not os.path.exists(p):
                 continue
+            h = np.loadtxt(os.path.join(os.path.dirname(p), "injection_rate.csv"), delimiter=",",
+                           skiprows=1, ndmin=2)
+            q_stop = [h[h[:, 2] == k][-1, 1] for k in sorted(set(h[:, 2].astype(int)))]
             a = np.loadtxt(p, delimiter=",", skiprows=1)
             x, y, by_stage = a[:, 0], a[:, 1], a[:, 5]
             along = (x - G.MOUTH[0]) * ax[0] + (y - G.MOUTH[1]) * ax[1]
@@ -81,20 +87,43 @@ def extent_report():
             x_f = float(along[first].max()) - depths[0]
             nxt = ", ".join("%.0f m %s" % (dd - depths[0], ">" if dd - depths[0] > x_f else "<=")
                             for dd in depths[1:])
-            lines.append("%-18s %6.1f %8.1f %8.1f %7.2f | %s" % (
-                "phi%.2f/%s" % (phi_v, name), l_max(phi_v), depths[0], x_f, x_f / l_max(phi_v), nxt or "-"))
+            lines.append("%-18s %6.1f %8.1f %8.1f %7.2f | %-28s | Q at each stop [m3/m/s]: %s" % (
+                "phi%.2f/%s" % (phi_v, name), l_max(phi_v), depths[0], x_f, x_f / l_max(phi_v), nxt or "-",
+                ", ".join("%.2e" % q for q in q_stop)))
     text = "\n".join(lines)
     open(os.path.join(S.OUT_ROOT, "extent.txt"), "w").write(text + "\n")
     print(text)
     return 0
 
 
+def options(argv):
+    """--cell X (default: the case's 2.5 m), --pass2 (second independent run,
+    separate outputs), --plans a,b (subset of PLANS by name). A finer cell
+    goes to outputs/stage_ratio_<cell>[_pass2]/ with labels prefixed by the
+    cell, so no checkpoint or output of another grid is ever reused."""
+    global PLANS, PHIS
+    cell = float(argv[argv.index("--cell") + 1]) if "--cell" in argv else G.CELL
+    G.CELL = cell
+    root = "stage_ratio" if cell == 2.5 else "stage_ratio_%g" % cell
+    if "--pass2" in argv:
+        root += "_pass2"
+    S.OUT_ROOT = os.path.join(REPO, "outputs", root)
+    if "--plans" in argv:
+        keep = argv[argv.index("--plans") + 1].split(",")
+        PLANS = tuple(p for p in PLANS if p[0] in keep)
+    if "--phi" in argv:
+        PHIS = tuple(float(v) for v in argv[argv.index("--phi") + 1].split(","))
+    prefix = "" if cell == 2.5 else "c%g/" % cell
+    if "--pass2" in argv:
+        prefix = "pass2/" + prefix        # distinct checkpoint tags: never resume pass 1
+    return prefix
+
+
 def main(argv):
+    prefix = options(argv)
     if "--extent" in argv:
         return extent_report()
     phis = PHIS
-    if "--phi" in argv:
-        phis = tuple(float(v) for v in argv[argv.index("--phi") + 1].split(","))
     _, x, y, _, _ = G.build_mesh_for_domain(G.X_MIN, G.X_MAX, G.Y_MIN, G.Y_MAX, G.CELL)
     mx, my = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
     nx = int(round((G.X_MAX - G.X_MIN) / G.CELL))
@@ -112,7 +141,7 @@ def main(argv):
         print("=== phi %.2f (L_max %.1f m): virgin reach %d cells ===" % (phi_v, l_max(phi_v), int(reach_virgin.sum())))
         sys.stdout.flush()
         for name, depths in PLANS:
-            label = "phi%.2f/%s" % (phi_v, name)
+            label = prefix + "phi%.2f/%s" % (phi_v, name)
             row = S.run_sequence(label, phi, depths, None, reach_virgin, full, False)
             later = []
             for k, stg in enumerate(row["stages"]):
@@ -133,7 +162,10 @@ def main(argv):
     text = "\n".join(lines)
     if not os.path.isdir(S.OUT_ROOT):
         os.makedirs(S.OUT_ROOT)
-    open(os.path.join(S.OUT_ROOT, "summary.txt"), "w").write(text + "\n")
+    name = "summary.txt"
+    if "--plans" in argv or "--phi" in argv:        # a subset: never overwrite the full table
+        name = "summary_%s_%s.txt" % ("-".join(p[0] for p in PLANS), "-".join("%.2f" % v for v in phis))
+    open(os.path.join(S.OUT_ROOT, name), "w").write(text + "\n")
     print("")
     print(text)
     return 0

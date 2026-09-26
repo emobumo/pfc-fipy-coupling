@@ -108,7 +108,15 @@ def make_field(kind, mx, my):
     if kind == "base":
         return C.field("base", mx, my)
     if kind == "collar":
+        # NOTE (2026-09-27): x = -13.75 was the collar column of the old 30 x 30 m
+        # domain (mouth at x = -15). On the v0.6 60 x 60 m domain (mouth at -30,
+        # toe at x = -16.07) this band sits just PAST THE TOE, so results
+        # labelled "collar" describe a near-toe channel. Kept unchanged so the
+        # old anchors still reproduce; use "collar_v06" for the real collar.
         return C.field("band", mx, my, phi_band=C.BAND_PHI_POS, band_x=-13.75)
+    if kind == "collar_v06":
+        # the same band the channel case runs as band_collar_x-28.75
+        return C.field("band", mx, my, phi_band=C.BAND_PHI_POS, band_x=C.BAND_X_COLLAR)
     if kind == "random":
         return C.field("random", mx, my, seed=1)
     raise ValueError(kind)
