@@ -50,7 +50,48 @@ def l_max(phi):
     return 83.33 * phi / (1.0 - phi)
 
 
+def extent_report():
+    """
+    After the runs: how far past its own toe did the first pass actually
+    cement, along the hole (cells within one cell of the axis)? Compare with
+    the next increment. Reads outputs/stage_ratio/<phi>/<plan>/cells.csv.
+
+    RESULT (2026-09-26): Delta/L_max does NOT separate the runs (0.66 injects,
+    0.74 does not); Delta against this measured extent x_f does, 12 of 12,
+    where Delta is counted from the toe of the last pass that actually took
+    grout (7 -> 10 -> 17 at phi 0.10: the 10 m pass is dead, so the 17 m pass
+    sees Delta = 10). x_f / L_max = 0.34 .. 0.80: a pass stops on refusal
+    while its front is still short of L_max (the Gustafson-Stille tail), and
+    a short source spreads less along its own axis.
+    """
+    end, d, nrm = G.hole_geometry()
+    ax = np.array([end[0] - G.MOUTH[0], end[1] - G.MOUTH[1]])
+    ax /= np.hypot(ax[0], ax[1])
+    lines = ["%-18s %6s %8s %8s %7s | %s" % ("run", "L_max", "d1", "x_f", "x_f/L", "next Delta (from last live toe) vs x_f")]
+    for phi_v in PHIS:
+        for name, depths in PLANS:
+            p = os.path.join(S.OUT_ROOT, "phi%.2f" % phi_v, name, "cells.csv")
+            if not os.path.exists(p):
+                continue
+            a = np.loadtxt(p, delimiter=",", skiprows=1)
+            x, y, by_stage = a[:, 0], a[:, 1], a[:, 5]
+            along = (x - G.MOUTH[0]) * ax[0] + (y - G.MOUTH[1]) * ax[1]
+            perp = np.abs((x - G.MOUTH[0]) * nrm[0] + (y - G.MOUTH[1]) * nrm[1])
+            first = (by_stage == 0) & (perp < G.CELL)
+            x_f = float(along[first].max()) - depths[0]
+            nxt = ", ".join("%.0f m %s" % (dd - depths[0], ">" if dd - depths[0] > x_f else "<=")
+                            for dd in depths[1:])
+            lines.append("%-18s %6.1f %8.1f %8.1f %7.2f | %s" % (
+                "phi%.2f/%s" % (phi_v, name), l_max(phi_v), depths[0], x_f, x_f / l_max(phi_v), nxt or "-"))
+    text = "\n".join(lines)
+    open(os.path.join(S.OUT_ROOT, "extent.txt"), "w").write(text + "\n")
+    print(text)
+    return 0
+
+
 def main(argv):
+    if "--extent" in argv:
+        return extent_report()
     phis = PHIS
     if "--phi" in argv:
         phis = tuple(float(v) for v in argv[argv.index("--phi") + 1].split(","))
