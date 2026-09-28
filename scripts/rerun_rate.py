@@ -209,6 +209,7 @@ C_JOBS = (
        for name, d in (("single", (h,)), ("7_%g" % h, (7.0, h)))]
     + [("p2x", phi, 1.25, 17.0, name, d, False) for phi in P2_PHIS        # the optional rest of the 12
        for name, d in (("5_17", (5.0, 17.0)), ("7_10_17", (7.0, 10.0, 17.0))) if not (phi == 0.18 and name == "5_17")]
+    + [("eps", 0.18, 1.25, 17.0, "7_17", (7.0, 17.0), False)]           # layer E only
 )
 
 
@@ -242,7 +243,7 @@ def _stage_extras(S, G, out, label, depths, n_ref):
     return res
 
 
-def layer_c(pass2, groups):
+def layer_c(pass2, groups, root="C"):
     """Staged runs: P2 (uniform, 1.25 m, to refusal), structural staged
     (base / random, 2.5 m, budget = layer A's quota), P3 (1.25 m; porosity
     group at H 17, length group at phi 0.14 with H 10 / 25 / 32 -- the hole
@@ -251,7 +252,7 @@ def layer_c(pass2, groups):
     S = imp.load_source("inclined_hole_staged", os.path.join(REPO, "cases", "inclined_hole_staged.py"))
     C, G = S.C, S.G
     sfx = "_pass2" if pass2 else ""
-    out = os.path.join(ROOT, "C" + sfx)
+    out = os.path.join(ROOT, root + sfx)
     if not os.path.isdir(out):
         os.makedirs(out)
     S.OUT_ROOT = out
@@ -330,7 +331,46 @@ def layer_d(pass2, groups):
     return 0
 
 
+def layer_e():
+    """eps sensitivity (first pass only, not anchors). Run with STOP_EPS=0.05 in
+    the environment: uniform / gradient line source 1.25 m; the collar channel
+    field 2.5 m (same quota and target as layer B); P2 phi 0.18 7->17 1.25 m;
+    Zhaojin D2."""
+    assert abs(stop_rule.EPS - 0.05) < 1e-12, "set STOP_EPS=0.05"
+    out = os.path.join(ROOT, "E")
+    if not os.path.isdir(out):
+        os.makedirs(out)
+    done_path = os.path.join(out, "results.json")
+    rows = json.load(open(done_path)) if os.path.exists(done_path) else []
+    done = set(r["label"] for r in rows)
+    for kind in ("uniform", "gradient"):
+        lab = "E_%s_1.25" % kind
+        if lab not in done:
+            rows.append(g_run(kind, 1.25, lab, out))
+            json.dump(rows, open(done_path, "w"), indent=1, default=float)
+    lab = "E_band_collar_phi0.45"
+    if lab not in done:
+        base = [r for r in json.load(open(os.path.join(ROOT, "A", "results.json")))
+                if r["label"] == "base_uniform_0.18_2.5"][0]
+        G.CELL = 2.5
+        C.OUT_ROOT = out
+        _, x, y, _, _ = G.build_mesh_for_domain(G.X_MIN, G.X_MAX, G.Y_MIN, G.Y_MAX, 2.5)
+        mx, my = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
+        phi = C.field("band", mx, my, phi_band=C.BAND_PHI_POS, band_x=C.BAND_X_COLLAR)
+        r = _scalars(C.run(lab, phi, v_quota=float(base["v_in"]),
+                           target_mask=np.load(os.path.join(ROOT, "A", "target_mask.npy"))))
+        rows.append(r)
+        json.dump(rows, open(done_path, "w"), indent=1, default=float)
+    layer_c(False, ["eps"], root="E")
+    ZR = imp.load_source("zhaojin_runs", os.path.join(REPO, "scripts", "zhaojin_runs.py"))
+    ZR.OUT = os.path.join(out, "zhaojin")
+    ZR.main(["--arrival", "--only", "D2"])
+    return 0
+
+
 def main(argv):
+    if argv and argv[0] == "E":
+        return layer_e()
     if argv and argv[0] == "D":
         return layer_d("--pass2" in argv, [a for a in argv[1:] if not a.startswith("--")]
                        or ["zj", "boulder", "aging"])

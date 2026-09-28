@@ -21,6 +21,8 @@ of resetting a counter.
 
 The rule is selected by the environment variable STOP_RULE: "rate"
 (default) or "legacy" (the old step-count rules, to reproduce old anchors).
+STOP_EPS overrides eps for a sensitivity run only (read once, at import;
+the checkpoint tag carries it).
 Cases put rate_tag(n_ref) into their checkpoint fingerprints so a run of
 one rule can never resume a checkpoint of the other.
 """
@@ -28,7 +30,7 @@ import bisect
 import os
 
 RULE = os.environ.get("STOP_RULE", "rate").strip().lower()
-EPS = 0.1
+EPS = float(os.environ.get("STOP_EPS", "0.1"))
 BETA = 0.1
 
 
