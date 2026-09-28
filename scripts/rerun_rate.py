@@ -302,7 +302,38 @@ def layer_c(pass2, groups):
     return 0
 
 
+def layer_d(pass2, groups):
+    """The scripts' own runs, redirected to outputs/rerun_rate/D[_pass2]/ so no
+    old (legacy-rule) result or checkpoint is skipped, resumed or overwritten:
+    zj       Zhaojin D2, E2 (to arrival, 1 m) and E2_20 (--seal20)
+    boulder  boulder_bypass A / B / C (0.5 m)
+    aging    viscosity_aging_gradient at 1.25 m (the grid ratio anchors are
+             quoted on); its stop row must equal layer A's uniform / gradient 1.25."""
+    sfx = "_pass2" if pass2 else ""
+    out = os.path.join(ROOT, "D" + sfx)
+    flag = ["--pass2"] if pass2 else []
+    if "zj" in groups:
+        ZR = imp.load_source("zhaojin_runs", os.path.join(REPO, "scripts", "zhaojin_runs.py"))
+        ZR.OUT = os.path.join(out, "zhaojin")
+        ZR.main(["--arrival", "--only", "E2,D2"] + flag)
+        ZR.main(["--arrival", "--seal20"] + flag)
+    if "boulder" in groups:
+        BB = imp.load_source("boulder_bypass", os.path.join(REPO, "cases", "boulder_bypass.py"))
+        BB.OUT = os.path.join(out, "boulder")
+        BB.main([])
+    if "aging" in groups:
+        VA = imp.load_source("viscosity_aging_gradient",
+                             os.path.join(REPO, "scripts", "viscosity_aging_gradient.py"))
+        VA.G.CELL = 1.25
+        VA.OUT = os.path.join(out, "aging_1.25")
+        VA.main()
+    return 0
+
+
 def main(argv):
+    if argv and argv[0] == "D":
+        return layer_d("--pass2" in argv, [a for a in argv[1:] if not a.startswith("--")]
+                       or ["zj", "boulder", "aging"])
     if argv and argv[0] == "A":
         return layer_a("--pass2" in argv)
     if argv and argv[0] == "B":
