@@ -67,6 +67,7 @@ from src.analysis.fill_diagnostics import (
     OVERSHOOT,
 )
 from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
+from src.analysis import stop_rule
 
 # Same slurry physics as the Zhaojin section (v0.6, face form, threshold).
 Z = imp.load_source("zhaojin_section", os.path.join(REPO, "cases", "zhaojin_section.py"))
@@ -93,8 +94,8 @@ VARIANTS = [
 DT_CAP = 5.0
 MAX_STEPS = 40000
 CLASSIFY_EVERY = 25
-STALL_WINDOW = 400
-STALL_REL = 1.0e-5
+STALL_WINDOW = 400            # legacy stop rule only (STOP_RULE=legacy)
+STALL_REL = 1.0e-5            # default: rate rule, n_ref = the matrix porosity
 
 
 def _in(box, x, y):
@@ -166,8 +167,11 @@ def run_one(tag, label, cfg):
     reach = reachable_domain(state, src, p0=P0, use_gravity=True)["reachable"]
     cap = float(np.sum(phi[reach] * vols[reach]))
 
+    sp = Z.slurry_params()
+    qref = stop_rule.q_ref(PHI_MATRIX, sp["calibrated_permeability_coefficient"], P0, sp["plastic_viscosity"])
     keeper = Checkpointer(os.path.join(OUT, "ckpt_" + tag), every=500,
-                          fingerprint=state_fingerprint(state, "boulder|%s|%r" % (tag, sorted(cfg.items()))))
+                          fingerprint=state_fingerprint(state, "boulder|%s|%r" % (tag, sorted(cfg.items()))
+                                                        + stop_rule.rate_tag(PHI_MATRIX)))
     t, v_in, step0, series, snaps = 0.0, 0.0, 0, [], {}
     resumed = keeper.restore(state)
     if resumed:
@@ -182,6 +186,10 @@ def run_one(tag, label, cfg):
     sys.stdout.flush()
 
     history = []
+    t_hist, v_hist = [0.0], [0.0]
+    if resumed and "t_hist" in resumed:
+        t_hist = list(np.atleast_1d(resumed["t_hist"]))
+        v_hist = list(np.atleast_1d(resumed["v_hist"]))
     reason = "max_steps"
     w0 = time.time()
     for step in range(step0, MAX_STEPS):
@@ -189,6 +197,8 @@ def run_one(tag, label, cfg):
         t += float(dt)
         dq = np.asarray(state["last_div_q"], dtype=float)
         v_in += float(np.sum(dq[hm] * vols[hm])) * float(dt)
+        t_hist.append(t)
+        v_hist.append(v_in)
         s = np.array(state["saturation"].value, copy=True)
         s[hm] = 1.0
         state["saturation"].setValue(s)
@@ -207,11 +217,16 @@ def run_one(tag, label, cfg):
                   % (step, t, dt, v_in, cap, 100 * r.get("pocket_filled", 0), 100 * r.get("pocket_bypass", 0),
                      100 * r.get("pocket_enclosed_unreachable", 0)))
             sys.stdout.flush()
-        if len(history) > STALL_WINDOW and history[-1] - history[-1 - STALL_WINDOW] < STALL_REL * cap:
-            reason = "stall"
+        if stop_rule.legacy():
+            if len(history) > STALL_WINDOW and history[-1] - history[-1 - STALL_WINDOW] < STALL_REL * cap:
+                reason = "legacy_stall"
+                break
+        elif stop_rule.stop_rule_physical(t_hist, v_hist, qref):
+            reason = "rate"
             break
         keeper.maybe_save(state, step=step + 1, t=t, v_in=v_in, series_json=json.dumps(series),
-                          snaps_json=json.dumps(dict((k, v.tolist()) for k, v in snaps.items())))
+                          snaps_json=json.dumps(dict((k, v.tolist()) for k, v in snaps.items())),
+                          t_hist=np.asarray(t_hist), v_hist=np.asarray(v_hist))
     keeper.finish()
 
     final = pocket_record(state, src, reach, pocket, vols, t, v_in, step + 1)

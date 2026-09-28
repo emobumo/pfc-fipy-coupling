@@ -32,6 +32,7 @@ if REPO not in sys.path:
 
 from src.models.slurry_transport.equations import solve_transport_step
 from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
+from src.analysis import stop_rule
 
 G = imp.load_source("inclined_hole_gradient", os.path.join(REPO, "cases", "inclined_hole_gradient.py"))
 OUT = os.path.join(REPO, "outputs", "viscosity_aging")
@@ -58,15 +59,24 @@ def run(kind, label):
     vols = np.asarray(state["mesh"].cellVolumes, dtype=float)
     hmask = np.zeros(mx.size, dtype=bool)
     hmask[hcells] = True
+    # stop rule: the case's (rate rule since 2026-09-27; Q_ref from the INITIAL
+    # mu_p -- the run is the constant-viscosity fast end, the slow end is its
+    # time-rescaling, so the stop is decided on the constant-viscosity clock)
+    n_ref = G.n_ref_for(kind)
+    qref = stop_rule.q_ref(n_ref, G.A_CAL, G.P0, G.MU_P)
     keeper = Checkpointer(os.path.join(OUT, "ckpt_" + kind), every=200,
-                          fingerprint=state_fingerprint(state, "aging|%s" % kind))
+                          fingerprint=state_fingerprint(state, "aging|%s" % kind + stop_rule.rate_tag(n_ref)))
     t, v_in, best, stall, step0, snaps = 0.0, 0.0, -1, 0, 0, {}
+    t_hist, v_hist = [0.0], [0.0]
     resumed = keeper.restore(state)
     if resumed:
         step0 = int(resumed["step"])
         t, v_in = float(resumed["t"]), float(resumed["v_in"])
         best, stall = int(resumed["best"]), int(resumed["stall"])
         snaps = json.loads(str(resumed["snaps_json"]))
+        if "t_hist" in resumed:
+            t_hist = list(np.atleast_1d(resumed["t_hist"]))
+            v_hist = list(np.atleast_1d(resumed["v_hist"]))
         print("  [%s] resuming at step %d (t=%.1f s)" % (label, step0, t))
     else:
         print("  [%s] marching ..." % label)
@@ -76,6 +86,8 @@ def run(kind, label):
         t += float(dt)
         div_q = np.asarray(state["last_div_q"], dtype=float)
         v_in += float(np.sum(div_q[hmask] * vols[hmask])) * float(dt)
+        t_hist.append(t)
+        v_hist.append(v_in)
         s = np.array(state["saturation"].value, copy=True)
         s[hmask] = 1.0
         state["saturation"].setValue(s)
@@ -88,10 +100,14 @@ def run(kind, label):
             best, stall = count, 0
         else:
             stall += 1
-        if stall >= G.STALL_PATIENCE:
+        if stop_rule.legacy():
+            if stall >= G.STALL_PATIENCE:
+                break
+        elif stop_rule.stop_rule_physical(t_hist, v_hist, qref):
             break
         keeper.maybe_save(state, step=step + 1, t=t, v_in=v_in, best=best, stall=stall,
-                          snaps_json=json.dumps(snaps))
+                          snaps_json=json.dumps(snaps),
+                          t_hist=np.asarray(t_hist), v_hist=np.asarray(v_hist))
     keeper.finish()
     snaps["stall"] = metrics(state, mx, my, hcells, t, v_in)
     return snaps

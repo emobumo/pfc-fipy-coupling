@@ -55,6 +55,7 @@ from src.models.slurry_transport.variables import (
     initialize_slurry_variables,
 )
 from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
+from src.analysis import stop_rule
 from src.models.slurry_transport.equations import (
     solve_transport_step,
     conservation_report,
@@ -99,8 +100,8 @@ A_CAL = _MAT["calibrated_permeability_coefficient"]
 
 # --- march control ---------------------------------------------------------
 DT_CAP = 5.0
-MAX_STEPS = 3000      # v0.6 reach is 2.3x the old set: more steps to stall
-STALL_PATIENCE = 60
+MAX_STEPS = 20000     # never binding under the rate rule (default stop since 2026-09-27)
+STALL_PATIENCE = 60   # legacy rule only (STOP_RULE=legacy)
 # Crash-resilience: see src/analysis/run_checkpoint.py. 0 disables.
 CKPT_EVERY = 200
 
@@ -278,6 +279,10 @@ def march(state, mx, my, hcells, vols, label, keeper=None):
     # s0 is the stage's initial saturation and must survive a resume, or
     # v_store would be measured from the middle of the run.
     s0 = np.array(state["saturation"].value, copy=True)
+    # stop rule (src/analysis/stop_rule.py): n_ref = porosity of the hole's middle cell
+    n_ref = float(np.asarray(state["porosity"].value, dtype=float)[hcells[len(hcells) // 2]])
+    qref = stop_rule.q_ref(n_ref, A_CAL, P0, MU_P)
+    t_hist, v_hist = [0.0], [0.0]
 
     resumed = keeper.restore(state) if keeper is not None else {}
     if resumed:
@@ -287,6 +292,9 @@ def march(state, mx, my, hcells, vols, label, keeper=None):
         best_count = int(resumed["best_count"])
         stall = int(resumed["stall"])
         s0 = np.array(resumed["s0"], copy=True)
+        if "t_hist" in resumed:
+            t_hist = list(np.atleast_1d(resumed["t_hist"]))
+            v_hist = list(np.atleast_1d(resumed["v_hist"]))
         print("  [%s] resuming at step %d (t=%.1f s)" % (label, step0, t))
     else:
         print("  [%s] marching ..." % label)
@@ -296,6 +304,8 @@ def march(state, mx, my, hcells, vols, label, keeper=None):
         t += float(dt)
         div_q = np.asarray(state["last_div_q"], dtype=float)
         v_in_src += float(np.sum(div_q[hmask] * vols[hmask])) * float(dt)
+        t_hist.append(t)
+        v_hist.append(v_in_src)
         s = np.array(state["saturation"].value, copy=True)
         s[hmask] = 1.0
         state["saturation"].setValue(s)
@@ -309,11 +319,15 @@ def march(state, mx, my, hcells, vols, label, keeper=None):
             stall = 0
         else:
             stall += 1
-        if stall >= STALL_PATIENCE:
+        if stop_rule.legacy():
+            if stall >= STALL_PATIENCE:
+                break
+        elif stop_rule.stop_rule_physical(t_hist, v_hist, qref):
             break
         if keeper is not None:
             keeper.maybe_save(state, step=step + 1, t=t, v_in_src=v_in_src,
-                              best_count=best_count, stall=stall, s0=s0)
+                              best_count=best_count, stall=stall, s0=s0,
+                              t_hist=np.asarray(t_hist), v_hist=np.asarray(v_hist))
     if keeper is not None:
         keeper.finish()
     print("    -> stop at step %d, t=%.1f s, filled=%d, Vstore=%.3f, Vin=%.3f"

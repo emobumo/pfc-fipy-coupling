@@ -135,7 +135,11 @@ def install_source(state, cells, p0):
 
 
 def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot,
-                 ckpt_every=CKPT_EVERY):
+                 ckpt_every=CKPT_EVERY, n_ref=None):
+    """n_ref: the stop rule's reference porosity (default: C.PHI_BASE). Each
+    pass restarts its own clock (the march starts at t = 0), Q_ref is fixed."""
+    from src.analysis import stop_rule
+    rtag = stop_rule.rate_tag(C.PHI_BASE if n_ref is None else n_ref)
     state, mx, my, nx, ny, phi_used, _, _ = C.build_from_phi(phi)
     vols = np.asarray(state["mesh"].cellVolumes, dtype=float)
     n0 = np.array(state["porosity"].value, copy=True)
@@ -163,7 +167,7 @@ def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot,
             os.path.join(_CKPT_DIR, tag + "_seq"), every=1,
             also=STAGE_STATE_KEYS,
             fingerprint=state_fingerprint(
-                state, "staged|%s|depths=%s|budget=%s" % (label, depths, budget)))
+                state, "staged|%s|depths=%s|budget=%s%s" % (label, depths, budget, rtag)))
         resumed = seq_keeper.restore(state)
         if resumed:
             k0 = int(resumed["stage"])
@@ -205,9 +209,9 @@ def run_sequence(label, phi, depths, budget, reach_virgin, full_cells, plot,
             stage_keeper = Checkpointer(
                 os.path.join(_CKPT_DIR, tag), every=ckpt_every,
                 fingerprint=state_fingerprint(
-                    state, "staged|%s|stage=%d|depth=%.3f" % (label, k, depth)))
+                    state, "staged|%s|stage=%d|depth=%.3f%s" % (label, k, depth, rtag)))
         m = C.march(state, src, vols, stage_label, v_quota=quota,
-                    keeper=stage_keeper)
+                    keeper=stage_keeper, n_ref=n_ref)
         for (t, q) in m["history"]:
             history_all.append((t_offset + t, q, k))
         t_offset += m["t"]

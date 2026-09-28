@@ -44,6 +44,7 @@ from src.models.slurry_transport.variables import (
     initialize_slurry_variables,
 )
 from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
+from src.analysis import stop_rule
 from src.models.slurry_transport.equations import (
     solve_transport_step,
     conservation_report,
@@ -91,9 +92,13 @@ A_CAL = _MAT["calibrated_permeability_coefficient"]
 # the GS log-singularity tail -- but the front envelope we measure/plot is set
 # once no new cell crosses S=0.5; count-plateau captures that without grinding
 # through the asymptotic tail.)
+#
+# Default stop rule since 2026-09-27: the physical rate rule of
+# src/analysis/stop_rule.py (window-mean injection rate below 0.1 Q_ref, window
+# 0.1 t). STALL_PATIENCE is the legacy rule, used only with STOP_RULE=legacy.
 DT_CAP = 5.0
-MAX_STEPS = 3000      # v0.6 reach is 2.3x the old set: more steps to stall
-STALL_PATIENCE = 60
+MAX_STEPS = 20000     # never the binding stop under the rate rule (it needs 1.4k-6.3k steps)
+STALL_PATIENCE = 60   # legacy rule only
 # This machine crashes at random under sustained load (CLAUDE.md), so a run is
 # checkpointed and resumes bit-identically; 0 disables it. See --help.
 CKPT_EVERY = 200
@@ -240,10 +245,27 @@ def front_metrics(state, mx, my, hcells):
     }
 
 
-def march(state, mx, my, hcells, vols, label, keeper=None):
+def n_ref_for(kind):
+    """The stop rule's reference porosity for this case family: the uniform
+    porosity, or the gradient field's porosity at the hole's mid-point."""
+    if kind == "gradient":
+        end, d, n = hole_geometry()
+        return float(phi_field("gradient", np.array([0.5 * (MOUTH[1] + end[1])]))[0])
+    return float(PHI_UNIFORM)
+
+
+LAST_REASON = [None]      # stop reason of the latest march(): rate / legacy_stall / max_steps
+
+
+def march(state, mx, my, hcells, vols, label, keeper=None, n_ref=None):
     phi = np.clip(np.asarray(state["porosity"].value, dtype=float), 1e-6, 1.0)
     hmask = np.zeros(mx.size, dtype=bool)
     hmask[hcells] = True
+    if n_ref is None:              # fall back to the porosity of the hole's middle cell
+        n_ref = float(phi[hcells[len(hcells) // 2]])
+    qref = stop_rule.q_ref(n_ref, A_CAL, P0, MU_P)
+    t_hist, v_hist = [0.0], [0.0]
+    reason = "max_steps"
 
     t = 0.0
     v_in_src = 0.0
@@ -264,15 +286,20 @@ def march(state, mx, my, hcells, vols, label, keeper=None):
         best_count = int(resumed["best_count"])
         stall = int(resumed["stall"])
         s0 = np.array(resumed["s0"], copy=True)
+        if "t_hist" in resumed:
+            t_hist = list(np.atleast_1d(resumed["t_hist"]))
+            v_hist = list(np.atleast_1d(resumed["v_hist"]))
         print("  [%s] resuming at step %d (t=%.1f s)" % (label, step0, t))
     else:
-        print("  [%s] marching ..." % label)
+        print("  [%s] marching (stop rule: %s) ..." % (label, "legacy" if stop_rule.legacy() else "rate, n_ref %.4f" % n_ref))
     sys.stdout.flush()
     for step in range(step0, MAX_STEPS):
         dt = solve_transport_step(state, dt_cap=DT_CAP)
         t += float(dt)
         div_q = np.asarray(state["last_div_q"], dtype=float)
         v_in_src += float(np.sum(div_q[hmask] * vols[hmask])) * float(dt)
+        t_hist.append(t)
+        v_hist.append(v_in_src)
         s = np.array(state["saturation"].value, copy=True)
         s[hmask] = 1.0
         state["saturation"].setValue(s)
@@ -287,15 +314,22 @@ def march(state, mx, my, hcells, vols, label, keeper=None):
             stall = 0
         else:
             stall += 1
-        if stall >= STALL_PATIENCE:
+        if stop_rule.legacy():
+            if stall >= STALL_PATIENCE:
+                reason = "legacy_stall"
+                break
+        elif stop_rule.stop_rule_physical(t_hist, v_hist, qref):
+            reason = "rate"
             break
         if keeper is not None:
             keeper.maybe_save(state, step=step + 1, t=t, v_in_src=v_in_src,
-                              best_count=best_count, stall=stall, s0=s0)
+                              best_count=best_count, stall=stall, s0=s0,
+                              t_hist=np.asarray(t_hist), v_hist=np.asarray(v_hist))
     if keeper is not None:
         keeper.finish()
-    print("    -> stop at step %d, t=%.1f s, filled=%d, Vstore=%.3f, Vin=%.3f"
-          % (step, t, count, v_store, v_in_src))
+    LAST_REASON[0] = reason
+    print("    -> %s at step %d, t=%.1f s, filled=%d, Vstore=%.3f, Vin=%.3f"
+          % (reason, step, t, count, v_store, v_in_src))
     sys.stdout.flush()
     return t, v_in_src, v_store
 
@@ -310,8 +344,8 @@ def run_one(kind, label, ckpt_every=CKPT_EVERY):
         tag = re.sub(r"[^A-Za-z0-9._-]+", "_", label)
         keeper = Checkpointer(
             os.path.join(_CKPT_DIR, tag), every=ckpt_every,
-            fingerprint=state_fingerprint(state, "gradient|%s|%s" % (kind, label)))
-    t, v_in_src, v_store = march(state, mx, my, hcells, vols, label, keeper=keeper)
+            fingerprint=state_fingerprint(state, "gradient|%s|%s%s" % (kind, label, stop_rule.rate_tag(n_ref_for(kind)))))
+    t, v_in_src, v_store = march(state, mx, my, hcells, vols, label, keeper=keeper, n_ref=n_ref_for(kind))
     rep = conservation_report(state)
     fm = front_metrics(state, mx, my, hcells)
     s_grid = to_grid(np.asarray(state["saturation"].value, dtype=float), mx, my, nx, ny)

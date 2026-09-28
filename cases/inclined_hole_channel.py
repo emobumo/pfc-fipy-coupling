@@ -48,6 +48,7 @@ if REPO not in sys.path:
 
 from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
 from src.models.slurry_transport.equations import solve_transport_step
+from src.analysis import stop_rule
 from src.structure.porosity_fields import uniform, where_band, random_correlated
 from src.analysis.fill_diagnostics import (
     FILLED, UNREACHABLE, FRONT_SHORTFALL, BYPASS_VOID, OVERSHOOT,
@@ -117,11 +118,19 @@ def field(kind, mx, my, seed=None, phi_band=None, band_x=BAND_X_TOE):
     raise ValueError(kind)
 
 
-def march(state, hcells, vols, label, v_quota=None, keeper=None):
-    """The baseline's march loop plus Q(t) recording and a volume quota."""
+def march(state, hcells, vols, label, v_quota=None, keeper=None, n_ref=None):
+    """The baseline's march loop plus Q(t) recording and a volume quota.
+    Stops on the rate rule (src/analysis/stop_rule.py; n_ref defaults to the
+    background PHI_BASE -- never a mean over source cells, which may sit in a
+    channel) or the quota, whichever first; STOP_RULE=legacy restores the
+    60-step stall window."""
     phi = np.clip(np.asarray(state["porosity"].value, dtype=float), 1e-6, 1.0)
     hmask = np.zeros(vols.size, dtype=bool)
     hmask[hcells] = True
+    if n_ref is None:
+        n_ref = PHI_BASE
+    qref = stop_rule.q_ref(n_ref, G.A_CAL, G.P0, G.MU_P)
+    t_hist, v_hist = [0.0], [0.0]
     history = []
     t, v_in, best, stall, count, v_store = 0.0, 0.0, -1, 0, 0, 0.0
     reason = "max_steps"
@@ -140,6 +149,9 @@ def march(state, hcells, vols, label, v_quota=None, keeper=None):
         stall = int(resumed["stall"])
         s0 = np.array(resumed["s0"], copy=True)
         history = [(float(a), float(b)) for a, b in np.atleast_2d(resumed["history"])]
+        if "t_hist" in resumed:
+            t_hist = list(np.atleast_1d(resumed["t_hist"]))
+            v_hist = list(np.atleast_1d(resumed["v_hist"]))
         print("  [%s] resuming at step %d (t=%.1f s)" % (label, step0, t))
     else:
         print("  [%s] marching%s ..."
@@ -150,6 +162,8 @@ def march(state, hcells, vols, label, v_quota=None, keeper=None):
         t += float(dt)
         div_q = np.asarray(state["last_div_q"], dtype=float)
         v_in += float(np.sum(div_q[hmask] * vols[hmask])) * float(dt)
+        t_hist.append(t)
+        v_hist.append(v_in)
         record_injection_rate(state, hcells, dt, t, history)
         s = np.array(state["saturation"].value, copy=True)
         s[hmask] = 1.0
@@ -160,8 +174,12 @@ def march(state, hcells, vols, label, v_quota=None, keeper=None):
             best, stall = count, 0
         else:
             stall += 1
-        if stall >= G.STALL_PATIENCE:
-            reason = "stall"
+        if stop_rule.legacy():
+            if stall >= G.STALL_PATIENCE:
+                reason = "legacy_stall"
+                break
+        elif stop_rule.stop_rule_physical(t_hist, v_hist, qref):
+            reason = "rate"
             break
         if v_quota is not None and v_in >= v_quota:
             reason = "quota"
@@ -169,7 +187,8 @@ def march(state, hcells, vols, label, v_quota=None, keeper=None):
         if keeper is not None:
             keeper.maybe_save(state, step=step + 1, t=t, v_in=v_in, best=best,
                               stall=stall, s0=s0,
-                              history=np.asarray(history, dtype=float))
+                              history=np.asarray(history, dtype=float),
+                              t_hist=np.asarray(t_hist), v_hist=np.asarray(v_hist))
     if keeper is not None:
         keeper.finish()
     print("    -> %s at step %d, t=%.1f s, filled=%d, Vin=%.3f, Vstore=%.3f"
@@ -180,7 +199,7 @@ def march(state, hcells, vols, label, v_quota=None, keeper=None):
 
 
 def run(label, phi, v_quota=None, target_mask=None, plot=False,
-        ckpt_every=CKPT_EVERY):
+        ckpt_every=CKPT_EVERY, n_ref=None):
     state, mx, my, nx, ny, phi_used, hcells, k = build_from_phi(phi)
     vols = np.asarray(state["mesh"].cellVolumes, dtype=float)
     keeper = None
@@ -191,8 +210,9 @@ def run(label, phi, v_quota=None, target_mask=None, plot=False,
         keeper = Checkpointer(
             os.path.join(_CKPT_DIR, tag), every=ckpt_every,
             fingerprint=state_fingerprint(
-                state, "channel|%s|quota=%s" % (label, v_quota)))
-    m = march(state, hcells, vols, label, v_quota=v_quota, keeper=keeper)
+                state, "channel|%s|quota=%s%s" % (label, v_quota,
+                                                  stop_rule.rate_tag(PHI_BASE if n_ref is None else n_ref))))
+    m = march(state, hcells, vols, label, v_quota=v_quota, keeper=keeper, n_ref=n_ref)
 
     reach = reachable_domain(state, hcells, p0=G.P0, use_gravity=True)
     cls = classify_unfilled(state, hcells, reach["reachable"], s_c=0.5,

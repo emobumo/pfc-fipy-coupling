@@ -142,7 +142,7 @@ def main(argv):
         sys.stdout.flush()
         for name, depths in PLANS:
             label = prefix + "phi%.2f/%s" % (phi_v, name)
-            row = S.run_sequence(label, phi, depths, None, reach_virgin, full, False)
+            row = S.run_sequence(label, phi, depths, None, reach_virgin, full, False, n_ref=phi_v)
             later = []
             for k, stg in enumerate(row["stages"]):
                 if k == 0:

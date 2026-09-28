@@ -75,9 +75,11 @@ def solver_pair():
         st["slurry_parameters"]["gravity_y"] = 0.0
         vols = np.asarray(st["mesh"].cellVolumes, dtype=float)
         label = "%s, no gravity" % kind
+        from src.analysis import stop_rule
         keeper = Checkpointer(os.path.join(OUT, "ckpt_" + re.sub(r"[^A-Za-z0-9._-]+", "_", label)),
-                              every=200, fingerprint=state_fingerprint(st, "nograv|%s" % kind))
-        t, v_in, v_store = G.march(st, mx, my, hc, vols, label, keeper=keeper)
+                              every=200, fingerprint=state_fingerprint(
+                                  st, "nograv|%s" % kind + stop_rule.rate_tag(G.n_ref_for(kind))))
+        t, v_in, v_store = G.march(st, mx, my, hc, vols, label, keeper=keeper, n_ref=G.n_ref_for(kind))
         fm = G.front_metrics(st, mx, my, hc)
         rows.append({"kind": kind, "t": t, "v_in": v_in, "cells": fm["count"],
                      "up": fm["perp_up"], "down": fm["perp_down"],

@@ -70,11 +70,16 @@ def target_mask(mx, my):
 
 
 def one(label, phi, patience, quota, target):
+    # this script studies the LEGACY step-count window itself
+    from src.analysis import stop_rule
+    rule = stop_rule.RULE
+    stop_rule.RULE = "legacy"
     G.STALL_PATIENCE = patience
     try:
         row = C.run(label, phi, v_quota=quota, target_mask=target)
     finally:
         G.STALL_PATIENCE = 60
+        stop_rule.RULE = rule
     row["patience"] = patience
     row["counts"] = list(COUNTS)
     return row

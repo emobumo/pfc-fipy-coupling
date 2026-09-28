@@ -40,6 +40,7 @@ from src.models.slurry_transport.variables import (
     initialize_slurry_variables,
 )
 from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
+from src.analysis import stop_rule
 from src.models.slurry_transport.equations import (
     solve_transport_step,
     conservation_report,
@@ -83,7 +84,7 @@ A_CAL = _MAT["calibrated_permeability_coefficient"]
 
 # --- march control ---------------------------------------------------------
 DT_CAP = 5.0
-MAX_STEPS = 3000      # v0.6 reach is 2.3x the old set: more steps to stall
+MAX_STEPS = 20000     # never binding under the rate rule (default stop since 2026-09-27)
 STALL_TOL_CELLS = 0      # stop when filled-cell count stops growing ...
 STALL_PATIENCE = 40      # ... for this many consecutive steps
 STALL_VSTORE_REL = 1.0e-4
@@ -297,6 +298,10 @@ def march(state, mx, my, hcells, vols, keeper=None):
     # s0 is this run's initial saturation: restored on resume so that V_store
     # keeps being measured from the start and not from the checkpoint.
     s0 = np.array(state["saturation"].value, copy=True)
+    # stop rule (src/analysis/stop_rule.py): n_ref = porosity of the hole's middle cell
+    n_ref = float(np.asarray(state["porosity"].value, dtype=float)[hcells[len(hcells) // 2]])
+    qref = stop_rule.q_ref(n_ref, A_CAL, P0, MU_P)
+    t_hist, v_hist = [0.0], [0.0]
 
     resumed = keeper.restore(state) if keeper is not None else {}
     if resumed:
@@ -307,6 +312,9 @@ def march(state, mx, my, hcells, vols, keeper=None):
         last_vstore = float(resumed["last_vstore"])
         stall = int(resumed["stall"])
         s0 = np.array(resumed["s0"], copy=True)
+        if "t_hist" in resumed:
+            t_hist = list(np.atleast_1d(resumed["t_hist"]))
+            v_hist = list(np.atleast_1d(resumed["v_hist"]))
         print("  -> resuming at step %d (t=%.3f s)" % (step0, t))
         sys.stdout.flush()
     print("step   t[s]      dt[s]     filled  Vstore[m3/m]  Vin_src   front_perp(dn/up)[m]")
@@ -316,6 +324,8 @@ def march(state, mx, my, hcells, vols, keeper=None):
         # source outflow this step from the explicit flux divergence
         div_q = np.asarray(state["last_div_q"], dtype=float)  # [1/s], +=outflow
         v_in_src += float(np.sum(div_q[hmask] * vols[hmask])) * float(dt)
+        t_hist.append(t)
+        v_hist.append(v_in_src)
         # re-assert the source saturation (guard against clip noise)
         s = np.array(state["saturation"].value, copy=True)
         s[hmask] = 1.0
@@ -341,13 +351,18 @@ def march(state, mx, my, hcells, vols, keeper=None):
             stall += 1
         last_count = max(last_count, count)
         last_vstore = v_store
-        if stall >= STALL_PATIENCE:
-            print("  -> stalled at step %d (t=%.3f s)" % (step, t))
+        if stop_rule.legacy():
+            if stall >= STALL_PATIENCE:
+                print("  -> stalled at step %d (t=%.3f s)" % (step, t))
+                break
+        elif stop_rule.stop_rule_physical(t_hist, v_hist, qref):
+            print("  -> rate rule at step %d (t=%.3f s)" % (step, t))
             break
         if keeper is not None:
             keeper.maybe_save(state, step=step + 1, t=t, v_in_src=v_in_src,
                               last_count=last_count, last_vstore=last_vstore,
-                              stall=stall, s0=s0)
+                              stall=stall, s0=s0,
+                              t_hist=np.asarray(t_hist), v_hist=np.asarray(v_hist))
     if keeper is not None:
         keeper.finish()
 

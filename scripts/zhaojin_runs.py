@@ -48,6 +48,7 @@ if REPO not in sys.path:
 
 from src.models.slurry_transport.equations import solve_transport_step
 from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
+from src.analysis import stop_rule
 
 Z = imp.load_source("zhaojin_section", os.path.join(REPO, "cases", "zhaojin_section.py"))
 OUT = os.path.join(REPO, "outputs", "zhaojin_runs")
@@ -95,8 +96,10 @@ ARRIVAL_SEAL20 = [
 
 DT_CAP = 5.0
 MAX_STEPS = 60000
-STALL_WINDOW = 400            # steps
+STALL_WINDOW = 400            # steps -- legacy stop rule only (STOP_RULE=legacy)
 STALL_REL = 1.0e-5            # V_in growth over the window, relative to the quota
+# Default stop: the rate rule of src/analysis/stop_rule.py with n_ref = the
+# zone's fill porosity (0.10 / 0.45 / 0.25).
 RECORD_EVERY = 50
 
 
@@ -143,7 +146,10 @@ def run_one(tag, label, overrides, cell, arrival=False, design="changed", pass2=
     tg = Z.targets(mx, my, region, cfg)
     design_capacity = float(np.sum(phi[g["design"]] * vols[g["design"]]))
 
-    fp = "zhaojin|%s|%r" % (tag, sorted(cfg.items()))
+    n_ref = float(Z.ZONES[cfg["zone"]]["phi"])
+    sp = Z.slurry_params()
+    qref = stop_rule.q_ref(n_ref, sp["calibrated_permeability_coefficient"], Z.P0, sp["plastic_viscosity"])
+    fp = "zhaojin|%s|%r" % (tag, sorted(cfg.items())) + stop_rule.rate_tag(n_ref)
     if design != "changed":
         fp += "|design=%s" % design       # never resume a run of the other design
     keeper = Checkpointer(os.path.join(OUT, "ckpt_" + tag + sfx), every=500,
@@ -166,12 +172,18 @@ def run_one(tag, label, overrides, cell, arrival=False, design="changed", pass2=
 
     reason = "max_steps"
     history = []
+    t_hist, v_hist = [0.0], [0.0]
+    if resumed and "t_hist" in resumed:
+        t_hist = list(np.atleast_1d(resumed["t_hist"]))
+        v_hist = list(np.atleast_1d(resumed["v_hist"]))
     w0 = time.time()
     for step in range(step0, MAX_STEPS):
         dt = solve_transport_step(state, dt_cap=DT_CAP)
         t += float(dt)
         dq = np.asarray(state["last_div_q"], dtype=float)
         v_in += float(np.sum(dq[hm] * vols[hm])) * float(dt)
+        t_hist.append(t)
+        v_hist.append(v_in)
         s = np.array(state["saturation"].value, copy=True)
         s[hm] = 1.0
         state["saturation"].setValue(s)
@@ -197,12 +209,17 @@ def run_one(tag, label, overrides, cell, arrival=False, design="changed", pass2=
         if v_in >= stop_volume:
             reason = "volume_cap" if arrival else "quota"
             break
-        if len(history) > STALL_WINDOW and \
-                history[-1] - history[-1 - STALL_WINDOW] < STALL_REL * quota:
-            reason = "stall"
+        if stop_rule.legacy():
+            if len(history) > STALL_WINDOW and \
+                    history[-1] - history[-1 - STALL_WINDOW] < STALL_REL * quota:
+                reason = "legacy_stall"
+                break
+        elif stop_rule.stop_rule_physical(t_hist, v_hist, qref):
+            reason = "rate"
             break
         keeper.maybe_save(state, step=step + 1, t=t, v_in=v_in, t_ore=t_ore, t_out=t_out,
-                          series_json=json.dumps(series), snaps_json=json.dumps(snaps))
+                          series_json=json.dumps(series), snaps_json=json.dumps(snaps),
+                          t_hist=np.asarray(t_hist), v_hist=np.asarray(v_hist))
     keeper.finish()
 
     s = np.asarray(state["saturation"].value, dtype=float)
