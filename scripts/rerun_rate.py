@@ -191,11 +191,125 @@ def layer_b(pass2):
     return 0
 
 
+def l_max(phi):
+    return 83.33 * phi / (1.0 - phi)
+
+
+P2_PHIS = (0.10, 0.14, 0.18)
+C_JOBS = (
+    # (group, field, cell, H, plan name, depths, budget=quota?)
+    [("p2", phi, 1.25, 17.0, "single", (17.0,), False) for phi in P2_PHIS]
+    + [("p2", phi, 1.25, 17.0, "7_17", (7.0, 17.0), False) for phi in P2_PHIS]
+    + [("p2", 0.18, 1.25, 17.0, "5_17", (5.0, 17.0), False)]
+    + [("struct", fld, 2.5, 17.0, name, d, True) for fld in ("base", "random")
+       for name, d in (("single", (17.0,)), ("7_10_17", (7.0, 10.0, 17.0)), ("8.5_17", (8.5, 17.0)))]
+    + [("p3", phi, 1.25, 17.0, name, d, False) for phi in (0.12, 0.16, 0.22)
+       for name, d in (("single", (17.0,)), ("7_17", (7.0, 17.0)))]
+    + [("p3", 0.14, 1.25, h, name, d, False) for h in (10.0, 25.0, 32.0)
+       for name, d in (("single", (h,)), ("7_%g" % h, (7.0, h)))]
+    + [("p2x", phi, 1.25, 17.0, name, d, False) for phi in P2_PHIS        # the optional rest of the 12
+       for name, d in (("5_17", (5.0, 17.0)), ("7_10_17", (7.0, 10.0, 17.0))) if not (phi == 0.18 and name == "5_17")]
+)
+
+
+def _stage_extras(S, G, out, label, depths, n_ref):
+    """Per stage: x_f (how far past its own toe the stage cemented along the
+    hole axis, cells within one cell of it), x_f / L_max, and Qbar/Q_ref at the
+    stage's stop, the window rate rebuilt from the recorded Q(t) exactly as the
+    march accumulates V_in."""
+    d = os.path.join(out, label)
+    a = np.loadtxt(os.path.join(d, "cells.csv"), delimiter=",", skiprows=1)
+    h = np.loadtxt(os.path.join(d, "injection_rate.csv"), delimiter=",", skiprows=1, ndmin=2)
+    end, dv, nv = G.hole_geometry()
+    along = (a[:, 0] - G.MOUTH[0]) * dv[0] + (a[:, 1] - G.MOUTH[1]) * dv[1]
+    perp = np.abs((a[:, 0] - G.MOUTH[0]) * nv[0] + (a[:, 1] - G.MOUTH[1]) * nv[1])
+    qref = stop_rule.q_ref(n_ref, G.A_CAL, G.P0, G.MU_P)
+    res, t0 = [], 0.0
+    for k, dep in enumerate(depths):
+        sel = (a[:, 5] == k) & (perp < G.CELL)
+        x_f = float(along[sel].max()) - dep if np.any(sel) else float("nan")
+        hk = h[h[:, 2] == k]
+        if hk.shape[0]:
+            t = [0.0] + list(hk[:, 0] - t0)
+            v = [0.0]
+            for i in range(hk.shape[0]):
+                v.append(v[-1] + hk[i, 1] * (t[i + 1] - t[i]))
+            qr = stop_rule.window_rate(t, v) / qref
+            t0 = float(hk[-1, 0])
+        else:
+            qr = float("nan")
+        res.append({"x_f": x_f, "x_f_over_L": x_f / l_max(n_ref), "q_over_qref": qr})
+    return res
+
+
+def layer_c(pass2, groups):
+    """Staged runs: P2 (uniform, 1.25 m, to refusal), structural staged
+    (base / random, 2.5 m, budget = layer A's quota), P3 (1.25 m; porosity
+    group at H 17, length group at phi 0.14 with H 10 / 25 / 32 -- the hole
+    length is set at run time through G.HOLE_LEN, which every hole routine
+    reads). n_ref = the uniform porosity (P2 / P3) or 0.18 (structural)."""
+    S = imp.load_source("inclined_hole_staged", os.path.join(REPO, "cases", "inclined_hole_staged.py"))
+    C, G = S.C, S.G
+    sfx = "_pass2" if pass2 else ""
+    out = os.path.join(ROOT, "C" + sfx)
+    if not os.path.isdir(out):
+        os.makedirs(out)
+    S.OUT_ROOT = out
+    quota = float([r for r in json.load(open(os.path.join(ROOT, "A", "results.json")))
+                   if r["label"] == "base_uniform_0.18_2.5"][0]["v_in"])
+    done_path = os.path.join(out, "results.json")
+    rows = json.load(open(done_path)) if os.path.exists(done_path) else []
+    done = set(r["label"] for r in rows)
+    for grp, fld, cell, hl, name, depths, use_quota in C_JOBS:
+        if grp not in groups:
+            continue
+        fname = fld if isinstance(fld, str) else "phi%.2f" % fld
+        label = "C_%s/%s_H%g_c%g/%s%s" % (grp, fname, hl, cell, name, sfx)
+        if label in done:
+            continue
+        G.CELL, G.HOLE_LEN = cell, hl
+        try:
+            _, x, y, _, _ = G.build_mesh_for_domain(G.X_MIN, G.X_MAX, G.Y_MIN, G.Y_MAX, cell)
+            mx, my = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
+            nx = int(round((G.X_MAX - G.X_MIN) / cell))
+            ny = int(round((G.Y_MAX - G.Y_MIN) / cell))
+            full = np.asarray(G.hole_cells(mx, my, nx, ny), dtype=int)
+            if isinstance(fld, str):
+                phi, n_ref = S.make_field(fld, mx, my), C.PHI_BASE
+            else:
+                phi, n_ref = np.full(mx.size, float(fld)), float(fld)
+            st0 = C.build_from_phi(phi)[0]
+            reach_virgin = reachable_domain(st0, full, p0=G.P0, use_gravity=True)["reachable"]
+            r = _scalars(S.run_sequence(label, phi, depths, quota if use_quota else None,
+                                        reach_virgin, full, False, n_ref=n_ref))
+            ext = _stage_extras(S, G, out, label, depths, n_ref)
+            for st, e in zip(r["stages"], ext):
+                st.update(e)
+            end = G.hole_geometry()[0]
+            r.update({"group": grp, "field": fname, "cell": cell, "H": hl, "plan": name,
+                      "depths": list(depths), "n_ref": n_ref, "budget": quota if use_quota else None,
+                      "L_max": l_max(n_ref), "toe": list(end),
+                      "toe_to_wall": min(end[0] - G.X_MIN, G.X_MAX - end[0], end[1] - G.Y_MIN, G.Y_MAX - end[1])})
+            rows.append(r)
+            json.dump(rows, open(done_path, "w"), indent=1, default=float)
+        finally:
+            G.CELL, G.HOLE_LEN = 2.5, 17.0
+    for r in rows:
+        print("%-44s V_tot=%8.2f reach%%=%5.1f shadow=%4d | %s" % (
+            r["label"], r["v_total"], 100 * r["over_reach_filled"], r["shadowed"],
+            "; ".join("%s V=%.2f x_f/L=%.2f Q/Qref=%.3f" % (st["reason"], st["v_in"], st["x_f_over_L"],
+                                                            st["q_over_qref"]) for st in r["stages"])))
+    return 0
+
+
 def main(argv):
     if argv and argv[0] == "A":
         return layer_a("--pass2" in argv)
     if argv and argv[0] == "B":
         return layer_b("--pass2" in argv)
+    if argv and argv[0] == "C":
+        groups = [a for a in argv[1:] if not a.startswith("--")] or ["p2", "struct", "p3"]
+        return layer_c("--pass2" in argv, groups)
     print(__doc__)
     return 1
 
