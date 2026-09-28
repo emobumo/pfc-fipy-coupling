@@ -33,6 +33,7 @@ if REPO not in sys.path:
 
 from src.analysis import stop_rule
 from src.analysis.run_checkpoint import Checkpointer, state_fingerprint
+from src.analysis.fill_diagnostics import reachable_domain
 
 C = imp.load_source("inclined_hole_channel", os.path.join(REPO, "cases", "inclined_hole_channel.py"))
 G = C.G
@@ -112,9 +113,89 @@ def layer_a(pass2):
     return 0
 
 
+def _scalars(r):
+    out = dict((k, v) for k, v in r.items() if not isinstance(v, np.ndarray))
+    if "stages" in out:
+        out["stages"] = [dict((k, v) for k, v in st.items() if not isinstance(v, np.ndarray))
+                         for st in out["stages"]]
+    return out
+
+
+def layer_b(pass2):
+    """2.5 m, relative comparisons against layer A's new quota and target
+    (both read from pass 1 of A): channel 5 fields, random seeds 1-3, P1 on
+    collar_v06 (full hole, staged 7->10->17 and 8.5->17, pre-plug h 2.5 / 10)."""
+    SS = imp.load_source("stage_supplement", os.path.join(REPO, "scripts", "stage_supplement.py"))
+    S = SS.S
+    C, G = S.C, S.G          # stage_supplement re-loads the case modules; use its copies
+    sfx = "_pass2" if pass2 else ""
+    out = os.path.join(ROOT, "B" + sfx)
+    if not os.path.isdir(out):
+        os.makedirs(out)
+    base = [r for r in json.load(open(os.path.join(ROOT, "A", "results.json")))
+            if r["label"] == "base_uniform_0.18_2.5"][0]
+    quota = float(base["v_in"])
+    target = np.load(os.path.join(ROOT, "A", "target_mask.npy"))
+    done_path = os.path.join(out, "results.json")
+    rows = json.load(open(done_path)) if os.path.exists(done_path) else []
+    done = set(r["label"] for r in rows)
+
+    def save():
+        json.dump(rows, open(done_path, "w"), indent=1, default=float)
+
+    G.CELL = 2.5
+    for mod in (C, S):
+        mod.OUT_ROOT = out
+    _, x, y, _, _ = G.build_mesh_for_domain(G.X_MIN, G.X_MAX, G.Y_MIN, G.Y_MAX, 2.5)
+    mx, my = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
+    assert target.size == mx.size
+    singles = []
+    for pb in C.BAND_PHIS:                                  # porosity at the toe position
+        singles.append(("B_band_toe_phi%.2f" % pb, C.field("band", mx, my, phi_band=pb)))
+    for name, bx in C.BAND_POSITIONS:                       # position at phi 0.45 (toe shared)
+        if name != "toe":
+            singles.append(("B_band_%s_phi%.2f" % (name, C.BAND_PHI_POS),
+                            C.field("band", mx, my, phi_band=C.BAND_PHI_POS, band_x=bx)))
+    for sd in C.RANDOM_SEEDS:
+        singles.append(("B_random_seed%d" % sd, C.field("random", mx, my, seed=sd)))
+    mx_, my_, nx, ny, hole, phi_c, band, _ = SS.setup()
+    singles.append(("B_p1_full_hole", phi_c))
+    for h in (2.5, 10.0):
+        singles.append(("B_p1_preplug_h%.2f" % h, SS.plugged(phi_c, band, hole, my, h)[0]))
+    for lab, phi in singles:
+        if lab + sfx in done:
+            continue
+        r = _scalars(C.run(lab + sfx, phi, v_quota=quota, target_mask=target))
+        r["quota"] = quota
+        rows.append(r)
+        save()
+    st0 = C.build_from_phi(phi_c)[0]
+    reach_virgin = reachable_domain(st0, hole, p0=G.P0, use_gravity=True)["reachable"]
+    for name, depths in S.SEQUENCES:
+        lab = "B_p1_collar_v06/%s%s" % (name, sfx)
+        if lab in done:
+            continue
+        r = _scalars(S.run_sequence(lab, phi_c, depths, quota, reach_virgin, hole, False))
+        r["quota"] = quota
+        rows.append(r)
+        save()
+    for r in rows:
+        if "stages" in r:
+            print("%-34s V_tot=%8.3f filled=%d shadow=%d | %s" % (
+                r["label"], r["v_total"], r["filled"], r["shadowed"],
+                "; ".join("%s t=%.0f V=%.2f" % (st["reason"], st["t"], st["v_in"]) for st in r["stages"])))
+        else:
+            print("%-34s %-6s t=%8.1f V=%8.3f fill=%d tgt=%.1f%% dsf=%.1f%%" % (
+                r["label"], r["reason"], r["t"], r["v_in"], r["filled_cells"],
+                100 * r["target_filled_fraction"], 100 * r["design_shortfall_fraction"]))
+    return 0
+
+
 def main(argv):
     if argv and argv[0] == "A":
         return layer_a("--pass2" in argv)
+    if argv and argv[0] == "B":
+        return layer_b("--pass2" in argv)
     print(__doc__)
     return 1
 
