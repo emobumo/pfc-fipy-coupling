@@ -203,9 +203,9 @@ C_JOBS = (
     + [("p2", 0.18, 1.25, 17.0, "5_17", (5.0, 17.0), False)]
     + [("struct", fld, 2.5, 17.0, name, d, True) for fld in ("base", "random")
        for name, d in (("single", (17.0,)), ("7_10_17", (7.0, 10.0, 17.0)), ("8.5_17", (8.5, 17.0)))]
-    + [("p3", phi, 1.25, 17.0, name, d, False) for phi in (0.12, 0.16, 0.22)
+    + [("p3phi", phi, 1.25, 17.0, name, d, False) for phi in (0.12, 0.16, 0.22)
        for name, d in (("single", (17.0,)), ("7_17", (7.0, 17.0)))]
-    + [("p3", 0.14, 1.25, h, name, d, False) for h in (10.0, 25.0, 32.0)
+    + [("p3len", 0.14, 1.25, h, name, d, False) for h in (10.0, 25.0, 32.0)
        for name, d in (("single", (h,)), ("7_%g" % h, (7.0, h)))]
     + [("p2x", phi, 1.25, 17.0, name, d, False) for phi in P2_PHIS        # the optional rest of the 12
        for name, d in (("5_17", (5.0, 17.0)), ("7_10_17", (7.0, 10.0, 17.0))) if not (phi == 0.18 and name == "5_17")]
@@ -379,7 +379,7 @@ def main(argv):
     if argv and argv[0] == "B":
         return layer_b("--pass2" in argv)
     if argv and argv[0] == "C":
-        groups = [a for a in argv[1:] if not a.startswith("--")] or ["p2", "struct", "p3"]
+        groups = [a for a in argv[1:] if not a.startswith("--")] or ["p2", "struct", "p3phi", "p3len"]
         return layer_c("--pass2" in argv, groups)
     print(__doc__)
     return 1
