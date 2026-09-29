@@ -316,8 +316,9 @@ def layer_d(pass2, groups):
     if "zj" in groups:
         ZR = imp.load_source("zhaojin_runs", os.path.join(REPO, "scripts", "zhaojin_runs.py"))
         ZR.OUT = os.path.join(out, "zhaojin")
-        ZR.main(["--arrival", "--only", "E2,D2"] + flag)
+        ZR.main(["--arrival", "--only", "E2"] + flag)
         ZR.main(["--arrival", "--seal20"] + flag)
+        ZR.main(["--arrival", "--only", "D2"] + flag)      # longest, last
     if "boulder" in groups:
         BB = imp.load_source("boulder_bypass", os.path.join(REPO, "cases", "boulder_bypass.py"))
         BB.OUT = os.path.join(out, "boulder")
