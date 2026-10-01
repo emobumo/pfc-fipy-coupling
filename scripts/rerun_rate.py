@@ -369,7 +369,68 @@ def layer_e():
     return 0
 
 
+def _git(*args):
+    import subprocess
+    try:
+        out = subprocess.Popen(("git", "-C", REPO) + args, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE).communicate()[0]
+        return out.decode("utf-8", "replace").strip()
+    except Exception as exc:                       # git missing: record why, never fail the run
+        return "unavailable (%s)" % exc
+
+
+def _done_labels(out):
+    """Every run label / tag recorded in the layer's results files."""
+    found = set()
+    for root, _, files in os.walk(out):
+        for f in files:
+            p = os.path.join(root, f)
+            try:
+                if f == "results.json":
+                    found.update(r["label"] for r in json.load(open(p)))
+                elif f.startswith("results") and f.endswith(".jsonl"):
+                    found.update(os.path.relpath(root, out) + ":" + json.loads(l)["tag"] for l in open(p) if l.strip())
+            except (ValueError, KeyError, TypeError):
+                pass
+    return found
+
+
+def _manifest(argv, out, phase, extra=None):
+    """Append one record per invocation to <layer dir>/manifest.jsonl: the code
+    version, command, environment and stop-rule parameters the runs came from.
+    Records only -- it never changes a computation."""
+    import platform
+    import time
+    import scipy
+    import fipy
+    if not os.path.isdir(out):
+        os.makedirs(out)
+    rec = {"phase": phase, "time": time.strftime("%Y-%m-%d %H:%M:%S"), "argv": list(argv),
+           "commit": _git("rev-parse", "HEAD"),
+           "dirty_files": [l for l in _git("status", "--porcelain", "--", "cases", "src", "scripts").splitlines()
+                           if l and not l.startswith("??")],
+           "python": platform.python_version(), "numpy": np.__version__, "scipy": scipy.__version__,
+           "fipy": getattr(fipy, "__version__", "?"),
+           "env": dict((k, os.environ.get(k)) for k in ("STOP_RULE", "STOP_EPS", "FIPY_SOLVERS")),
+           "stop_rule": {"rule": stop_rule.RULE, "eps": stop_rule.EPS, "beta": stop_rule.BETA}}
+    if extra:
+        rec.update(extra)
+    with open(os.path.join(out, "manifest.jsonl"), "a") as fh:
+        fh.write(json.dumps(rec) + "\n")
+
+
 def main(argv):
+    if not argv or argv[0] not in ("A", "B", "C", "D", "E"):
+        return _dispatch(argv)
+    out = os.path.join(ROOT, argv[0] + ("_pass2" if "--pass2" in argv and argv[0] != "E" else ""))
+    before = _done_labels(out)
+    _manifest(argv, out, "start")
+    rc = _dispatch(argv)
+    _manifest(argv, out, "end", {"exit": rc, "runs_finished_now": sorted(_done_labels(out) - before)})
+    return rc
+
+
+def _dispatch(argv):
     if argv and argv[0] == "E":
         return layer_e()
     if argv and argv[0] == "D":
