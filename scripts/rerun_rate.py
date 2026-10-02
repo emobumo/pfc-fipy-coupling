@@ -295,7 +295,7 @@ def layer_c(pass2, groups, root="C"):
             json.dump(rows, open(done_path, "w"), indent=1, default=float)
         finally:
             G.CELL, G.HOLE_LEN = 2.5, 17.0
-    for r in rows:
+    for r in [r for r in rows if "stages" in r]:      # layer E shares the file with line-source rows
         print("%-44s V_tot=%8.2f reach%%=%5.1f shadow=%4d | %s" % (
             r["label"], r["v_total"], 100 * r["over_reach_filled"], r["shadowed"],
             "; ".join("%s V=%.2f x_f/L=%.2f Q/Qref=%.3f" % (st["reason"], st["v_in"], st["x_f_over_L"],
