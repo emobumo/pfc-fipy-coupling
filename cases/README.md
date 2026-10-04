@@ -12,6 +12,43 @@ on the 60x60 m domain (`variables.grout_material_v06`), under the **scipy PCG**
 linear solver that `run_local.ps1` has set as default since 2026-09-22. Anchors
 for the previous parameter set survive only where a heading says so.
 
+## Stop rule (since 2026-09-28) -- read before any table below
+
+Every case now stops on the **injection-rate rule** of `src/analysis/stop_rule.py`
+(window-mean rate Q_bar = [V_in(t) - V_in(0.9 t)] / (0.1 t) below eps * Q_ref,
+eps = 0.1, Q_ref = k(n_ref) p0 / mu_p, t counted from the start of each pass), or
+on a volume quota where the case has one, whichever comes first. The old
+step-count windows (60 steps without a new filled cell; 400 steps of V_in growth
+for the Zhaojin and boulder cases) were grid-dependent and are reproduced only
+with `STOP_RULE=legacy`. **Tables further down that say "stall" are old-rule
+anchors, kept as a record.** n_ref per case:
+
+| case | n_ref |
+|---|---|
+| uniform line source / uniform staged trials | that porosity |
+| gradient (incl. strength sweep, no-gravity control) | porosity at the hole's mid-point (v0.6 field 0.1976) |
+| channel, random, P1, structural staged | background 0.18 |
+| Zhaojin section | the zone's fill porosity (0.10 / 0.45 / 0.25) |
+| boulder | matrix 0.18 |
+| toe, real pack (not rerun) | porosity of the hole's middle cell |
+
+Current anchors (rate rule, both passes bit-identical; driver
+`scripts/rerun_rate.py`, outputs `outputs/rerun_rate/`, each layer directory
+carries a `manifest.jsonl` with the commit, command and versions):
+
+| anchor | value |
+|---|---|
+| quota / design target (uniform 0.18, 2.5 m) | 185.861 m³/m / 175 cells (old 166.15 / 155) |
+| up/down, 1.25 m, gradient / uniform | 1.220 / 0.912 (2.5 m: 1.193 / 0.843) |
+| up/down, 1.25 m, no gravity, gradient / uniform | 1.369 / 0.994 |
+| gradient strength phi_top 0.25 / 0.35 (1.25 m) | 1.159 / 1.331 |
+| uniform 0.18, 1.25 m, stop | t = 8886.4 s, V_in = 194.997 m³/m, 691 cells |
+| staged trials, x_f / L_max at the stop | 0.86 .. 0.89 (later pass live iff Delta > x_f) |
+
+Per-layer tables (channel, random, P1, structural staged, P2, P3, Zhaojin,
+boulder, viscosity bracket, eps = 0.05) are in `docs/results_log.md`,
+section "停注判据改为物理判据".
+
 **Long runs on this machine die of segmentation faults and of Windows
 bugchecks, and the cause is very likely the machine, not FiPy.** Two blue
 screens on 2026-09-22/23 with *different* stop codes (0xFC
