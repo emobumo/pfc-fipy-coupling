@@ -86,9 +86,9 @@ K02,88 / 88 / 75,%,块石 A / B / C 绕流空区峰值占口袋,块石，0.5 m,�
 K03,38 / 38 / 25,%,块石 C 终态：口袋充填 / 绕流 / 致密包裹,块石 C，0.5 m,速率判据 ε=0.1,CLAUDE.md L119-120；docs/results_log.md L706,outputs/rerun_rate/D/boulder/results.jsonl,是,取代旧规则终态 75/0/0
 K04,1.13,p₀,块石 C 盖石下第一排 4 个单元的可达代价,块石 C，0.5 m，可达域,不涉及（无求解器 / 闭式）,docs/results_log.md L345,outputs/boulder_bypass/（旧运行）,未注明,
 Z01,28.6,m³/m,原设计浆量（22 m 层、20% 均一）,招金,不涉及（无求解器 / 闭式）,CLAUDE.md L122；docs/results_log.md L259,outputs/zhaojin_runs/original_design.txt,—,由方案书推算
-Z02,147.9 / 129.1 / 124.8,m³/m,按终压持续注到达 −63 m 时累计注入 II(45%) / I(10%) / III(25%) 段,招金 A2/B2/C2，1 m,到达 −63 m 判停（运行时为旧规则，但旧停滞未先触发）,CLAUDE.md L123（125~148）；docs/results_log.md L241,outputs/zhaojin_runs/results.jsonl；original_design.txt,部分,注满 28.6 前的序列行与 A3–C3 逐位相同；到达值本身单遍；第二遍 2026-10-09 夜间运行中（outputs/zhaojin_arrival_pass2/）
-Z03,5.17 / 4.51 / 4.36,倍,到达 −63 m 所需原设计浆量倍数,招金 A2/B2/C2，1 m,同 Z02,CLAUDE.md L123（4.4~5.2）；docs/results_log.md L267-269,outputs/zhaojin_runs/original_design.txt,部分,同 Z02
-Z04,4.77 / 4.10 / 3.98 / 2.96,倍,到达 −56 m 所需原设计浆量倍数 A2/B2/C2/D2,招金，1 m,同 Z02,docs/results_log.md L267-270,outputs/zhaojin_runs/original_design.txt,部分,
+Z02,147.9 / 129.1 / 124.8,m³/m,按终压持续注到达 −63 m 时累计注入 II(45%) / I(10%) / III(25%) 段,招金 A2/B2/C2，1 m,到达 −63 m 判停（运行时为旧规则，但旧停滞未先触发）,CLAUDE.md L123（125~148）；docs/results_log.md L241,outputs/zhaojin_runs/results.jsonl；original_design.txt,是（2026-10-09 第二遍，outputs/zhaojin_arrival_pass2/compare.txt）,第二遍与第一遍到达时刻、到达时注入量、快照与最终场逐位一致（STOP_RULE=legacy，即第一遍规则；到达判停）
+Z03,5.17 / 4.51 / 4.36,倍,到达 −63 m 所需原设计浆量倍数,招金 A2/B2/C2，1 m,同 Z02,CLAUDE.md L123（4.4~5.2）；docs/results_log.md L267-269,outputs/zhaojin_runs/original_design.txt,是（2026-10-09 第二遍，outputs/zhaojin_arrival_pass2/compare.txt）,同 Z02
+Z04,4.77 / 4.10 / 3.98 / 2.96,倍,到达 −56 m 所需原设计浆量倍数 A2/B2/C2/D2,招金，1 m,同 Z02,docs/results_log.md L267-270,outputs/zhaojin_runs/original_design.txt,是（2026-10-09 第二遍，outputs/zhaojin_arrival_pass2/compare.txt）,同 Z02
 Z05,8.4 / 23.7 / 19.1 / 62.6,%,注满 28.6 m³/m 时注浆水平以下占注入 A2/B2/C2/D2,招金，1 m,按注入量定义,docs/results_log.md L267-270,outputs/zhaojin_runs/original_design.txt,是,与 A3–D3 共享行逐位相同
 Z06,46.5 / 58.9 / 55.2 / 69.4,%,A3–D3 原设计 22 m 层充填率,招金，1 m,配额（原设计浆量）,docs/results_log.md L279-282,outputs/zhaojin_runs/results.jsonl；results_pass2.jsonl,是,
 Z07,0,m³/m,封底 E2 / E2_20 注浆水平以下,招金，1 m,速率判据 ε=0.1,CLAUDE.md L125；docs/results_log.md L716-717,outputs/rerun_rate/D/zhaojin/results.jsonl,是,

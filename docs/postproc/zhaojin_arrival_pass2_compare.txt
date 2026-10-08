@@ -1,0 +1,3 @@
+A2: reason arrived_-63m / arrived_-63m, t_out 1167.357830 / 1167.357830, V at -63 m 147.898204 / 147.898204 | scalars+snaps identical | final fields identical
+B2: reason arrived_-63m / arrived_-63m, t_out 1610.373509 / 1610.373509, V at -63 m 129.061980 / 129.061980 | scalars+snaps identical | final fields identical
+C2: reason arrived_-63m / arrived_-63m, t_out 1439.151151 / 1439.151151, V at -63 m 124.795290 / 124.795290 | scalars+snaps identical | final fields identical

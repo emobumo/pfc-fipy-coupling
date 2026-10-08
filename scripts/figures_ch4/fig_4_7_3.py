@@ -4,7 +4,7 @@
 上排：按原设计浆量 28.6 m³/m 停止（A3–D3）+ 封底后按变更设计浆量停止（E）；
 下排：按终压持续注（A2–C2 到达跑浆中段即止；D2、E2 按现行停注判据）；
 右下：到达跑浆中段所需原设计浆量倍数与原设计浆量下注浆水平以下占比（分栏）。
-数据：outputs/zhaojin_runs/final_{A3,B3,C3,D3,E,A2,B2,C2}.npz（A3–D3 两遍一致；A2–C2 到达判停，第二遍运行中）、
+数据：outputs/zhaojin_runs/final_{A3,B3,C3,D3,E,A2,B2,C2}.npz（A3–D3、A2–C2 两遍一致）、
 outputs/rerun_rate/D/zhaojin/final_{D2,E2}.npz（速率判据，两遍一致）；倍数与占比取 outputs/zhaojin_runs/original_design.txt
 与 docs/results_log.md T2 表。
 """
