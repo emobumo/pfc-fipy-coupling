@@ -43,7 +43,7 @@ carries a `manifest.jsonl` with the commit, command and versions):
 | up/down, 1.25 m, no gravity, gradient / uniform | 1.369 / 0.994 |
 | gradient strength phi_top 0.25 / 0.35 (1.25 m) | 1.159 / 1.331 |
 | uniform 0.18, 1.25 m, stop | t = 8886.4 s, V_in = 194.997 m³/m, 691 cells |
-| staged trials, x_f / L_max at the stop | 0.86 .. 0.89 (later pass live iff Delta > x_f) |
+| staged trials, x_f / L_max at the stop | 0.833 .. 0.906 at 1.25 m, 22 stages (later pass live iff Delta > x_f) |
 
 Per-layer tables (channel, random, P1, structural staged, P2, P3, Zhaojin,
 boulder, viscosity bracket, eps = 0.05) are in `docs/results_log.md`,

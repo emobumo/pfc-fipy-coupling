@@ -1,0 +1,37 @@
+Two-grid agreement under the rate rule (2.5 m | 1.25 m), from outputs/rerun_rate (two passes bit-identical)
+
+uniform 0.18, full hole              V_in  185.861 |  194.997 (+4.9%)   x_f  16.12 |  16.27 m (diff 0.15 m)   x_f/L_max 0.881 | 0.890
+gradient, full hole                  V_in  287.959 |  299.587 (+4.0%)   x_f  21.65 |  21.80 m (diff 0.15 m)
+uniform 0.18, 7 m segment (stage 1)  V_in  128.108 |  127.161 (-0.7%)   x_f  15.67 |  15.83 m (diff 0.15 m)   x_f/L_max 0.857 | 0.865
+
+x_f / L_max at each rate-stopped stage (layer C, eps 0.1):
+  C_p2/phi0.10_H17_c1.25/7_17              stage 1  cell 1.25  x_f/L_max 0.891
+  C_p2/phi0.10_H17_c1.25/7_17              stage 2  cell 1.25  x_f/L_max 0.895
+  C_p2/phi0.10_H17_c1.25/single            stage 1  cell 1.25  x_f/L_max 0.895
+  C_p2/phi0.14_H17_c1.25/7_17              stage 1  cell 1.25  x_f/L_max 0.887
+  C_p2/phi0.14_H17_c1.25/single            stage 1  cell 1.25  x_f/L_max 0.890
+  C_p2/phi0.18_H17_c1.25/5_17              stage 1  cell 1.25  x_f/L_max 0.863
+  C_p2/phi0.18_H17_c1.25/7_17              stage 1  cell 1.25  x_f/L_max 0.865
+  C_p2/phi0.18_H17_c1.25/single            stage 1  cell 1.25  x_f/L_max 0.890
+  C_p3len/phi0.14_H10_c1.25/7_10           stage 1  cell 1.25  x_f/L_max 0.887
+  C_p3len/phi0.14_H10_c1.25/single         stage 1  cell 1.25  x_f/L_max 0.870
+  C_p3len/phi0.14_H25_c1.25/7_25           stage 1  cell 1.25  x_f/L_max 0.887
+  C_p3len/phi0.14_H25_c1.25/7_25           stage 2  cell 1.25  x_f/L_max 0.889
+  C_p3len/phi0.14_H25_c1.25/single         stage 1  cell 1.25  x_f/L_max 0.889
+  C_p3len/phi0.14_H32_c1.25/7_32           stage 1  cell 1.25  x_f/L_max 0.887
+  C_p3len/phi0.14_H32_c1.25/7_32           stage 2  cell 1.25  x_f/L_max 0.886
+  C_p3len/phi0.14_H32_c1.25/single         stage 1  cell 1.25  x_f/L_max 0.833
+  C_p3phi/phi0.12_H17_c1.25/7_17           stage 1  cell 1.25  x_f/L_max 0.906
+  C_p3phi/phi0.12_H17_c1.25/7_17           stage 2  cell 1.25  x_f/L_max 0.486
+  C_p3phi/phi0.12_H17_c1.25/single         stage 1  cell 1.25  x_f/L_max 0.882
+  C_p3phi/phi0.16_H17_c1.25/7_17           stage 1  cell 1.25  x_f/L_max 0.868
+  C_p3phi/phi0.16_H17_c1.25/single         stage 1  cell 1.25  x_f/L_max 0.870
+  C_p3phi/phi0.22_H17_c1.25/7_17           stage 1  cell 1.25  x_f/L_max 0.852
+  C_p3phi/phi0.22_H17_c1.25/single         stage 1  cell 1.25  x_f/L_max 0.853
+  C_struct/base_H17_c2.5/7_10_17           stage 1  cell 2.50  x_f/L_max 0.857
+  C_struct/base_H17_c2.5/8.5_17            stage 1  cell 2.50  x_f/L_max 0.775
+  C_struct/base_H17_c2.5/single            stage 1  cell 2.50  x_f/L_max 0.881
+  C_struct/random_H17_c2.5/7_10_17         stage 1  cell 2.50  x_f/L_max 0.969
+  C_struct/random_H17_c2.5/8.5_17          stage 1  cell 2.50  x_f/L_max 0.887
+  range at 1.25 m: 0.486 .. 0.906 (23 stages)
+  range at 2.50 m: 0.775 .. 0.969 (5 stages)

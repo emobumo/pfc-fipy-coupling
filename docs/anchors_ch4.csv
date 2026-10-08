@@ -21,10 +21,10 @@ SR09,≥ 7,—,分辨率门槛 L_max/Δx（2.5 m 上 φ ≤ 0.12 不作定量锚
 R01,2.7,%,16 邻域可达域度量最坏误差（只低估；R/1.0275）,可达域诊断,不涉及（无求解器 / 闭式）,CLAUDE.md L98-99；docs/results_log.md L110,tests/test_fill_diagnostics.py,是,
 R02,1.179 / 0.897,—,可达域上/下比 梯度 / 均质,线源，1.25 m，16 邻域,不涉及（无求解器 / 闭式）,CLAUDE.md L102；docs/results_log.md L355,outputs/gravity_control/gravity_control.txt,是,
 R03,1.175 / 0.888,—,可达域上/下比 梯度 / 均质,线源，2.5 m，16 邻域,不涉及（无求解器 / 闭式）,docs/results_log.md L123,outputs/rerun_2026-09-24_metric16/headline_1.log,是,2.5 m 值，只作相对比较
-R04,1.000 / 0.897 / 1.383 / 1.179,—,可达域分解：几何 / 只有重力 / 只有结构 / 两者,线源，1.25 m,不涉及（无求解器 / 闭式）,CLAUDE.md L104-105；docs/results_log.md L355,outputs/gravity_control/gravity_control.txt,未注明,
-R05,0.947,—,2.5 m 均质无重力可达比（= 2.5 m 量化误差约 0.05）,线源，2.5 m,不涉及（无求解器 / 闭式）,docs/results_log.md L357,outputs/gravity_control/gravity_control.txt,未注明,
-R06,10,组,τ₀/A/ρ 敏感性中均质与梯度都未触边界的组数（18 组中）,可达域，1.25 m,不涉及（无求解器 / 闭式）,CLAUDE.md L105；docs/results_log.md L369,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,未注明,
-R07,1.03~1.25 / 0.90~1.02,—,上述 10 组可达上/下比 梯度 / 均质,可达域，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L364-365,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,未注明,
+R04,1.000 / 0.897 / 1.383 / 1.179,—,可达域分解：几何 / 只有重力 / 只有结构 / 两者,线源，1.25 m,不涉及（无求解器 / 闭式）,CLAUDE.md L104-105；docs/results_log.md L355,outputs/gravity_control/gravity_control.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
+R05,0.947,—,2.5 m 均质无重力可达比（= 2.5 m 量化误差约 0.05）,线源，2.5 m,不涉及（无求解器 / 闭式）,docs/results_log.md L357,outputs/gravity_control/gravity_control.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
+R06,10,组,τ₀/A/ρ 敏感性中均质与梯度都未触边界的组数（18 组中）,可达域，1.25 m,不涉及（无求解器 / 闭式）,CLAUDE.md L105；docs/results_log.md L369,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
+R07,1.03~1.25 / 0.90~1.02,—,上述 10 组可达上/下比 梯度 / 均质,可达域，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L364-365,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
 R08,0.0,%,V1 均质点源可达域三个轴向与焦点椭圆 r = L_max/(1+Π_g sinθ) 的偏差,100×100 m，点源，1.25 / 0.625 m,不涉及（无求解器 / 闭式）,docs/results_log.md L402,outputs/conic_check/conic_check.txt,是,
 R09,2.63 / 2.72~2.99,%,V1 扇区最大低估 无重力 / 含重力,同 R08,不涉及（无求解器 / 闭式）,docs/results_log.md L403,outputs/conic_check/conic_check.txt,是,
 R10,2.75%/(1 + Π_g sinθ),—,V1 含重力度量误差界（n 0.30 下方 3.15%）,同 R08,不涉及（无求解器 / 闭式）,docs/results_log.md L405-406,outputs/conic_check/conic_check.txt,是,
@@ -36,14 +36,14 @@ R15,2.635,—,v0.6 梯度场对应翻转数 F = γp₀/(2ρg),V3，1.25 m,不涉
 R16,1.015~1.021,—,V3 临界 F*（直射线，四组）,V3,不涉及（无求解器 / 闭式）,docs/results_log.md L425,outputs/flip_criterion/flip_criterion.txt,是,
 R17,0.958 / 1.052；1.003 / 1.052,—,V3 临界 F* 二维：组 1 / 组 4（1.25 m）；组 2 / 组 3（0.625 m）,V3,不涉及（无求解器 / 闭式）,docs/results_log.md L425-427,outputs/flip_criterion/flip_criterion.txt；flip_criterion_refine_0.625.txt,是,组 2/3 在 1.25 m 为 0.750/0.687（L_max/Δx 8~9，台阶），不引
 R18,0.0060~0.0061 / 0.0066 / 0.0061 / 0.0063,/m,V3 幅度 (因子−1)/L_max at F₁=2：射线（组 1~3）/ 二维组 1（1.25 m）/ 组 2、3（0.625 m）,V3,不涉及（无求解器 / 闭式）,docs/results_log.md L428-429,同 R17,是,组 4（ρ 1450）二维 0.0073、射线 0.0076 只在输出文件中
-R19,0 / 0.197~0.206,p₀,S2 通道入口代价：孔穿过通道 / 孔底外（1.25 m）,S2，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L439-446,outputs/channel_entry_cost/entry_cost_1.25.txt,未注明,2.5 m 为 0.257~0.279；表中配额耗时/目标区两列是旧规则数，不引
-R20,0.76~0.79,p₀,招金 有贯通交界面（φ_c 0.35）三段到 −63 m 代价比,招金筛选，0.5 m，可达域,不涉及（无求解器 / 闭式）,docs/results_log.md L210,outputs/zhaojin_screen/screen_cell0.50.txt,未注明,
-R21,0.22~0.25（z2 0.20）,—,交界面最低等效空隙率（反推）,招金，可达域,不涉及（无求解器 / 闭式）,docs/results_log.md L214-215,outputs/zhaojin_screen/contact_threshold.txt,未注明,一维沿交界面约 0.31
-R22,70~95,p₀,封底后向下路径代价比,招金筛选,不涉及（无求解器 / 闭式）,docs/results_log.md L219,outputs/zhaojin_screen/screen_cell0.50.txt,未注明,
-R23,0.79 → 0.78,p₀,孔仰角 35° → 20° 到 −63 m 代价比,招金筛选,不涉及（无求解器 / 闭式）,docs/results_log.md L221,outputs/zhaojin_screen/screen_cell0.50.txt,未注明,
-R24,z1 0.227~0.474；z2 0.194~0.474；z3 0.225~0.474,—,C1 各段交界面阈值 φ_c 范围（10 组参数中 8 组可达）,招金，0.5 m，可达域,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,否,只有一个来源（未写入 results_log / CLAUDE.md）；τ₀ 60 与 A×0.3 两组在 0.60 仍不可达
-R25,−0.115~−0.005,—,C1 二维 − 一维沿交界面估算,同 R24,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,否,只有一个来源
-R26,13 / 144,个,C2 浆液优先进入存窿矿石的配置数,招金 144 配置，0.5 m,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,否,只有一个来源
+R19,0 / 0.197~0.206,p₀,S2 通道入口代价：孔穿过通道 / 孔底外（1.25 m）,S2，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L439-446,outputs/channel_entry_cost/entry_cost_1.25.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,2.5 m 为 0.257~0.279；表中配额耗时/目标区两列是旧规则数，不引
+R20,0.76~0.79,p₀,招金 有贯通交界面（φ_c 0.35）三段到 −63 m 代价比,招金筛选，0.5 m，可达域,不涉及（无求解器 / 闭式）,docs/results_log.md L210,outputs/zhaojin_screen/screen_cell0.50.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
+R21,0.22~0.25（z2 0.20）,—,交界面最低等效空隙率（反推）,招金，可达域,不涉及（无求解器 / 闭式）,docs/results_log.md L214-215,outputs/zhaojin_screen/contact_threshold.txt,是（2026-10-09 由 cases/zhaojin_section.py 重建表格，按打印精度一致；原生成脚本已不存在）,一维沿交界面约 0.31
+R22,70~95,p₀,封底后向下路径代价比,招金筛选,不涉及（无求解器 / 闭式）,docs/results_log.md L219,outputs/zhaojin_screen/screen_cell0.50.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
+R23,0.79 → 0.78,p₀,孔仰角 35° → 20° 到 −63 m 代价比,招金筛选,不涉及（无求解器 / 闭式）,docs/results_log.md L221,outputs/zhaojin_screen/screen_cell0.50.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
+R24,z1 0.227~0.474；z2 0.194~0.474；z3 0.225~0.474,—,C1 各段交界面阈值 φ_c 范围（10 组参数中 8 组可达）,招金，0.5 m，可达域,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,2026-10-09 已登记 results_log；τ₀ 60 与 A×0.3 两组在 0.60 仍不可达
+R25,−0.115~−0.005,—,C1 二维 − 一维沿交界面估算,同 R24,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,只有一个来源
+R26,13 / 144,个,C2 浆液优先进入存窿矿石的配置数,招金 144 配置，0.5 m,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,只有一个来源
 S01,185.861,m³/m,新配额 = 均质 0.18 线源速率判据停止体积,均质 0.18，2.5 m,速率判据 ε=0.1,CLAUDE.md L107（185.86）；docs/results_log.md L571,outputs/rerun_rate/A/results.json,是,
 S02,175,单元,设计目标域 = 上述停止足迹（含 10 个孔单元）,均质 0.18，2.5 m,速率判据 ε=0.1,CLAUDE.md L107；docs/results_log.md L571,outputs/rerun_rate/A/target_mask.npy,是,
 S03,1.220,—,上/下比 梯度线源,梯度，1.25 m,速率判据 ε=0.1,CLAUDE.md L102；docs/results_log.md L575,outputs/rerun_rate/A/results.json,是,
@@ -64,7 +64,7 @@ B08,55.8 / 28.7,%,P1 ② 分段（第 1 段经通道耗尽配额）目标区 / �
 B09,75.8 / 12.0；87.3 / 7.0,%,P1 ③ 预置封堵 h = 2.5 / 10 m 目标区 / 跑浆,同上,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L117；docs/results_log.md L604-605,outputs/rerun_rate/B/B_p1_preplug_*/cells.csv,是,
 C01,93.6 / 62.0,%,结构场 base 单段 / 分段 可达域覆盖,base，2.5 m，预算 185.86,速率判据 ε=0.1 或配额（实际配额先到）,docs/results_log.md L620-621,outputs/rerun_rate/C/results.json,是,
 C02,92.6 / 84.1,%,结构场 random 单段 / 分段 可达域覆盖,random seed1，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,docs/results_log.md L622-623,outputs/rerun_rate/C/results.json,是,
-C03,0.86~0.89,—,分段试算各段停止时 x_f/L_max,P2/P3 均质，1.25 m,速率判据 ε=0.1,CLAUDE.md L112；docs/results_log.md L644,outputs/rerun_rate/C/results.json（stages.x_f_over_L）,是,ε = 0.05 时 0.90（E03）
+C03,0.833~0.906,—,分段试算各段停止时 x_f/L_max（1.25 m 全部 22 个常规段；φ 0.12 临界第 2 段 0.486 除外）,P2/P3 均质，1.25 m,速率判据 ε=0.1,CLAUDE.md L112；docs/results_log.md L644,outputs/rerun_rate/two_grid_check.txt；outputs/rerun_rate/C/results.json,是,原记 0.86~0.89 只取自 P2 表，含 P3 后为 0.833~0.906（2026-10-09 更正）；ε = 0.05 时 0.90（E03）
 C04,0.74 / 1.08,—,P2 临界区间：Δ/L_max 0.74 第 2 段死，1.08 进浆,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L645,outputs/rerun_rate/C/results.json,是,
 C05,4 / 4,—,Δ > x_f 判据与 P2 后续段是否进浆一致的个数,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L643,outputs/rerun_rate/C/results.json,是,
 C06,98.0 / 97.1 / 96.1,%,P2 单段可达域覆盖 φ 0.10 / 0.14 / 0.18,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L635-637,outputs/rerun_rate/C/results.json,是,
@@ -86,8 +86,8 @@ K02,88 / 88 / 75,%,块石 A / B / C 绕流空区峰值占口袋,块石，0.5 m,�
 K03,38 / 38 / 25,%,块石 C 终态：口袋充填 / 绕流 / 致密包裹,块石 C，0.5 m,速率判据 ε=0.1,CLAUDE.md L119-120；docs/results_log.md L706,outputs/rerun_rate/D/boulder/results.jsonl,是,取代旧规则终态 75/0/0
 K04,1.13,p₀,块石 C 盖石下第一排 4 个单元的可达代价,块石 C，0.5 m，可达域,不涉及（无求解器 / 闭式）,docs/results_log.md L345,outputs/boulder_bypass/（旧运行）,未注明,
 Z01,28.6,m³/m,原设计浆量（22 m 层、20% 均一）,招金,不涉及（无求解器 / 闭式）,CLAUDE.md L122；docs/results_log.md L259,outputs/zhaojin_runs/original_design.txt,—,由方案书推算
-Z02,147.9 / 129.1 / 124.8,m³/m,按终压持续注到达 −63 m 时累计注入 II(45%) / I(10%) / III(25%) 段,招金 A2/B2/C2，1 m,到达 −63 m 判停（运行时为旧规则，但旧停滞未先触发）,CLAUDE.md L123（125~148）；docs/results_log.md L241,outputs/zhaojin_runs/results.jsonl；original_design.txt,部分,注满 28.6 前的序列行与 A3–C3 逐位相同；到达值本身单遍
-Z03,5.17 / 4.51 / 4.36,倍,到达 −63 m 所需原设计浆量倍数,招金 A2/B2/C2，1 m,同 Z02,CLAUDE.md L123（4.4~5.2）；docs/results_log.md L267-269,outputs/zhaojin_runs/original_design.txt,部分,
+Z02,147.9 / 129.1 / 124.8,m³/m,按终压持续注到达 −63 m 时累计注入 II(45%) / I(10%) / III(25%) 段,招金 A2/B2/C2，1 m,到达 −63 m 判停（运行时为旧规则，但旧停滞未先触发）,CLAUDE.md L123（125~148）；docs/results_log.md L241,outputs/zhaojin_runs/results.jsonl；original_design.txt,部分,注满 28.6 前的序列行与 A3–C3 逐位相同；到达值本身单遍；第二遍 2026-10-09 夜间运行中（outputs/zhaojin_arrival_pass2/）
+Z03,5.17 / 4.51 / 4.36,倍,到达 −63 m 所需原设计浆量倍数,招金 A2/B2/C2，1 m,同 Z02,CLAUDE.md L123（4.4~5.2）；docs/results_log.md L267-269,outputs/zhaojin_runs/original_design.txt,部分,同 Z02
 Z04,4.77 / 4.10 / 3.98 / 2.96,倍,到达 −56 m 所需原设计浆量倍数 A2/B2/C2/D2,招金，1 m,同 Z02,docs/results_log.md L267-270,outputs/zhaojin_runs/original_design.txt,部分,
 Z05,8.4 / 23.7 / 19.1 / 62.6,%,注满 28.6 m³/m 时注浆水平以下占注入 A2/B2/C2/D2,招金，1 m,按注入量定义,docs/results_log.md L267-270,outputs/zhaojin_runs/original_design.txt,是,与 A3–D3 共享行逐位相同
 Z06,46.5 / 58.9 / 55.2 / 69.4,%,A3–D3 原设计 22 m 层充填率,招金，1 m,配额（原设计浆量）,docs/results_log.md L279-282,outputs/zhaojin_runs/results.jsonl；results_pass2.jsonl,是,
@@ -103,6 +103,8 @@ L05,1.98 / 1.993 / 0.0022,— / — / %,台阶 4a 收敛阶 / Roache 表观阶 /
 L06,1.0,—,台阶 4b 含停滞锋面收敛阶,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 4b,tests/test_verification_ladder.py,是,
 L07,0.60~0.67,—,Picard 末轮/首轮残差均值（极限环）；12 与 40 轮结果逐项一致,v0.6 线源 2.5 m,旧规则运行（只关迭代，不关停注）,docs/results_log.md L735-736,outputs/picard_scan/,是（12 vs 40 两次）,
 L08,9.1e-4 / 1.2e-3,—,二维线源相对守恒漂移 梯度 / 均质,线源，2.5 m,旧 60 步规则运行,cases/README.md L156,—,未注明,现行速率判据重算未记录漂移；量级不依赖停注规则
-O01,0 ~ 5,单元,速率判据重算中的越界（overshoot）单元数（A/B/C 层，含 1.25 m）,A/B/C 层,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt,是（读两遍一致的结果）,只有输出文件一个来源；旧'越界均为 0'是旧规则数
+O01,0 ~ 5,单元,速率判据重算中的越界（overshoot）单元数（A/B/C 层，含 1.25 m）,A/B/C 层,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt,是（读两遍一致的结果）,只有输出文件一个来源；旧'越界均为 0'是旧规则数；越界单元路径代价 1.0065~1.0463 p₀（outputs/rerun_rate/overshoot_cost.txt），均在可达边界一个单元之内
 O02,0.926 ~ 0.987,—,单段运行充填占可达域（over_reach_filled）,C 层单段，2.5 / 1.25 m,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt,是,只有输出文件一个来源；诊断回放的 0.88~0.97 为单遍
 O03,86 ~ 96,min,慢端黏度时钟下 P2 第 1 段按速率判据停注的实际时间（初凝取 240 min）,P2，1.25 m,速率判据 ε=0.1（慢端时钟回放）,—,outputs/rerun_rate/slow_end_stage1.txt,是（输入为两遍一致的序列）,只有输出文件一个来源；旧'48~139 min'为旧规则
+TG01,+4.9 / +4.0 / −0.7,%,两网格 V_in 差（1.25 相对 2.5 m）：均质 0.18 整孔 / 梯度整孔 / 均质 7 m 段第 1 段,A 层、C 层，2.5 vs 1.25 m,速率判据 ε=0.1,—,outputs/rerun_rate/two_grid_check.txt,是（读两遍一致的结果）,取代停注诊断单遍回放的'≤ 5%'；φ 0.10 在 2.5 m 低于分辨率门槛，无对应
+TG02,0.15 / 0.15 / 0.15,m,两网格 x_f 差：同上三对,同上,速率判据 ε=0.1,—,outputs/rerun_rate/two_grid_check.txt,是（读两遍一致的结果）,取代'x_f 差 ≤ 0.9 m'

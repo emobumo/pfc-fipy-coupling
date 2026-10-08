@@ -1,0 +1,10 @@
+reach_sensitivity/reach_sensitivity_1.25.txt                                     byte-identical
+zhaojin_screen/screen_cell0.50.csv                                               byte-identical
+zhaojin_screen/screen_cell0.50.txt                                               byte-identical
+zhaojin_screen/screen_cell1.00.csv                                               byte-identical
+zhaojin_screen/screen_cell1.00.txt                                               byte-identical
+channel_entry_cost/entry_cost_1.25.txt                                           byte-identical
+channel_entry_cost/entry_cost_2.50.txt                                           byte-identical
+zhaojin_c1c2/c1c2.txt                                                            byte-identical
+gravity_control/gravity_control.json [reach] + .txt (reach part)                 identical
+zhaojin_screen/contact_threshold.txt (9 rows x 9 values, printed precision)      identical (9 rows)

@@ -1,0 +1,7 @@
+slow-end replay of the rate rule for P2 first stages (tau = T(1-exp(-t/T)), T = 4444 s; Q_ref from initial mu_p; initial set 240 min)
+
+phi0.10_H17_c1.25/7_17       fast-end stop tau=8006 s V=24.10 | slow end: V(tau->T)=21.70 (90%), rate-rule stop at real 96 min, V there 19.99
+phi0.14_H17_c1.25/7_17       fast-end stop tau=7789 s V=61.10 | slow end: V(tau->T)=54.10 (89%), rate-rule stop at real 92 min, V there 49.17
+phi0.18_H17_c1.25/7_17       fast-end stop tau=7677 s V=127.16 | slow end: V(tau->T)=111.45 (88%), rate-rule stop at real 89 min, V there 99.83
+phi0.18_H17_c1.25/5_17       fast-end stop tau=7566 s V=115.65 | slow end: V(tau->T)=100.88 (87%), rate-rule stop at real 86 min, V there 89.09
+phi0.18_H17_c1.25/single     fast-end stop tau=8886 s V=195.00 | slow end: V(tau->T)=171.53 (88%), rate-rule stop at real 100 min, V there 159.55
