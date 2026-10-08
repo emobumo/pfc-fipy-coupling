@@ -1,0 +1,97 @@
+﻿锚点编号,数值,单位,含义,算例与分辨率,停注规则,来源一,来源二,两遍逐位一致,备注
+P01,30,Pa,屈服应力 τ₀（参数集 v0.6）,全部算例,不涉及（无求解器 / 闭式）,CLAUDE.md L94 参数集 v0.6,src/models/slurry_transport/variables.py grout_material_v06,—,参数输入，非计算结果
+P02,0.15,Pa·s,塑性黏度 μ_p,全部算例,不涉及（无求解器 / 闭式）,CLAUDE.md L94,同 P01,—,参数输入
+P03,1830,kg/m³,浆体密度 ρ,全部算例,不涉及（无求解器 / 闭式）,CLAUDE.md L94；docs/results_log.md L80,同 P01,—,参数输入
+P04,1.25e-7,m²,标定渗透系数 A（k = A·n³/(1−n)²）,全部算例,不涉及（无求解器 / 闭式）,CLAUDE.md L94,同 P01,—,参数输入
+P05,6.00e4(1−n)/n,Pa/m,启动压力梯度 λ(n) 闭式,全部算例,不涉及（无求解器 / 闭式）,CLAUDE.md L95,docs/results_log.md L82（√(8A)=1.000e-3 m）,—,闭式
+P06,83.33n/(1−n),m,p₀ = 5 MPa 下停滞距离 L_max(n) 闭式,全部算例,不涉及（无求解器 / 闭式）,CLAUDE.md L95,docs/results_log.md L82,—,闭式
+P07,18.3,m,L_max(φ 0.18)（表中亦记 18.29）,均质 0.18,不涉及（无求解器 / 闭式）,docs/results_log.md L84,docs/results_log.md L637（18.29）,—,闭式；两处有效位数不同
+P08,60×60,m,"计算域；孔口 (−30, 21) 在左边界（坡面，无流）",线源 / 结构 / 分段算例,不涉及（无求解器 / 闭式）,CLAUDE.md L95-96,docs/results_log.md L84-88,—,设定
+P09,1e-18,m²,胶结体渗透率 clip（λ_胶结/λ_原生 = 428）,段间凝固,不涉及（无求解器 / 闭式）,CLAUDE.md L97,docs/results_log.md L13-15,—,
+P10,428,—,λ_胶结 / λ_原生,台阶 7 一维夹具,不涉及（无求解器 / 闭式）,CLAUDE.md L97,docs/results_log.md L15,—,
+SR01,0.1,—,停注判据 ε（Q̄/Q_ref < ε）,全部求解器算例,速率判据 ε=0.1,CLAUDE.md L82-86,src/analysis/stop_rule.py EPS,—,定义
+SR02,0.1·t,s,窗口 T_w = β·t，β = 0.1,全部求解器算例,速率判据 ε=0.1,CLAUDE.md L83,src/analysis/stop_rule.py BETA,—,定义
+SR03,3.614e-2,m³/(m·s),Q_ref(n_ref 0.18) = k·p₀/μ_p,均质 0.18 / 通道族,速率判据 ε=0.1,docs/results_log.md L512,tests/test_stop_rule.py（3.6139e-2）,—,
+SR04,0.07 ~ 11.7,—,旧 60 步规则在各算例中相当的 ε,停注诊断 D1–D5，2.5/1.25 m,诊断（停滞关闭，跑到 3×10⁴ s）,docs/results_log.md L550,outputs/stop_rule_diagnostic/evaluation.txt,否,诊断运行单遍
+SR05,2 ~ 13,倍,旧规则同一算例两网格判停 Q 之比,停注诊断，2.5 vs 1.25 m,诊断,docs/results_log.md L515-516,outputs/stop_rule_diagnostic/evaluation.txt,否,
+SR06,0.83 ~ 0.94,—,ε = 0.1 停止时 x_f/L_max（诊断回放）,停注诊断,诊断回放,docs/results_log.md L552,outputs/stop_rule_diagnostic/evaluation.txt,否,重算后 P2/P3 实测 0.86~0.89，见 ST10
+SR07,0.88 ~ 0.97,—,ε = 0.1 停止时充填占可达（诊断回放）,停注诊断,诊断回放,docs/results_log.md L552,outputs/stop_rule_diagnostic/evaluation.txt,否,取代旧'求解器没填满 14~19%'（旧规则）
+SR08,≤ 5% / ≤ 0.9,% / m,分辨充分算例两网格 V_in 差 / x_f 差,停注诊断,诊断回放,docs/results_log.md L555,outputs/stop_rule_diagnostic/evaluation.txt,否,
+SR09,≥ 7,—,分辨率门槛 L_max/Δx（2.5 m 上 φ ≤ 0.12 不作定量锚点）,全部,不涉及（无求解器 / 闭式）,CLAUDE.md L85；docs/results_log.md L557,—,—,只有一个来源类型（规则），无输出文件
+R01,2.7,%,16 邻域可达域度量最坏误差（只低估；R/1.0275）,可达域诊断,不涉及（无求解器 / 闭式）,CLAUDE.md L98-99；docs/results_log.md L110,tests/test_fill_diagnostics.py,是,
+R02,1.179 / 0.897,—,可达域上/下比 梯度 / 均质,线源，1.25 m，16 邻域,不涉及（无求解器 / 闭式）,CLAUDE.md L102；docs/results_log.md L355,outputs/gravity_control/gravity_control.txt,是,
+R03,1.175 / 0.888,—,可达域上/下比 梯度 / 均质,线源，2.5 m，16 邻域,不涉及（无求解器 / 闭式）,docs/results_log.md L123,outputs/rerun_2026-09-24_metric16/headline_1.log,是,2.5 m 值，只作相对比较
+R04,1.000 / 0.897 / 1.383 / 1.179,—,可达域分解：几何 / 只有重力 / 只有结构 / 两者,线源，1.25 m,不涉及（无求解器 / 闭式）,CLAUDE.md L104-105；docs/results_log.md L355,outputs/gravity_control/gravity_control.txt,未注明,
+R05,0.947,—,2.5 m 均质无重力可达比（= 2.5 m 量化误差约 0.05）,线源，2.5 m,不涉及（无求解器 / 闭式）,docs/results_log.md L357,outputs/gravity_control/gravity_control.txt,未注明,
+R06,10,组,τ₀/A/ρ 敏感性中均质与梯度都未触边界的组数（18 组中）,可达域，1.25 m,不涉及（无求解器 / 闭式）,CLAUDE.md L105；docs/results_log.md L369,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,未注明,
+R07,1.03~1.25 / 0.90~1.02,—,上述 10 组可达上/下比 梯度 / 均质,可达域，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L364-365,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,未注明,
+R08,0.0,%,V1 均质点源可达域三个轴向与焦点椭圆 r = L_max/(1+Π_g sinθ) 的偏差,100×100 m，点源，1.25 / 0.625 m,不涉及（无求解器 / 闭式）,docs/results_log.md L402,outputs/conic_check/conic_check.txt,是,
+R09,2.63 / 2.72~2.99,%,V1 扇区最大低估 无重力 / 含重力,同 R08,不涉及（无求解器 / 闭式）,docs/results_log.md L403,outputs/conic_check/conic_check.txt,是,
+R10,2.75%/(1 + Π_g sinθ),—,V1 含重力度量误差界（n 0.30 下方 3.15%）,同 R08,不涉及（无求解器 / 闭式）,docs/results_log.md L405-406,outputs/conic_check/conic_check.txt,是,
+R11,0.936 / 0.877 / 0.773,—,点源上/下比 (1−Π_g)/(1+Π_g)，n 0.10/0.18/0.30,解析,不涉及（无求解器 / 闭式）,docs/results_log.md L407,outputs/conic_check/conic_check.txt（0.9356/0.8767/0.7727）,是,
+R12,1.000/1.000；0.898/0.897；1.261/1.383；1.201/1.179,—,V2 直射线 / 二维：均质无重力、只有重力、只有结构、两者,组 A，v0.6，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L412-413,outputs/flip_criterion/flip_criterion.txt,是,
+R13,1.000 / 0.898 / 1.378 / 1.215,—,V2 忽略左右边界的孔中点自由射线,组 A，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L415-416,outputs/flip_criterion/flip_criterion.txt,是,
+R14,−0.029~+0.020 / −0.035~+0.043,—,V2 组 B（10 组）射线 − 二维 因子差 均质 / 梯度,1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L419-420,outputs/flip_criterion/flip_criterion.txt,是,
+R15,2.635,—,v0.6 梯度场对应翻转数 F = γp₀/(2ρg),V3，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L423,outputs/flip_criterion/flip_criterion.txt,是,
+R16,1.015~1.021,—,V3 临界 F*（直射线，四组）,V3,不涉及（无求解器 / 闭式）,docs/results_log.md L425,outputs/flip_criterion/flip_criterion.txt,是,
+R17,0.958 / 1.052；1.003 / 1.052,—,V3 临界 F* 二维：组 1 / 组 4（1.25 m）；组 2 / 组 3（0.625 m）,V3,不涉及（无求解器 / 闭式）,docs/results_log.md L425-427,outputs/flip_criterion/flip_criterion.txt；flip_criterion_refine_0.625.txt,是,组 2/3 在 1.25 m 为 0.750/0.687（L_max/Δx 8~9，台阶），不引
+R18,0.0060~0.0061 / 0.0066 / 0.0061 / 0.0063,/m,V3 幅度 (因子−1)/L_max at F₁=2：射线（组 1~3）/ 二维组 1（1.25 m）/ 组 2、3（0.625 m）,V3,不涉及（无求解器 / 闭式）,docs/results_log.md L428-429,同 R17,是,组 4（ρ 1450）二维 0.0073、射线 0.0076 只在输出文件中
+R19,0 / 0.197~0.206,p₀,S2 通道入口代价：孔穿过通道 / 孔底外（1.25 m）,S2，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L439-446,outputs/channel_entry_cost/entry_cost_1.25.txt,未注明,2.5 m 为 0.257~0.279；表中配额耗时/目标区两列是旧规则数，不引
+R20,0.76~0.79,p₀,招金 有贯通交界面（φ_c 0.35）三段到 −63 m 代价比,招金筛选，0.5 m，可达域,不涉及（无求解器 / 闭式）,docs/results_log.md L210,outputs/zhaojin_screen/screen_cell0.50.txt,未注明,
+R21,0.22~0.25（z2 0.20）,—,交界面最低等效空隙率（反推）,招金，可达域,不涉及（无求解器 / 闭式）,docs/results_log.md L214-215,outputs/zhaojin_screen/contact_threshold.txt,未注明,一维沿交界面约 0.31
+R22,70~95,p₀,封底后向下路径代价比,招金筛选,不涉及（无求解器 / 闭式）,docs/results_log.md L219,outputs/zhaojin_screen/screen_cell0.50.txt,未注明,
+R23,0.79 → 0.78,p₀,孔仰角 35° → 20° 到 −63 m 代价比,招金筛选,不涉及（无求解器 / 闭式）,docs/results_log.md L221,outputs/zhaojin_screen/screen_cell0.50.txt,未注明,
+R24,z1 0.227~0.474；z2 0.194~0.474；z3 0.225~0.474,—,C1 各段交界面阈值 φ_c 范围（10 组参数中 8 组可达）,招金，0.5 m，可达域,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,否,只有一个来源（未写入 results_log / CLAUDE.md）；τ₀ 60 与 A×0.3 两组在 0.60 仍不可达
+R25,−0.115~−0.005,—,C1 二维 − 一维沿交界面估算,同 R24,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,否,只有一个来源
+R26,13 / 144,个,C2 浆液优先进入存窿矿石的配置数,招金 144 配置，0.5 m,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,否,只有一个来源
+S01,185.861,m³/m,新配额 = 均质 0.18 线源速率判据停止体积,均质 0.18，2.5 m,速率判据 ε=0.1,CLAUDE.md L107（185.86）；docs/results_log.md L571,outputs/rerun_rate/A/results.json,是,
+S02,175,单元,设计目标域 = 上述停止足迹（含 10 个孔单元）,均质 0.18，2.5 m,速率判据 ε=0.1,CLAUDE.md L107；docs/results_log.md L571,outputs/rerun_rate/A/target_mask.npy,是,
+S03,1.220,—,上/下比 梯度线源,梯度，1.25 m,速率判据 ε=0.1,CLAUDE.md L102；docs/results_log.md L575,outputs/rerun_rate/A/results.json,是,
+S04,0.912,—,上/下比 均质线源,均质 0.18，1.25 m,速率判据 ε=0.1,CLAUDE.md L102；docs/results_log.md L574,outputs/rerun_rate/A/results.json,是,
+S05,1.193 / 0.843,—,上/下比 梯度 / 均质,2.5 m,速率判据 ε=0.1,CLAUDE.md L106；docs/results_log.md L572-573,outputs/rerun_rate/A/results.json,是,2.5 m，只作同族相对比较
+S06,1.369 / 0.994,—,无重力上/下比 梯度 / 均质,1.25 m,速率判据 ε=0.1,CLAUDE.md L103；docs/results_log.md L576-577,outputs/rerun_rate/A/results.json,是,
+S07,1.159 / 1.220 / 1.331,—,梯度强度 φ_top 0.25 / 0.30 / 0.35 上/下比,1.25 m,速率判据 ε=0.1,CLAUDE.md L103-104；docs/results_log.md L578-579,outputs/rerun_rate/A/results.json,是,
+S08,8886.4 / 194.997 / 691,s / m³/m / 单元,均质 0.18 线源停止 t / V_in / 充填单元,1.25 m,速率判据 ε=0.1,docs/results_log.md L574,outputs/rerun_rate/A/results.json,是,
+S09,11579.7 / 299.587 / 898,s / m³/m / 单元,梯度线源停止 t / V_in / 充填单元,1.25 m,速率判据 ε=0.1,docs/results_log.md L575,outputs/rerun_rate/A/results.json,是,
+B01,87.3 / 72.7 / 64.8,%,孔底通道 φ 0.30 / 0.45 / 0.60 目标区充填,通道，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L108（87/73/65）；docs/results_log.md L597-599,outputs/rerun_rate/B/results.json；B/*/cells.csv,是,
+B02,3482 / 2200 / 1859,s,孔底通道 φ 0.30 / 0.45 / 0.60 注满配额时刻,通道，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,docs/results_log.md L597-599,outputs/rerun_rate/B/results.json,是,模型时间轴不可与现场比
+B03,595 / 774,s,孔中 / 孔口通道 φ 0.45 注满配额时刻,通道，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L109（600~800 s）；docs/results_log.md L600-601,outputs/rerun_rate/B/results.json,是,
+B04,19.0 / 21.7,%,孔中 / 孔口通道跑浆占比（35.3 / 40.3 m³/m）,通道，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L109（19%/22%）；docs/results_log.md L600-601,outputs/rerun_rate/B/*/cells.csv,是,
+B05,78.2 / 76.4 / 77.0,%,随机场 seed 1/2/3 目标区充填,随机，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L109-110；docs/results_log.md L602,outputs/rerun_rate/B/results.json,是,
+B06,17.7 / 2.9 / 13.1,%,随机场 seed 1/2/3 dsf（目标域中不可达）,随机，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L110；docs/results_log.md L602,outputs/rerun_rate/B/results.json,是,
+B07,65.5 / 21.7,%,P1 ① 整孔 目标区 / 跑浆,孔口通道 collar_v06，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L116；docs/results_log.md L601、L608,outputs/rerun_rate/B/B_p1_full_hole/cells.csv,是,
+B08,55.8 / 28.7,%,P1 ② 分段（第 1 段经通道耗尽配额）目标区 / 跑浆,同上,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L116；docs/results_log.md L603,outputs/rerun_rate/B/B_p1_collar_v06/*/cells.csv,是,
+B09,75.8 / 12.0；87.3 / 7.0,%,P1 ③ 预置封堵 h = 2.5 / 10 m 目标区 / 跑浆,同上,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L117；docs/results_log.md L604-605,outputs/rerun_rate/B/B_p1_preplug_*/cells.csv,是,
+C01,93.6 / 62.0,%,结构场 base 单段 / 分段 可达域覆盖,base，2.5 m，预算 185.86,速率判据 ε=0.1 或配额（实际配额先到）,docs/results_log.md L620-621,outputs/rerun_rate/C/results.json,是,
+C02,92.6 / 84.1,%,结构场 random 单段 / 分段 可达域覆盖,random seed1，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,docs/results_log.md L622-623,outputs/rerun_rate/C/results.json,是,
+C03,0.86~0.89,—,分段试算各段停止时 x_f/L_max,P2/P3 均质，1.25 m,速率判据 ε=0.1,CLAUDE.md L112；docs/results_log.md L644,outputs/rerun_rate/C/results.json（stages.x_f_over_L）,是,ε = 0.05 时 0.90（E03）
+C04,0.74 / 1.08,—,P2 临界区间：Δ/L_max 0.74 第 2 段死，1.08 进浆,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L645,outputs/rerun_rate/C/results.json,是,
+C05,4 / 4,—,Δ > x_f 判据与 P2 后续段是否进浆一致的个数,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L643,outputs/rerun_rate/C/results.json,是,
+C06,98.0 / 97.1 / 96.1,%,P2 单段可达域覆盖 φ 0.10 / 0.14 / 0.18,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L635-637,outputs/rerun_rate/C/results.json,是,
+C07,94.6 / 58.7 / 62.1 / 56.4,%,P2 分段覆盖：0.10 7→17、0.14 7→17、0.18 7→17、0.18 5→17,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L638-641,outputs/rerun_rate/C/results.json,是,
+C08,24.10 + 18.15,m³/m,P2 φ 0.10 7→17 各段注入量（Δ 10 > x_f 8.2）,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L638,outputs/rerun_rate/C/results.json,是,
+C09,29.7 / 34.0 / 35.4 / 38.4 / 32.9 / 3.4,百分点,P3 孔隙率组覆盖损失 φ 0.22/0.18/0.16/0.14/0.12/0.10（H 17）,P2+P3，1.25 m,速率判据 ε=0.1,docs/results_log.md L655-660,outputs/rerun_rate/C/results.json；figs/p3_loss.csv,是,
+C10,13.8 / 38.4 / 2.2 / 1.2,百分点,P3 孔长组覆盖损失 H 10/17/25/32 m（φ 0.14）,P3，1.25 m,速率判据 ε=0.1,docs/results_log.md L658、L661-663,outputs/rerun_rate/C/results.json；figs/p3_loss.csv,是,
+C11,5.33,m³/m,P3 φ 0.12（Δ/L_max 0.88，临界）第 2 段注入量；20 个孔单元 19 个已埋,P3，1.25 m,速率判据 ε=0.1,docs/results_log.md L659,outputs/rerun_rate/C/results.json,是,
+C12,20.6,m,32 m 孔孔底距最近边界（> L_max 13.6 m，不触边界）,P3，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L667,outputs/rerun_rate/C/results.json（toe_to_wall）,是,
+V01,1.17~1.22 / 0.91~0.97,—,黏度时变两端及各时刻上/下比 梯度 / 均质,线源，1.25 m,速率判据 ε=0.1（Q_ref 取初始 μ_p）,CLAUDE.md L103-104；docs/results_log.md L682,outputs/rerun_rate/D/aging_1.25/gradient_marks.txt,是,
+V02,1.186 / 0.922,—,慢端（τ = T = 4444 s）上/下比 梯度 / 均质,线源，1.25 m,速率判据 ε=0.1,docs/results_log.md L679,outputs/rerun_rate/D/aging_1.25/gradient_marks.txt,是,
+V03,81 / 88,%,慢端注入量占快端 梯度 / 均质,线源，1.25 m,速率判据 ε=0.1,docs/results_log.md L683,outputs/rerun_rate/D/aging_1.25/gradient_marks.txt,是,
+V04,74,min,黏度 e 折时间 T（Lv et al. 2021，W/C 0.5）,文献,不涉及（无求解器 / 闭式）,docs/results_log.md L305,scripts/viscosity_aging_bracket.py,—,文献值
+E01,1.258 / 0.925,—,ε = 0.05 上/下比 梯度 / 均质,线源，1.25 m,速率判据 ε=0.05,CLAUDE.md L105；docs/results_log.md L690,outputs/rerun_rate/E/results.json,否,敏感性，单遍，不作锚点
+E02,9~14,%,ε 减半注入量增加,线源，1.25 m,ε=0.05 vs 0.1,docs/results_log.md L695,outputs/rerun_rate/E/results.json,否,敏感性
+E03,0.90,—,ε = 0.05 时 P2 φ 0.18 7→17 第 1 段 x_f/L_max（第 2 段仍为 0）,P2，1.25 m,速率判据 ε=0.05,CLAUDE.md L113；docs/results_log.md L692,outputs/rerun_rate/E/results.json,否,敏感性
+K01,33.6（75%）/ 23.9（49%）/ 23.4（49%）,m³/m（占可达孔隙）,块石 A / B / C 首次封闭时注入量,块石，0.5 m,按注入量定义，与停注规则无关,docs/results_log.md L337-339,outputs/rerun_rate/D/boulder/results.jsonl（窗口 33.57.. / 23.88.. / 23.40..）,是,原值来自旧规则运行；速率判据重算窗口起点相同
+K02,88 / 88 / 75,%,块石 A / B / C 绕流空区峰值占口袋,块石，0.5 m,按注入量定义,docs/results_log.md L337-339、L704-706,outputs/rerun_rate/D/boulder/results.jsonl,是,
+K03,38 / 38 / 25,%,块石 C 终态：口袋充填 / 绕流 / 致密包裹,块石 C，0.5 m,速率判据 ε=0.1,CLAUDE.md L119-120；docs/results_log.md L706,outputs/rerun_rate/D/boulder/results.jsonl,是,取代旧规则终态 75/0/0
+K04,1.13,p₀,块石 C 盖石下第一排 4 个单元的可达代价,块石 C，0.5 m，可达域,不涉及（无求解器 / 闭式）,docs/results_log.md L345,outputs/boulder_bypass/（旧运行）,未注明,
+Z01,28.6,m³/m,原设计浆量（22 m 层、20% 均一）,招金,不涉及（无求解器 / 闭式）,CLAUDE.md L122；docs/results_log.md L259,outputs/zhaojin_runs/original_design.txt,—,由方案书推算
+Z02,147.9 / 129.1 / 124.8,m³/m,按终压持续注到达 −63 m 时累计注入 II(45%) / I(10%) / III(25%) 段,招金 A2/B2/C2，1 m,到达 −63 m 判停（运行时为旧规则，但旧停滞未先触发）,CLAUDE.md L123（125~148）；docs/results_log.md L241,outputs/zhaojin_runs/results.jsonl；original_design.txt,部分,注满 28.6 前的序列行与 A3–C3 逐位相同；到达值本身单遍
+Z03,5.17 / 4.51 / 4.36,倍,到达 −63 m 所需原设计浆量倍数,招金 A2/B2/C2，1 m,同 Z02,CLAUDE.md L123（4.4~5.2）；docs/results_log.md L267-269,outputs/zhaojin_runs/original_design.txt,部分,
+Z04,4.77 / 4.10 / 3.98 / 2.96,倍,到达 −56 m 所需原设计浆量倍数 A2/B2/C2/D2,招金，1 m,同 Z02,docs/results_log.md L267-270,outputs/zhaojin_runs/original_design.txt,部分,
+Z05,8.4 / 23.7 / 19.1 / 62.6,%,注满 28.6 m³/m 时注浆水平以下占注入 A2/B2/C2/D2,招金，1 m,按注入量定义,docs/results_log.md L267-270,outputs/zhaojin_runs/original_design.txt,是,与 A3–D3 共享行逐位相同
+Z06,46.5 / 58.9 / 55.2 / 69.4,%,A3–D3 原设计 22 m 层充填率,招金，1 m,配额（原设计浆量）,docs/results_log.md L279-282,outputs/zhaojin_runs/results.jsonl；results_pass2.jsonl,是,
+Z07,0,m³/m,封底 E2 / E2_20 注浆水平以下,招金，1 m,速率判据 ε=0.1,CLAUDE.md L125；docs/results_log.md L716-717,outputs/rerun_rate/D/zhaojin/results.jsonl,是,
+Z08,61.32 / 58.07,m³/m,封底 E2（35°）/ E2_20（20°）停止注入量,招金，1 m,速率判据 ε=0.1,docs/results_log.md L716-717,outputs/rerun_rate/D/zhaojin/results.jsonl,是,旧规则 62.13 / 62.23
+Z09,94.13 / 32312,m³/m / s,D2（无交界面）停止注入量 / 到 −56 m 时刻；不到 −63 m,招金，1 m,速率判据 ε=0.1,CLAUDE.md L125；docs/results_log.md L718,outputs/rerun_rate/D/zhaojin/results.jsonl,是,ε = 0.05 时 94.20，结论不变
+Z10,0,m³/m,E20（变更设计仰角 20°，注满 50.4）注浆水平以下,招金，1 m,配额（变更设计浆量）,docs/results_log.md L292-293,outputs/zhaojin_runs/results.jsonl,未注明,
