@@ -95,3 +95,14 @@ Z07,0,m³/m,封底 E2 / E2_20 注浆水平以下,招金，1 m,速率判据 ε=0.
 Z08,61.32 / 58.07,m³/m,封底 E2（35°）/ E2_20（20°）停止注入量,招金，1 m,速率判据 ε=0.1,docs/results_log.md L716-717,outputs/rerun_rate/D/zhaojin/results.jsonl,是,旧规则 62.13 / 62.23
 Z09,94.13 / 32312,m³/m / s,D2（无交界面）停止注入量 / 到 −56 m 时刻；不到 −63 m,招金，1 m,速率判据 ε=0.1,CLAUDE.md L125；docs/results_log.md L718,outputs/rerun_rate/D/zhaojin/results.jsonl,是,ε = 0.05 时 94.20，结论不变
 Z10,0,m³/m,E20（变更设计仰角 20°，注满 50.4）注浆水平以下,招金，1 m,配额（变更设计浆量）,docs/results_log.md L292-293,outputs/zhaojin_runs/results.jsonl,未注明,
+L01,<1,%,台阶 1 一维线性 Darcy：压力与流量相对误差,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 验证阶梯表 台阶 1,tests/test_verification_ladder.py,是（确定性测试，每次全套运行复现）,
+L02,0.620 / 0.600 / 3.3,m / m / %,台阶 2 一维宾汉停滞：实测 / L_max / 误差（容差 5%）,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 2,tests/test_verification_ladder.py,是,
+L03,≤0.3 / 1.2e-15,% L_max / —,台阶 2b 锋面对 Gustafson–Stille 最大偏差 / 守恒漂移,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 2b,tests/test_verification_ladder.py,是,
+L04,0.700 / 0.700,m,台阶 3 径向停滞半径 实测 / I_max,径向,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 3,tests/test_verification_ladder.py,是,
+L05,1.98 / 1.993 / 0.0022,— / — / %,台阶 4a 收敛阶 / Roache 表观阶 / GCI_fine,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 4a,tests/test_verification_ladder.py,是,
+L06,1.0,—,台阶 4b 含停滞锋面收敛阶,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 4b,tests/test_verification_ladder.py,是,
+L07,0.60~0.67,—,Picard 末轮/首轮残差均值（极限环）；12 与 40 轮结果逐项一致,v0.6 线源 2.5 m,旧规则运行（只关迭代，不关停注）,docs/results_log.md L735-736,outputs/picard_scan/,是（12 vs 40 两次）,
+L08,9.1e-4 / 1.2e-3,—,二维线源相对守恒漂移 梯度 / 均质,线源，2.5 m,旧 60 步规则运行,cases/README.md L156,—,未注明,现行速率判据重算未记录漂移；量级不依赖停注规则
+O01,0 ~ 5,单元,速率判据重算中的越界（overshoot）单元数（A/B/C 层，含 1.25 m）,A/B/C 层,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt,是（读两遍一致的结果）,只有输出文件一个来源；旧'越界均为 0'是旧规则数
+O02,0.926 ~ 0.987,—,单段运行充填占可达域（over_reach_filled）,C 层单段，2.5 / 1.25 m,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt,是,只有输出文件一个来源；诊断回放的 0.88~0.97 为单遍
+O03,86 ~ 96,min,慢端黏度时钟下 P2 第 1 段按速率判据停注的实际时间（初凝取 240 min）,P2，1.25 m,速率判据 ε=0.1（慢端时钟回放）,—,outputs/rerun_rate/slow_end_stage1.txt,是（输入为两遍一致的序列）,只有输出文件一个来源；旧'48~139 min'为旧规则
