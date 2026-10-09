@@ -61,7 +61,7 @@ def extent_report():
     where Delta is counted from the toe of the last pass that actually took
     grout (7 -> 10 -> 17 at phi 0.10: the 10 m pass is dead, so the 17 m pass
     sees Delta = 10). x_f / L_max = 0.34 .. 0.80: a pass stops on refusal
-    while its front is still short of L_max (the Gustafson-Stille tail), and
+    while its front is still short of L_max (the asymptotic tail of the 1D analytic fill curve, ladder step 2b), and
     a short source spreads less along its own axis.
     """
     end, d, nrm = G.hole_geometry()

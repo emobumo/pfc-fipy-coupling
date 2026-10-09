@@ -89,7 +89,7 @@ A_CAL = _MAT["calibrated_permeability_coefficient"]
 # --- march control ---------------------------------------------------------
 # Stall = the S>=0.5 front (filled-cell count) stops advancing for PATIENCE
 # steps. (V_store keeps creeping as partially-filled interior cells densify --
-# the GS log-singularity tail -- but the front envelope we measure/plot is set
+# the log-singularity tail of the 1D analytic fill curve -- but the front envelope we measure/plot is set
 # once no new cell crosses S=0.5; count-plateau captures that without grinding
 # through the asymptotic tail.)
 #

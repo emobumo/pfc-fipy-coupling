@@ -98,7 +98,7 @@ Z09,94.13 / 32312,m³/m / s,D2（无交界面）停止注入量 / 到 −56 m �
 Z10,0,m³/m,E20（变更设计仰角 20°，注满 50.4）注浆水平以下,招金，1 m,配额（变更设计浆量）,docs/results_log.md L292-293,outputs/zhaojin_runs/results.jsonl,未注明,
 L01,<1,%,台阶 1 一维线性 Darcy：压力与流量相对误差,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 验证阶梯表 台阶 1,tests/test_verification_ladder.py,是（确定性测试，每次全套运行复现）,
 L02,0.620 / 0.600 / 3.3,m / m / %,台阶 2 一维宾汉停滞：实测 / L_max / 误差（容差 5%）,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 2,tests/test_verification_ladder.py,是,
-L03,0.36 / 1.2e-15,% L_max / —,台阶 2b 锋面对 Gustafson–Stille 最大偏差 / 守恒漂移,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 2b,outputs/verification_ladder/step2b_front_time.csv；summary.txt,是（2026-10-09 两遍逐字节一致）,偏差为现行求解器读出值；CLAUDE.md 原记 ≤0.3%，已更正。守恒漂移 1.2e-15 未重读
+L03,0.36 / 1.2e-15,% L_max / —,台阶 2b 锋面对本模型流动律一维解析解最大偏差 / 守恒漂移,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 2b,outputs/verification_ladder/step2b_front_time.csv；summary.txt,是（2026-10-09 两遍逐字节一致）,偏差为现行求解器读出值；CLAUDE.md 原记 ≤0.3%，已更正。守恒漂移 1.2e-15 未重读
 L04,0.700 / 0.700,m,台阶 3 径向停滞半径 实测 / I_max,径向,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 3,outputs/verification_ladder/step3_axis_profile.csv；summary.txt,是（2026-10-09 两遍逐字节一致）,剖面最大偏差 2.59% p₀
 L05,1.98 / 1.993 / 0.0022,— / — / %,台阶 4a 收敛阶 / Roache 表观阶 / GCI_fine,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 4a,tests/test_verification_ladder.py,是,
 L06,1.0,—,台阶 4b 含停滞锋面收敛阶,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 4b,tests/test_verification_ladder.py,是,

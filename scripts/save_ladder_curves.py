@@ -5,7 +5,7 @@ running the test module's own fixtures unchanged (the same computation every
 full test run performs; nothing is re-implemented):
 
     step 2b  _run_step2b_march(): front position vs time, against the
-             Gustafson-Stille curve _gs_front(t)
+             model's own 1D analytic curve _fill_front(t)
     step 3   _run_step3_march(): stalled pressure along the +x axis, against
              max(0, p0 - lambda (r - r0)); stall radius vs I_max
 
@@ -34,9 +34,9 @@ def main():
     if not os.path.isdir(OUT):
         os.makedirs(OUT)
     _, traj, _ = T._run_step2b_march()
-    rows = [(t, f, T._gs_front(t)) for t, f in traj]
+    rows = [(t, f, T._fill_front(t)) for t, f in traj]
     np.savetxt(os.path.join(OUT, "step2b_front_time.csv"), np.array(rows), delimiter=",", comments="",
-               header="t_s,front_numeric_m,front_gustafson_stille_m  (L_max = %.3f m)" % T.S2B_LMAX)
+               header="t_s,front_numeric_m,front_analytic_m  (L_max = %.3f m)" % T.S2B_LMAX)
     start = max(int(0.2 * len(rows)), 1)
     worst = max(abs(f - g) / T.S2B_LMAX for _, f, g in rows[start:])
     state, hist = T._run_step3_march()
@@ -49,7 +49,7 @@ def main():
     out = x > T.S3_R0
     dev = float(np.max(np.abs(p[out] - exact[out]))) / T.S3_P0
     text = "\n".join([
-        "step 2b: %d steps to front %.4f m (%.2f L_max); max |front - GS| / L_max after the first 20%% = %.4f"
+        "step 2b: %d steps to front %.4f m (%.2f L_max); max |front - analytic| / L_max after the first 20%% = %.4f"
         % (len(rows), rows[-1][1], rows[-1][1] / T.S2B_LMAX, worst),
         "step 3: stall radius %.4f m vs I_max %.4f m (rel err %.4f); max |p - exact| / p0 outside r0 = %.4f"
         % (stall, T.S3_IMAX, abs(stall - T.S3_IMAX) / T.S3_IMAX, dev)])

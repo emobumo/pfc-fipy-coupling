@@ -467,9 +467,13 @@ class TestStep3RadialGustafsonStille(unittest.TestCase):
 # --- Step 2b configuration ---------------------------------------------------
 # Variable-saturation fill on a dry pile (1D): S starts at 0, the inlet
 # supplies S=1 slurry, and the fill closure (penalized air-pressure cells +
-# explicit face-inflow fill) advances a sharp S front. This is the
-# Gustafson-Stille 1D benchmark in its native form -- a relative
+# explicit face-inflow fill) advances a sharp S front. The reference is the
+# 1D analytic solution of this model's own flow law -- a relative
 # penetration / relative time curve, NOT a single terminal stall point.
+# It is the same type of benchmark as the Gustafson et al. parallel-plate
+# solution (same stall-length form: L_max = p0/lambda vs I_max =
+# dp*b/(2*tau0), r_eff in the place of the full aperture b), but it is not
+# their time curve: the flow laws differ, so t(x_f) differs.
 #
 # Analytic 1D fill (quasi-steady volume balance, S=1 behind a sharp front):
 #   uniform flux behind front  q = (k/mu)*(p0/x_f - lambda)
@@ -479,7 +483,7 @@ class TestStep3RadialGustafsonStille(unittest.TestCase):
 # The log term diverges as x_f -> L_max, so the front reaches L_max only as
 # t -> infinity: at any FINITE time the analytic front is strictly below
 # L_max. The test therefore checks that the numeric front TRACKS this
-# analytic time-distance curve over the injection period (the GS benchmark),
+# analytic time-distance curve over the injection period (the benchmark),
 # instead of asserting a terminal stall position (which is an asymptotic
 # limit, not reachable in finite steps).
 #
@@ -502,8 +506,8 @@ S2B_PHI = S2_PHI
 S2B_M0 = S2B_K / S2B_MU
 S2B_LMAX = S2_LMAX
 S2B_LAMBDA = S2_LAMBDA
-# Gustafson-Stille time coefficient n/(M*lambda) [s].
-S2B_GS_COEF = S2B_PHI / (S2B_M0 * S2B_LAMBDA)
+# Analytic fill time coefficient n/(M*lambda) [s].
+S2B_TIME_COEF = S2B_PHI / (S2B_M0 * S2B_LAMBDA)
 # March until the front passes this fraction of L_max. Kept to the injection
 # period (before the slow yield-margin phase) so the unit suite stays fast
 # (~550 steps). The round-5 convergence / long-time-creep study (marching to
@@ -516,24 +520,24 @@ S2B_MAX_STEPS = 1500
 _STEP2B_CACHE = {}
 
 
-def _gs_time(x_f):
+def _fill_time(x_f):
     """Analytic fill time to reach front position x_f (< L_max) [s]."""
     if x_f <= 0.0:
         return 0.0
     x_f = min(x_f, S2B_LMAX * (1.0 - 1.0e-9))
-    return S2B_GS_COEF * (
+    return S2B_TIME_COEF * (
         S2B_LMAX * math.log(S2B_LMAX / (S2B_LMAX - x_f)) - x_f
     )
 
 
-def _gs_front(t):
-    """Invert _gs_time: analytic front position at time t (bisection)."""
+def _fill_front(t):
+    """Invert _fill_time: analytic front position at time t (bisection)."""
     if t <= 0.0:
         return 0.0
     lo, hi = 0.0, S2B_LMAX * (1.0 - 1.0e-12)
     for _ in range(80):
         mid = 0.5 * (lo + hi)
-        if _gs_time(mid) < t:
+        if _fill_time(mid) < t:
             lo = mid
         else:
             hi = mid
@@ -615,10 +619,11 @@ def _run_step2b_march():
 
 
 class TestStep2bSaturationFront(unittest.TestCase):
-    """Step 2b: the dry-pile S front must track the Gustafson-Stille
-    analytic penetration-vs-time curve over the injection period."""
+    """Step 2b: the dry-pile S front must track the analytic
+    penetration-vs-time curve of the model's own 1D flow law over the
+    injection period."""
 
-    def test_front_tracks_gustafson_stille_curve(self):
+    def test_front_tracks_analytic_curve(self):
         _, trajectory, _ = _run_step2b_march()
         # Compare the numeric front to the analytic front at the SAME time, at
         # several samples spanning the tracked range (skip the first 20% of
@@ -627,16 +632,16 @@ class TestStep2bSaturationFront(unittest.TestCase):
         worst = 0.0
         worst_msg = ""
         for t, front in trajectory[start:]:
-            analytic = _gs_front(t)
+            analytic = _fill_front(t)
             err = abs(front - analytic) / S2B_LMAX
             if err > worst:
                 worst = err
-                worst_msg = ("t=%.3f s: numeric front %.4f vs GS %.4f "
+                worst_msg = ("t=%.3f s: numeric front %.4f vs analytic %.4f "
                              "(err %.3f of L_max)" % (t, front, analytic, err))
         self.assertLess(
             worst,
             0.05,
-            "front departs from the GS curve: %s" % worst_msg,
+            "front departs from the analytic curve: %s" % worst_msg,
         )
 
     def test_injected_volume_monotone(self):

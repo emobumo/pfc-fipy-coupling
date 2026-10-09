@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-图 4.4-2 解析对比三联图：(a) 一维变饱和充填锋面—时间对 Gustafson–Stille 解析曲线（台阶 2b）；
+图 4.4-2 解析对比三联图：(a) 一维变饱和充填锋面—时间对本模型流动律一维解析解（台阶 2b；与 Gustafson 等平行板解同类型，
+非其式 9）；
 (b) 径向停滞沿轴压力剖面对 max(0, p₀ − λ(r − r₀))（台阶 3）；(c) 均质点源可达域对解析椭圆。
 数据：(a)(b) outputs/verification_ladder/step2b_front_time.csv、step3_axis_profile.csv（scripts/save_ladder_curves.py
 运行测试夹具 _run_step2b_march、_run_step3_march 得到，两遍逐字节一致）；(c) scripts/conic_check.py 的 build/one
@@ -26,7 +27,7 @@ def main():
     a = np.loadtxt(os.path.join(VL, "step2b_front_time.csv"), delimiter=",", skiprows=1)
     lmax = 0.6
     ax = axs[0]
-    ax.plot(a[:, 0], a[:, 2] / lmax, "-", color=K.C2, lw=1.4, label=u"Gustafson–Stille 解析曲线")
+    ax.plot(a[:, 0], a[:, 2] / lmax, "-", color=K.C2, lw=1.4, label=u"本模型流动律一维解析解")
     ax.plot(a[::12, 0], a[::12, 1] / lmax, "o", color=K.C1, ms=3.5, label=u"数值（充填饱和度 0.5 位置）")
     ax.set_xlabel(u"时间 t (s)"); ax.set_ylabel(u"锋面位置 " + K.XF + u" / " + K.LMAX)
     ax.legend(loc="lower right", frameon=False, fontsize=7, numpoints=1)
