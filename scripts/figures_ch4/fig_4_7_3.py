@@ -22,7 +22,7 @@ Z = imp.load_source("zhaojin_section", os.path.join(K.REPO, "cases", "zhaojin_se
 ZR = os.path.join(K.REPO, "outputs", "zhaojin_runs")
 ZD = os.path.join(K.RR, "D", "zhaojin")
 CELL = 1.0
-LAB = {"A": u"II 段（45%）", "B": u"I 段（10%）", "C": u"III 段（25%）", "D": u"I 段，无交界面", "E": u"II 段，封底"}
+LAB = {"A": u"II 段（孔隙率 45%）", "B": u"I 段（孔隙率 10%）", "C": u"III 段（孔隙率 25%）", "D": u"I 段，无交界面", "E": u"II 段，封底"}
 TOP = [("A", os.path.join(ZR, "final_A3.npz")), ("B", os.path.join(ZR, "final_B3.npz")), ("C", os.path.join(ZR, "final_C3.npz")),
        ("D", os.path.join(ZR, "final_D3.npz")), ("E", os.path.join(ZR, "final_E.npz"))]
 BOT = [("A", os.path.join(ZR, "final_A2.npz")), ("B", os.path.join(ZR, "final_B2.npz")), ("C", os.path.join(ZR, "final_C2.npz")),
@@ -52,7 +52,7 @@ def main():
                 ax.set_yticklabels([])
     fig.text(0.04, 0.005, u"色斑：%s；深灰：围岩、未采矿体与封底；红框：跑浆中段；点线：注浆水平。上排 E 为封底后按变更设计浆量停止。"
              % TERMS["fill"], fontsize=7, color=K.INK2)
-    names = [u"II 段\n45%", u"I 段\n10%", u"III 段\n25%", u"I 段\n无交界面"]
+    names = [u"II 段\n孔隙率 45%", u"I 段\n孔隙率 10%", u"III 段\n孔隙率 25%", u"I 段\n无交界面"]
     mult = [5.17, 4.51, 4.36, None]
     below = [8.3, 23.9, 19.5, 62.6]
     ax = fig.add_axes([0.66, 0.57, 0.31, 0.33])

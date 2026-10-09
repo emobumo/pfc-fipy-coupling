@@ -25,10 +25,10 @@ P0 = 5.0e6
 def table(path):
     rows = {}
     for line in open(path):
-        m = re.match(r"(\d) (.{9})\s+(-?[\d.]+)\s+(-?[\d.]+)\s+([\d.]+) \|\s+[\d.]+\s+[\d.]+ \|\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", line)
+        m = re.match(r"(\d) (.{9})\s+(-?[\d.]+)\s+(-?[\d.]+)\s+([\d.]+) \|\s+[\d.]+\s+[\d.]+ \|\s+([\d.]+)\s+([\d.]+)\s+([\d.]+) \|\s+(True|False)", line)
         if m:
             g = int(m.group(1))
-            rows.setdefault(g, []).append((float(m.group(4)), float(m.group(7)), float(m.group(8))))
+            rows.setdefault(g, []).append((float(m.group(4)), float(m.group(7)), float(m.group(8)), m.group(9) == "True"))
     return rows
 
 
@@ -41,7 +41,7 @@ def sweep_F(top, bottom=0.12, y_mid=25.875, H=60.0):
 def main():
     base = table(os.path.join(FC, "flip_criterion.txt"))
     fine = table(os.path.join(FC, "flip_criterion_refine_0.625.txt"))
-    names = {1: u"组 1 基准参数（1.25 m）", 2: u"组 2 $\\tau_0$ 加倍（0.625 m）", 3: u"组 3 A × 0.3（0.625 m）", 4: u"组 4 ρ = 1450（1.25 m）"}
+    names = {1: u"组 1 基准参数（1.25 m）", 2: u"组 2 $\\tau_0$ 加倍（0.625 m）", 3: u"组 3 A × 0.3（0.625 m）", 4: u"组 4 ρ = 1450 kg/m³（1.25 m）"}
     cols = {1: K.C1, 2: K.C2, 3: K.C3, 4: "#4a3aa7"}
     mk = {1: "o", 2: "s", 3: "^", 4: "D"}
     fig, ax = plt.subplots(figsize=(6.4, 4.4))
@@ -49,7 +49,10 @@ def main():
         src = fine[g] if g in (2, 3) else base[g]
         F = np.array([r[0] for r in src]); two = np.array([r[1] for r in src]); ray = np.array([r[2] for r in src])
         ax.plot(F, ray, "--", color=cols[g], lw=1.0)
-        ax.plot(F, two, mk[g], color=cols[g], ms=5, mec="white", mew=0.8, label=names[g])
+        clip = np.array([r[3] for r in src])
+        ax.plot(F[~clip], two[~clip], mk[g], color=cols[g], ms=5, mec="white", mew=0.8, label=names[g])
+        if clip.any():
+            ax.plot(F[clip], two[clip], mk[g], mfc="white", mec=cols[g], mew=1.1, ms=5)
     A = dict((r["label"], r) for r in json.load(open(os.path.join(K.RR, "A", "results.json"))))
     sx = [sweep_F(0.25), sweep_F(0.30), sweep_F(0.35)]
     sy = [A["gradient_1.25_top0.25"]["ratio"] / 0.994, A["gradient_1.25"]["ratio"] / 0.994, A["gradient_1.25_top0.35"]["ratio"] / 0.994]
@@ -57,9 +60,10 @@ def main():
     ax.axhline(1.0, color=K.INK2, lw=0.8)
     ax.axvline(1.0, color=K.INK2, lw=0.8, ls=":")
     ax.axvline(2.635, color=K.INK2, lw=0.8, ls="--")
-    ax.text(2.66, 0.76, u"现梯度场\nF = 2.635", fontsize=7, color=K.INK2)
+    ax.text(2.66, 0.76, u"梯度场算例\nF = 2.635", fontsize=7, color=K.INK2)
     ax.text(1.03, 0.74, u"F = 1", fontsize=7, color=K.INK2)
     ax.plot([], [], "--", color=K.INK2, lw=1.0, label=u"直射线估计（一阶近似）")
+    ax.plot([], [], "o", mfc="white", mec=K.INK2, mew=1.1, ms=5, label=u"空心：可达域触及计算边界")
     ax.set_xlabel(u"翻转判据 F = γ$p_0$/(2ρg)")
     ax.set_ylabel(TERMS["updown"] + u"（相对几何基线的因子）")
     ax.legend(loc="upper left", frameon=False, fontsize=7, numpoints=1)

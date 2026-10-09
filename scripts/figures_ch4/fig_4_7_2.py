@@ -23,7 +23,7 @@ from src.analysis.fill_diagnostics import reachable_domain
 
 Z = imp.load_source("zhaojin_section", os.path.join(K.REPO, "cases", "zhaojin_section.py"))
 CELL = 0.5
-ZONE_NAME = {"z1_cuts1-6": u"I 段（10%）", "z2_cuts6-10": u"II 段（45%）", "z3_cuts10-15": u"III 段（25%）"}
+ZONE_NAME = {"z1_cuts1-6": u"I 段（孔隙率 10%）", "z2_cuts6-10": u"II 段（孔隙率 45%）", "z3_cuts10-15": u"III 段（孔隙率 25%）"}
 
 
 def threshold_table():
@@ -65,7 +65,7 @@ def main():
         K.outline(ax, mx, my, out, CELL, color="#e34948", x0=0.0, y0=Z.Y_LEVEL, lw=1.2)
         ax.plot(mx[src], my[src] - Z.Y_LEVEL, ".", color="k", ms=2)
         ax.set_aspect("equal")
-        ax.set_title(u"(a%d) I 段，%s交界面\n到跑浆中段 T/$p_0$ %s" % (j + 1, u"有" if contacts else u"无",
+        ax.set_title(u"(a%d) I 段（孔隙率 10%%），%s交界面\n到跑浆中段 T/$p_0$ %s" % (j + 1, u"有" if contacts else u"无",
                      (u"= %.2f" % ratio) if ratio < 50 else u"> 50（不可达）"), fontsize=8)
         ax.set_xlabel(TERMS["x"]); K.style(ax)
         if j == 0:
@@ -85,7 +85,7 @@ def main():
     ax.axhline(1.0, color="k", lw=0.8)
     ax.axvspan(0.20, 0.25, color="#e4e3dd", zorder=0)
     ax.text(0.205, 0.30, TERMS["phi_c_min"] + u"\n约 0.20~0.25", fontsize=7, color=K.INK2)
-    ax.set_xlabel(u"交界面孔隙率 φ_c"); ax.set_ylabel(TERMS["p_ratio"] + u"（到跑浆中段 / $p_0$）")
+    ax.set_xlabel(u"交界面孔隙率 " + K.PHIC); ax.set_ylabel(TERMS["p_ratio"] + u"（到跑浆中段 / $p_0$）")
     ax.set_ylim(0.2, 1.8); ax.set_xlim(0.1, 0.47)
     ax.legend(loc="upper right", frameon=False, fontsize=7, numpoints=1)
     ax.set_title(u"(b) " + TERMS["p_ratio"] + u"与交界面孔隙率的关系", fontsize=8)

@@ -23,9 +23,9 @@ CASES = [(u"基准\n（均质）", os.path.join("A", "base_uniform_0.18_2.5")),
          (u"孔底外\nφ0.30", os.path.join("B", "B_band_toe_phi0.30")),
          (u"孔底外\nφ0.45", os.path.join("B", "B_band_toe_phi0.45")),
          (u"孔底外\nφ0.60", os.path.join("B", "B_band_toe_phi0.60")),
-         (u"随机\n1", os.path.join("B", "B_random_seed1")),
-         (u"随机\n2", os.path.join("B", "B_random_seed2")),
-         (u"随机\n3", os.path.join("B", "B_random_seed3"))]
+         (u"随机场\n种子 1", os.path.join("B", "B_random_seed1")),
+         (u"随机场\n种子 2", os.path.join("B", "B_random_seed2")),
+         (u"随机场\n种子 3", os.path.join("B", "B_random_seed3"))]
 
 
 def main():
@@ -46,8 +46,8 @@ def main():
         run.append(float(np.sum(a[:, 2] * np.clip(s, 0, 1) * 6.25 * (~target & notsrc))))
     xs = np.arange(len(CASES))
     fig, (ax, bx) = plt.subplots(2, 1, figsize=(7.2, 5.6), sharex=True, gridspec_kw={"height_ratios": [2.2, 1]})
-    ax.bar(xs, un, 0.6, color=K.SOLID, edgecolor="white", label=TERMS["unreach"])
-    ax.bar(xs, fr, 0.6, bottom=un, color=K.C1, edgecolor="white", label=TERMS["front_trunc"])
+    ax.bar(xs, un, 0.6, color=K.SOLID, edgecolor="white", label=TERMS["unreach_lvl"])
+    ax.bar(xs, fr, 0.6, bottom=un, color=K.C1, edgecolor="white", label=TERMS["front_lvl"])
     if max(bv) > 0:
         ax.bar(xs, bv, 0.6, bottom=np.array(un) + np.array(fr), color=K.C3, edgecolor="white", label=TERMS["bypass"])
     for xi, a, b, c in zip(xs, un, fr, bv):
@@ -58,14 +58,13 @@ def main():
     bx.bar(xs, run, 0.6, color=K.C2, edgecolor="white")
     for xi, v in zip(xs, run):
         bx.text(xi, v + 0.8, "%.1f" % v, ha="center", fontsize=7)
-    bx.set_ylabel(TERMS["runaway"] + u"量 (m³/m)")
+    bx.set_ylabel(TERMS["outside_V"] + u" (m³/m)")
     bx.set_xlim(-0.6, len(CASES) - 0.4)
     bx.set_ylim(0, 48)
     bx.set_xticks(xs)
     bx.set_xticklabels([c[0] for c in CASES], fontsize=8)
     for a_ in (ax, bx):
         K.style(a_)
-    ax.set_title(u"设计域未充填部分的成因（不可达区 = 设计缺陷，锋面截断区 = 充填缺陷）", fontsize=9)
     K.save(fig, "fig_4_5_5")
     for (n, _), a, b, c, r in zip(CASES, un, fr, bv, run):
         print(n.replace("\n", " "), "unreach %.1f front %.1f bypass %.1f runaway %.1f" % (a, b, c, r))

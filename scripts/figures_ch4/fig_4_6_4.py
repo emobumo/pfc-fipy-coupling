@@ -62,7 +62,7 @@ def main():
     fig.text(0.05, 0.355, u"虚线：%s；实线：%s；橙线：孔口通道；深灰：预置封堵体；②中色斑为各段累计充填（含%s）"
              % (TERMS["design"], TERMS["reach"], TERMS["cement"]), fontsize=8, color=K.INK2)
     names = [u"①\n理想整孔", u"②\n等长分段", u"③\n封堵 h = 2.5 m", u"③\n封堵 h = 10 m"]
-    for k, (vals, lab, col) in enumerate(((tg, u"目标区充填率 (%)", K.C1), (ru, TERMS["runaway"] + u"占比 (%)", K.C2))):
+    for k, (vals, lab, col) in enumerate(((tg, TERMS["design_fill"] + u" (%)", K.C1), (ru, TERMS["outside_V"] + u"占比 (%)", K.C2))):
         ax = fig.add_axes([0.07 + k * 0.48, 0.07, 0.42, 0.22])
         xs = np.arange(len(vals))
         ax.bar(xs, vals, 0.6, color=col, edgecolor="white")

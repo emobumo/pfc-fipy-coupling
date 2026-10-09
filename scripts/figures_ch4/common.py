@@ -69,7 +69,17 @@ TERMS = {
     "x": u"水平距离 (m)",
     "y": u"相对高程 (m)",
     "hole": u"钻孔",
+    "design_fill": u"设计域充填率",
+    "outside_V": u"设计域外浆量",
+    "unreach_lvl": u"不可达区（可达层面缺陷）",
+    "front_lvl": u"锋面截断区（过程层面缺陷）",
 }
+
+# mathtext for symbols with subscripts (round-2 comments: x_f, L_max, lambda_c ...)
+XF = u"$x_f$"
+LMAX = u"$L_{\mathrm{max}}$"
+PIG = u"$\Pi_g$"
+PHIC = u"$\phi_c$"
 
 # ---- colours -------------------------------------------------------------
 SAT_CMAP = LinearSegmentedColormap.from_list("sat", ["#ffffff", "#9ec5f4", "#2a78d6", "#0d366b"])

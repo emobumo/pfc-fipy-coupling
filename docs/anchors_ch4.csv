@@ -58,7 +58,8 @@ B02,3482 / 2200 / 1859,s,孔底通道 φ 0.30 / 0.45 / 0.60 注满配额时刻,�
 B03,595 / 774,s,孔中 / 孔口通道 φ 0.45 注满配额时刻,通道，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L109（600~800 s）；docs/results_log.md L600-601,outputs/rerun_rate/B/results.json,是,
 B04,19.0 / 21.7,%,孔中 / 孔口通道跑浆占比（35.3 / 40.3 m³/m）,通道，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L109（19%/22%）；docs/results_log.md L600-601,outputs/rerun_rate/B/*/cells.csv,是,
 B05,78.2 / 76.4 / 77.0,%,随机场 seed 1/2/3 目标区充填,随机，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L109-110；docs/results_log.md L602,outputs/rerun_rate/B/results.json,是,
-B06,17.7 / 2.9 / 13.1,%,随机场 seed 1/2/3 dsf（目标域中不可达）,随机，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L110；docs/results_log.md L602,outputs/rerun_rate/B/results.json,是,
+B06,17.7 / 2.9 / 13.1,%,随机场 seed 1/2/3 不可达比例（整个设计域 175 单元口径，含孔单元；seed 1 计入 1 个越界单元）,随机，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L110；docs/results_log.md L602,outputs/rerun_rate/B/results.json,是,175 单元口径，保留；现行口径见 B06b
+B06b,18.2 / 3.0 / 13.9,%,随机场 seed 1/2/3 不可达区占设计域（不计钻孔单元，165 单元口径）,随机，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/B/B_random_seed*/cells.csv（scripts/figures_ch4/fig_4_5_5.py 计算）,是（读两遍一致的结果）,第二轮意见：设计域统一按 165 单元口径，与设计域充填率同分母
 B07,65.5 / 21.7,%,P1 ① 整孔 目标区 / 跑浆,孔口通道 collar_v06，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L116；docs/results_log.md L601、L608,outputs/rerun_rate/B/B_p1_full_hole/cells.csv,是,
 B08,55.8 / 28.7,%,P1 ② 分段（第 1 段经通道耗尽配额）目标区 / 跑浆,同上,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L116；docs/results_log.md L603,outputs/rerun_rate/B/B_p1_collar_v06/*/cells.csv,是,
 B09,75.8 / 12.0；87.3 / 7.0,%,P1 ③ 预置封堵 h = 2.5 / 10 m 目标区 / 跑浆,同上,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L117；docs/results_log.md L604-605,outputs/rerun_rate/B/B_p1_preplug_*/cells.csv,是,
@@ -97,8 +98,8 @@ Z09,94.13 / 32312,m³/m / s,D2（无交界面）停止注入量 / 到 −56 m �
 Z10,0,m³/m,E20（变更设计仰角 20°，注满 50.4）注浆水平以下,招金，1 m,配额（变更设计浆量）,docs/results_log.md L292-293,outputs/zhaojin_runs/results.jsonl,未注明,
 L01,<1,%,台阶 1 一维线性 Darcy：压力与流量相对误差,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 验证阶梯表 台阶 1,tests/test_verification_ladder.py,是（确定性测试，每次全套运行复现）,
 L02,0.620 / 0.600 / 3.3,m / m / %,台阶 2 一维宾汉停滞：实测 / L_max / 误差（容差 5%）,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 2,tests/test_verification_ladder.py,是,
-L03,≤0.3 / 1.2e-15,% L_max / —,台阶 2b 锋面对 Gustafson–Stille 最大偏差 / 守恒漂移,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 2b,tests/test_verification_ladder.py,是,
-L04,0.700 / 0.700,m,台阶 3 径向停滞半径 实测 / I_max,径向,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 3,tests/test_verification_ladder.py,是,
+L03,0.36 / 1.2e-15,% L_max / —,台阶 2b 锋面对 Gustafson–Stille 最大偏差 / 守恒漂移,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 2b,outputs/verification_ladder/step2b_front_time.csv；summary.txt,是（2026-10-09 两遍逐字节一致）,偏差为现行求解器读出值；CLAUDE.md 原记 ≤0.3%，已更正。守恒漂移 1.2e-15 未重读
+L04,0.700 / 0.700,m,台阶 3 径向停滞半径 实测 / I_max,径向,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 3,outputs/verification_ladder/step3_axis_profile.csv；summary.txt,是（2026-10-09 两遍逐字节一致）,剖面最大偏差 2.59% p₀
 L05,1.98 / 1.993 / 0.0022,— / — / %,台阶 4a 收敛阶 / Roache 表观阶 / GCI_fine,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 4a,tests/test_verification_ladder.py,是,
 L06,1.0,—,台阶 4b 含停滞锋面收敛阶,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 4b,tests/test_verification_ladder.py,是,
 L07,0.60~0.67,—,Picard 末轮/首轮残差均值（极限环）；12 与 40 轮结果逐项一致,v0.6 线源 2.5 m,旧规则运行（只关迭代，不关停注）,docs/results_log.md L735-736,outputs/picard_scan/,是（12 vs 40 两次）,

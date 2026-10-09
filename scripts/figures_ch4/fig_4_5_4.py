@@ -69,7 +69,7 @@ def main():
             ax.set_ylabel(TERMS["y"])
     fig.text(0.06, 0.505, u"虚线：%s；实线：%s；橙线：通道；色斑：%s" % (TERMS["design"], TERMS["reach"], TERMS["fill"]),
              fontsize=8, color=K.INK2)
-    rows = [("t", TERMS["given_t"] + u" (s)"), ("tgt", u"目标区充填率 (%)"), ("ent", TERMS["entry_p"] + u" / $p_0$")]
+    rows = [("t", TERMS["given_t"] + u" (s)"), ("tgt", TERMS["design_fill"] + u" (%)"), ("ent", TERMS["entry_p"] + u" / $p_0$")]
     for col, (series, xlab) in enumerate(((POS, u"通道位置（φ 0.45）"), (PHI, u"通道孔隙率（孔底外）"))):
         xs = range(len(series))
         vals = {"t": [res[s[1]]["t"] for s in series], "tgt": [tgt(s[1])[0] for s in series],

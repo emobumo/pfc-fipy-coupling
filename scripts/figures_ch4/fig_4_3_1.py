@@ -32,7 +32,7 @@ def main():
     fig, axs = plt.subplots(3, 1, figsize=(5.2, 6.4), sharex=True)
     for ax, f, lab, col, fmt in ((axs[0], k, u"渗透率 k (m²)", K.C1, "%.2e"),
                                  (axs[1], lam, u"启动压力梯度 λ (Pa/m)", K.C2, "%.3g"),
-                                 (axs[2], lmax, u"停滞距离 L_max (m)（$p_0$ = 5 MPa）", K.C3, "%.1f")):
+                                 (axs[2], lmax, u"停滞距离 " + K.LMAX + u" (m)（$p_0$ = 5 MPa）", K.C3, "%.1f")):
         ax.semilogy(n, f(n), color=col, lw=1.6)
         for m in marks:
             ax.plot([m], [f(m)], "o", color=col, ms=5)

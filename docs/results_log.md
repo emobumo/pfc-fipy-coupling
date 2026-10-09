@@ -750,6 +750,13 @@ t 为本段开始后的模型时间（分段每段重新计时，Q_ref 不变）
 - **招金 A2/B2/C2 到达值第二遍**（`scripts/zhaojin_arrival_pass2.py`，STOP_RULE=legacy 即第一遍的规则，
   → `outputs/zhaojin_arrival_pass2/compare.txt`）：A2 / B2 / C2 的停止原因（到达 −63 m）、到达时刻（1167.36 / 1610.37 / 1439.15 s）、到达时注入量（147.90 / 129.06 / 124.80 m³/m）、全部快照与最终场**逐位一致**。"124.8~147.9 m³/m、原设计浆量的 4.4~5.2 倍"两遍一致，可引用。
 
+### 验证阶梯曲线输出（2026-10-09，`scripts/save_ladder_curves.py` → `outputs/verification_ladder/`）
+
+为图 4.4-2 (a)(b) 保存台阶 2b、台阶 3 的曲线：直接调用 `tests/test_verification_ladder.py` 的测试夹具 `_run_step2b_march`、`_run_step3_march`（与全套测试同一计算，未改写），两遍逐字节一致。
+
+- 台阶 2b：546 步到锋面 0.3906 m（0.65 L_max）；去掉前 20% 启动段后，锋面对 Gustafson–Stille 曲线的最大偏差 **0.36% L_max**（`step2b_front_time.csv`）。CLAUDE.md 验证阶梯表原记"实测 ≤0.3%"，按现行求解器读出为 0.36%，已更正（容差 5%，通过不变）。
+- 台阶 3：停滞半径 0.7000 m 对 I_max 0.7000 m（相对误差 0）；r > r₀ 处剖面对 max(0, p₀ − λ(r − r₀)) 的最大偏差 2.59% p₀（`step3_axis_profile.csv`），与表中 2.6% 一致。
+
 ## Picard 扫描与 ③ 的结论（2026-09-23/24，`scripts/picard_scan.py`）
 
 ③ 原定为"屈服边缘 Picard 不收敛导致越界蠕动，需 Anderson 加速或主动集求解器"。第 0 步扫描
