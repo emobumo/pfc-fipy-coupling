@@ -6,7 +6,7 @@ Visual grammar (framework v1.1, section 1.6): design domain = dashed outline;
 reachable domain = solid outline; filled domain = saturation colour patches on
 one colour scale for the whole chapter; solids and cement = dark grey; the
 hole is always drawn the same way; elevations are relative; all text Chinese.
-All wording comes from docs/术语对照表_2026-10-08.md (TERMS below) -- change a
+All wording comes from docs/术语对照表_2026-10-09.md (TERMS below) -- change a
 term here and every figure follows. Numbers are read from the rate-rule
 outputs (outputs/rerun_rate/ ...); nothing is re-run.
 """
@@ -39,7 +39,7 @@ matplotlib.rcParams.update({
     "svg.fonttype": "none",
 })
 
-# ---- the chapter's terms (docs/术语对照表_2026-10-08.md) --------------------
+# ---- the chapter's terms (docs/术语对照表_2026-10-09.md) --------------------
 TERMS = {
     "design": u"设计域",
     "reach": u"可达域",
