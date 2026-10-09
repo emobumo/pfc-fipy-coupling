@@ -199,22 +199,22 @@ z
     <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;" transform="translate(188.2069 126.940875)">0.83~0.91</text>
    </g>
    <g id="text_13">
-    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 100.796703, 81.396074)" x="100.796702524" y="81.396073501">φ 0.22</text>
+    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 100.796703, 81.396074)" x="100.796702524" y="81.396073501">n = 0.22</text>
    </g>
    <g id="text_14">
-    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 122.441205, 61.700122)" x="122.441204668" y="61.7001217862">φ 0.18</text>
+    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 122.441205, 61.700122)" x="122.441204668" y="61.7001217862">n = 0.18</text>
    </g>
    <g id="text_15">
-    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 137.321800, 54.946424)" x="137.321799892" y="54.9464238411">φ 0.16</text>
+    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 137.321800, 54.946424)" x="137.321799892" y="54.9464238411">n = 0.16</text>
    </g>
    <g id="text_16">
-    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 156.453994, 41.051718)" x="156.453993751" y="41.0517177914">φ 0.14</text>
+    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 156.453994, 41.051718)" x="156.453993751" y="41.0517177914">n = 0.14</text>
    </g>
    <g id="text_17">
-    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 181.963586, 66.584293)" x="181.963585563" y="66.5842930591">φ 0.12</text>
+    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 181.963586, 66.584293)" x="181.963585563" y="66.5842930591">n = 0.12</text>
    </g>
    <g id="text_18">
-    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 217.677014, 202.642432)" x="217.677014101" y="202.642432432">φ 0.10</text>
+    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 217.677014, 202.642432)" x="217.677014101" y="202.642432432">n = 0.10</text>
    </g>
    <g id="text_19">
     <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 64.313348, 177.785281)" x="64.3133481254" y="177.785280899">10 m</text>
@@ -263,20 +263,20 @@ z
     <g id="line2d_13"/>
     <g id="line2d_14">
      <g>
-      <use style="fill:#2a78d6;stroke:#ffffff;stroke-width:1.5;" x="243.50375" xlink:href="#m615c616795" y="30.865"/>
+      <use style="fill:#2a78d6;stroke:#ffffff;stroke-width:1.5;" x="244.70375" xlink:href="#m615c616795" y="30.6175"/>
      </g>
     </g>
     <g id="text_23">
-     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 257.903750, 33.665000)" x="257.90375" y="33.665">孔隙率组（H = 17 m，φ 0.10~0.22）</text>
+     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 259.103750, 33.417500)" x="259.10375" y="33.4175">孔隙率组（H = 17 m，n 0.10~0.22）</text>
     </g>
     <g id="line2d_15"/>
     <g id="line2d_16">
      <g>
-      <use style="fill:#eb6834;stroke:#ffffff;stroke-linejoin:miter;stroke-width:1.5;" x="243.50375" xlink:href="#m81ca419a91" y="43.3125"/>
+      <use style="fill:#eb6834;stroke:#ffffff;stroke-linejoin:miter;stroke-width:1.5;" x="244.70375" xlink:href="#m81ca419a91" y="42.8175"/>
      </g>
     </g>
     <g id="text_24">
-     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 257.903750, 46.112500)" x="257.90375" y="46.1125">孔长组（φ 0.14，H = 10~32 m）</text>
+     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 259.103750, 45.617500)" x="259.10375" y="45.6175">孔长组（n = 0.14，H = 10~32 m）</text>
     </g>
    </g>
   </g>

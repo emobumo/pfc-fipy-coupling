@@ -36,14 +36,14 @@ def main():
     ax.axvspan(0.833, 0.906, color="#e4e3dd", zorder=0)
     ax.axvline(0.873, color=K.INK2, lw=0.8, ls="--")
     ax.text(0.915, 22, K.XF + u"/" + K.LMAX + u"（ε = 0.1）\n0.83~0.91", fontsize=7, color=K.INK2)
-    for g, col, mk, lab in (("phi", K.C1, "o", u"孔隙率组（H = 17 m，φ 0.10~0.22）"), ("len", K.C2, "s", u"孔长组（φ 0.14，H = 10~32 m）")):
+    for g, col, mk, lab in (("phi", K.C1, "o", u"孔隙率组（H = 17 m，n 0.10~0.22）"), ("len", K.C2, "s", u"孔长组（n = 0.14，H = 10~32 m）")):
         sel = sorted([p for p in pts if p["g"] == g], key=lambda p: p["dl"])
         ax.plot([p["dl"] for p in sel], [p["loss"] for p in sel], linestyle="none", marker=mk, color=col,
                 ms=8 if mk == "o" else 11, mec="white", mew=1.5, zorder=4 if mk == "o" else 3, label=lab)
         for p in sel:
             if g == "len" and p["H"] == 17.0:
                 continue
-            ax.annotate(u"φ %.2f" % p["phi"] if g == "phi" else u"%g m" % p["H"], (p["dl"], p["loss"]),
+            ax.annotate(u"n = %.2f" % p["phi"] if g == "phi" else u"%g m" % p["H"], (p["dl"], p["loss"]),
                         xytext=(0, 9 if g == "phi" else -14), textcoords="offset points", ha="center", fontsize=7, color=K.INK2)
     ax.set_xlabel(u"Δ / " + K.LMAX + u"（Δ = H − 7 m）")
     ax.set_ylabel(TERMS["stage_loss"] + u"（百分点）")

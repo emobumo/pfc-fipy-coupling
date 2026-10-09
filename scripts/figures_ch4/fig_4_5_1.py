@@ -49,7 +49,7 @@ def descend(mx, my, cost, start):
 def main():
     end, d, n = G.hole_geometry()
     fig, axes = plt.subplots(2, 2, figsize=(8.0, 7.6))
-    for j, (kind, title) in enumerate((("uniform", u"均质场（φ = 0.18）"), ("gradient", u"梯度场（φ 0.12→0.30，上疏下密）"))):
+    for j, (kind, title) in enumerate((("uniform", u"均质场（n = 0.18）"), ("gradient", u"梯度场（n 0.12→0.30，上疏下密）"))):
         mx, my, s, cost, hc = field(kind)
         reach = cost <= 1.0
         ax = axes[0, j]

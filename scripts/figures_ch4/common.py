@@ -79,7 +79,7 @@ TERMS = {
 XF = u"$x_f$"
 LMAX = u"$L_{\mathrm{max}}$"
 PIG = u"$\Pi_g$"
-PHIC = u"$\phi_c$"
+PHIC = u"$n_c$"
 
 # ---- colours -------------------------------------------------------------
 SAT_CMAP = LinearSegmentedColormap.from_list("sat", ["#ffffff", "#9ec5f4", "#2a78d6", "#0d366b"])

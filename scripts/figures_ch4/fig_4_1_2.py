@@ -52,7 +52,7 @@ def main():
     show(axs[1], mx, my, ch, 2.5, *K.MOUTH)
     for name, bx, yy in ((u"孔口", C.BAND_X_COLLAR, 36.5), (u"孔中", C.BAND_X_MID, 31.5), (u"孔底外", C.BAND_X_TOE, 36.5)):
         axs[1].text(bx - K.MOUTH[0] + 1.6, yy, name, ha="left", fontsize=6)
-    axs[1].set_title(u"(b) 贯通通道 φ 0.45（三个位置，算例中各取其一）", fontsize=8)
+    axs[1].set_title(u"(b) 贯通通道 n = 0.45（三个位置，算例中各取其一）", fontsize=8)
     show(axs[2], mx, my, C.field("random", mx, my, seed=1), 2.5, *K.MOUTH)
     axs[2].set_title(u"(c) 随机非均质（种子 1）", fontsize=8)
     for a in axs[:3]:
@@ -68,7 +68,7 @@ def main():
     for a in axs:
         K.style(a)
     cax = fig.add_axes([0.93, 0.2, 0.01, 0.6])
-    cb = fig.colorbar(im, cax=cax); cb.set_label(u"孔隙率 φ（≥ 0.45 同色）", fontsize=8)
+    cb = fig.colorbar(im, cax=cax); cb.set_label(u"孔隙率 n（≥ 0.45 同色）", fontsize=8)
     fig.subplots_adjust(left=0.05, right=0.91, wspace=0.35)
     K.save(fig, "fig_4_1_2")
 

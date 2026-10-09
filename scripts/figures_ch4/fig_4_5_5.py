@@ -18,11 +18,11 @@ from common import plt, TERMS
 
 G = imp.load_source("inclined_hole_gradient", os.path.join(K.REPO, "cases", "inclined_hole_gradient.py"))
 CASES = [(u"基准\n（均质）", os.path.join("A", "base_uniform_0.18_2.5")),
-         (u"孔口\nφ0.45", os.path.join("B", "B_band_collar_phi0.45")),
-         (u"孔中\nφ0.45", os.path.join("B", "B_band_midhole_phi0.45")),
-         (u"孔底外\nφ0.30", os.path.join("B", "B_band_toe_phi0.30")),
-         (u"孔底外\nφ0.45", os.path.join("B", "B_band_toe_phi0.45")),
-         (u"孔底外\nφ0.60", os.path.join("B", "B_band_toe_phi0.60")),
+         (u"孔口\nn = 0.45", os.path.join("B", "B_band_collar_phi0.45")),
+         (u"孔中\nn = 0.45", os.path.join("B", "B_band_midhole_phi0.45")),
+         (u"孔底外\nn = 0.30", os.path.join("B", "B_band_toe_phi0.30")),
+         (u"孔底外\nn = 0.45", os.path.join("B", "B_band_toe_phi0.45")),
+         (u"孔底外\nn = 0.60", os.path.join("B", "B_band_toe_phi0.60")),
          (u"随机场\n种子 1", os.path.join("B", "B_random_seed1")),
          (u"随机场\n种子 2", os.path.join("B", "B_random_seed2")),
          (u"随机场\n种子 3", os.path.join("B", "B_random_seed3"))]

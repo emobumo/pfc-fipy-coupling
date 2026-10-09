@@ -19,7 +19,7 @@ from common import plt, TERMS
 
 D = os.path.join(K.RR, "D", "boulder")
 CELL = 0.5
-NAMES = {"A": u"A 无周边疏松环", "B": u"B 周边疏松环 φ 0.45", "C": u"C 疏松环 + 块石下压密细粒 φ 0.03"}
+NAMES = {"A": u"A 无周边疏松环", "B": u"B 周边疏松环 n = 0.45", "C": u"C 疏松环 + 块石下压密细粒 n = 0.03"}
 Y0 = 6.0          # pocket floor: relative elevation 0
 
 
