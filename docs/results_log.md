@@ -311,6 +311,8 @@ dτ = dt/f(t)；指数增稠时 τ = T(1−e^{−t/T}) < T，即"常黏度解截
 无逐点比较定理，写"预期"不写"严格"）。锋面浆最先注入、最老，慢端对锋面本身描述尚可。
 分段每段新浆，时钟逐段重置。黏度时变**不改 L_max**（只含 τ₀），只截断趋近 L_max 的慢尾。
 
+**隐含假设（2026-10-10 补记，两端界定与 `slow_end_stage1` 回放都依赖）**：只用 Lv et al. 2021（P0004）拟合式的**相对增长** f(t) = μ(t)/μ(0) = e^{0.01350t}（T = 74 min = 4444 s），不用其绝对值 869.75 mPa·s；慢端为 μ_p(t) = 0.15 Pa·s × f(t)，快端 f ≡ 1。由此隐含：① 模型的**塑性黏度**与该文测得的**表观黏度**按同一相对速率增长（869.75 mPa·s 是 t = 0 的表观黏度，约为 μ_p 0.15 Pa·s 的 5.8 倍，两者不是同一个量）；② **τ₀ 不随时间变化**（该文无 τ₀(t)，作者模拟中 τ₀ 亦固定），因而 λ 与 L_max 不变；③ 测量区间只有 0~40 min，**40 min 以后为外推**。正文写黏度时变两端界定时须写明这三条。
+
 结果（40 个算例/段，`outputs/viscosity_aging/bracket.txt`）：
 - **两端一致（稳健）**：全部通道算例（2~60 min 达同一终态）、随机场（29~43 min）、招金 A2/B2/C2
   跑浆（慢端 23/33/29 min 到 −63 m）、E2 封底、**分段第 1 段 48~139 min 停滞 < 初凝，后续段照样空转**。
@@ -670,7 +672,7 @@ t 为本段开始后的模型时间（分段每段重新计时，Q_ref 不变）
 
 ### 黏度时变两端（1.25 m，2026-10-01/02，`scripts/rerun_rate.py D aging [--pass2]`，`outputs/rerun_rate/D*/aging_1.25/`）
 
-两遍逐位一致；快端（停止行）与 A 层 1.25 m 逐位相同。Q_ref 取初始 μ_p（快端即常黏度运行，慢端是其时间变换）。
+两遍逐位一致；快端（停止行）与 A 层 1.25 m 逐位相同。Q_ref 取初始 μ_p（快端即常黏度运行，慢端是其时间变换）。隐含假设（塑性黏度与表观黏度同速率相对增长、τ₀ 不变、40 min 以后外推）见"黏度时变的两端界定"一节。
 
 | 时刻（慢端模型时间 τ） | 梯度 V_in / 上下比 | 均质 V_in / 上下比 |
 |---|---|---|
@@ -736,12 +738,12 @@ t 为本段开始后的模型时间（分段每段重新计时，Q_ref 不变）
   zhaojin_screen（0.5 / 1 m）、channel_entry_cost（1.25 / 2.5 m）、zhaojin_c1c2 共 8 个文件**逐字节相同**；
   gravity_control 可达部分相同（原文件另含 `--solver` 段）；`contact_threshold.txt` 的生成脚本已不存在，由
   `cases/zhaojin_section.py` 按其表头设置重建，81 个值按打印精度相同（原表 φ 0.45 列漏标 "*"，值不受影响）。
-- **越界单元与充填占可达**（`outputs/rerun_rate/overshoot_fill_reach.txt`，读 A/B/C 层 results.json）：越界 0~5 个单元；
+- **越界单元与充填占可达**（`scripts/overshoot_fill_reach.py` → `outputs/rerun_rate/overshoot_fill_reach.txt`，读 A/B/C 层 results.json）：越界 0~5 个单元；
   单段运行充填占可达（over_reach_filled）0.926~0.987。越界单元的路径代价（`scripts/overshoot_cost.py` →
   `outputs/rerun_rate/overshoot_cost.txt`）1.0065~1.0463 p₀：1.25 m 上除 1 个单元（1.0399）外都在 16 邻域度量界
   （约 1.0275）之内；2.5 m 的 1.038~1.046 与 1.25 m 的 1.040 超出度量界，但折合距离都小于一个单元（例如
   0.046 × 18.3 m ≈ 0.85 m < 2.5 m）——是单元中心判填的离散效应。"旧规则批次越界均为 0"不再成立。
-- **慢端黏度下分段第 1 段的停注时刻**（`outputs/rerun_rate/slow_end_stage1.txt`）：取 P2 各第 1 段的 Q(τ) 记录，按
+- **慢端黏度下分段第 1 段的停注时刻**（`scripts/slow_end_stage1.py` → `outputs/rerun_rate/slow_end_stage1.txt`）：取 P2 各第 1 段的 Q(τ) 记录，按
   τ = T(1 − e^{−t/T})（T = 4444 s）映射到实际时间，用初始 μ_p 的 Q_ref 回放速率判据：实际 86~96 min 停注，早于
   240 min 初凝（快端 126~133 min），慢端注入量为快端的 87%~90%。"先停注、后凝固"在两端都成立。
 - **两网格一致性与 x_f/L_max**（`scripts/two_grid_check.py` → `outputs/rerun_rate/two_grid_check.txt`）：现行重算中
@@ -751,6 +753,8 @@ t 为本段开始后的模型时间（分段每段重新计时，Q_ref 不变）
   φ 0.12 临界第 2 段 0.486 除外）。2.5 m 上为 0.775~0.881（含名义孔深误差，只含均质 base）。*（2026-10-10 定义：22 段中 n 0.14 的 7 m 第 1 段在 4 个方案中是同一计算，独立段为 19 个，范围不变；c = 0.871（19 个独立段 x_f 对 L_max 的过原点最小二乘斜率，c ≈ 0.87），图 4.6-2 按此拟合；锚点 C03b。）*
 - **招金 A2/B2/C2 到达值第二遍**（`scripts/zhaojin_arrival_pass2.py`，STOP_RULE=legacy 即第一遍的规则，
   → `outputs/zhaojin_arrival_pass2/compare.txt`）：A2 / B2 / C2 的停止原因（到达 −63 m）、到达时刻（1167.36 / 1610.37 / 1439.15 s）、到达时注入量（147.90 / 129.06 / 124.80 m³/m）、全部快照与最终场**逐位一致**。"124.8~147.9 m³/m、原设计浆量的 4.4~5.2 倍"两遍一致，可引用。
+
+- **两个后处理文件的生成脚本补齐**（2026-10-10）：`slow_end_stage1.txt` 与 `overshoot_fill_reach.txt` 原为会话中一次性计算写出、仓库无脚本；按原计算整理为 `scripts/slow_end_stage1.py`、`scripts/overshoot_fill_reach.py`（算法与输出格式不变，路径改为相对仓库），重算结果与 `outputs/rerun_rate/` 和 `docs/postproc/` 中的原文件**逐字节一致**（MD5 938a851d… / aa80ed14…）。锚点 O01–O03 来源列已写入脚本路径。
 
 ### 验证阶梯曲线输出（2026-10-09，`scripts/save_ladder_curves.py` → `outputs/verification_ladder/`）
 

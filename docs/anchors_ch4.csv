@@ -107,8 +107,8 @@ L05,1.98 / 1.993 / 0.0022,— / — / %,台阶 4a 收敛阶 / Roache 表观阶 /
 L06,1.0,—,台阶 4b 含停滞锋面收敛阶,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 4b,tests/test_verification_ladder.py,是,
 L07,0.60~0.67,—,Picard 末轮/首轮残差均值（极限环）；12 与 40 轮结果逐项一致,v0.6 线源 2.5 m,旧规则运行（只关迭代，不关停注）,docs/results_log.md L735-736,outputs/picard_scan/,是（12 vs 40 两次）,
 L08,9.1e-4 / 1.2e-3,—,二维线源相对守恒漂移 梯度 / 均质,线源，2.5 m,旧 60 步规则运行,cases/README.md L156,—,未注明,现行速率判据重算未记录漂移；量级不依赖停注规则
-O01,0 ~ 5,单元,速率判据重算中的越界（overshoot）单元数（A/B/C 层，含 1.25 m）,A/B/C 层,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt,是（读两遍一致的结果）,只有输出文件一个来源；旧'越界均为 0'是旧规则数；越界单元路径代价 1.0065~1.0463 p₀（outputs/rerun_rate/overshoot_cost.txt），均在可达边界一个单元之内
-O02,0.926 ~ 0.987,—,单段运行充填占可达域（over_reach_filled）,C 层单段，2.5 / 1.25 m,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt,是,只有输出文件一个来源；诊断回放的 0.88~0.97 为单遍
-O03,86 ~ 96,min,慢端黏度时钟下 P2 第 1 段按速率判据停注的实际时间（初凝取 240 min）,P2，1.25 m,速率判据 ε=0.1（慢端时钟回放）,—,outputs/rerun_rate/slow_end_stage1.txt,是（输入为两遍一致的序列）,只有输出文件一个来源；旧'48~139 min'为旧规则
+O01,0 ~ 5,单元,速率判据重算中的越界（overshoot）单元数（A/B/C 层，含 1.25 m）,A/B/C 层,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt（scripts/overshoot_fill_reach.py）,是（读两遍一致的结果）,生成脚本 2026-10-10 补齐，重算与原文件逐字节一致；旧'越界均为 0'是旧规则数；越界单元路径代价 1.0065~1.0463 p₀（outputs/rerun_rate/overshoot_cost.txt），均在可达边界一个单元之内
+O02,0.926 ~ 0.987,—,单段运行充填占可达域（over_reach_filled）,C 层单段，2.5 / 1.25 m,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt（scripts/overshoot_fill_reach.py）,是,生成脚本 2026-10-10 补齐，重算与原文件逐字节一致；诊断回放的 0.88~0.97 为单遍
+O03,86 ~ 96,min,慢端黏度时钟下 P2 第 1 段按速率判据停注的实际时间（初凝取 240 min）,P2，1.25 m,速率判据 ε=0.1（慢端时钟回放）,—,outputs/rerun_rate/slow_end_stage1.txt（scripts/slow_end_stage1.py）,是（输入为两遍一致的序列）,生成脚本 2026-10-10 补齐，重算与原文件逐字节一致；旧'48~139 min'为旧规则
 TG01,+4.9 / +4.0 / −0.7,%,两网格 V_in 差（1.25 相对 2.5 m）：均质 0.18 整孔 / 梯度整孔 / 均质 7 m 段第 1 段,A 层、C 层，2.5 vs 1.25 m,速率判据 ε=0.1,—,outputs/rerun_rate/two_grid_check.txt,是（读两遍一致的结果）,取代停注诊断单遍回放的'≤ 5%'；φ 0.10 在 2.5 m 低于分辨率门槛，无对应
 TG02,0.15 / 0.15 / 0.15,m,两网格 x_f 差：同上三对,同上,速率判据 ε=0.1,—,outputs/rerun_rate/two_grid_check.txt,是（读两遍一致的结果）,取代'x_f 差 ≤ 0.9 m'
