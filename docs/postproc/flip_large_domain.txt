@@ -1,0 +1,32 @@
+flip criterion in a large synthetic box: x -195.00..150.00, y -145.00..196.25 m (345.00 x 341.25 m, 75348 cells of 1.25 m); hole unchanged (mouth (-30.0, 21.0), 17 m, 35 deg)
+F family n(y) = n_mid + n'(y - y_mid), y_mid = 25.875 m, n_mid = 0.19763, n' = F x 1.1387e-03 /m (rho 1830); A, rho at v0.6; excluded = n over the reached vertical span outside 0.05-0.60; box = reach touches the box
+
+tau0 = 30.0 Pa: L_max(n_mid) = 20.53 m; geometric baseline (uniform n_mid, gravity off) up/down 1.0048 (up 21.04 / down 20.94 m, box False)
+       F | n(ymin) n(ymax) |   up [m] down [m]      2D |   factor     rays | box    neg status
+   -1.00 |  0.2321  0.1737 |    19.10    24.63  0.7755 |   0.7718   0.7783 | False    0 ok
+   -0.50 |  0.2134  0.1850 |    19.41    23.50  0.8257 |   0.8218   0.8312 | False    0 ok
+    0.00 |  0.1976  0.1976 |    20.02    22.27  0.8988 |   0.8945   0.8861 | False    0 ok
+    0.25 |  0.1901  0.2043 |    20.22    21.87  0.9249 |   0.9205   0.9127 | False    0 ok
+    0.50 |  0.1833  0.2117 |    20.53    21.76  0.9434 |   0.9389   0.9400 | False    0 ok
+    0.75 |  0.1761  0.2188 |    20.94    21.46  0.9760 |   0.9713   0.9683 | False    0 ok
+    1.00 |  0.1703  0.2258 |    21.25    21.15  1.0047 |   0.9999   0.9976 | False    0 ok
+    1.25 |  0.1635  0.2346 |    21.86    21.15  1.0337 |   1.0287   1.0278 | False    0 ok
+    1.50 |  0.1588  0.2420 |    22.27    20.84  1.0686 |   1.0635   1.0590 | False    0 ok
+  F*: 2D 1.001, rays 1.020 (from the 9 usable F values)
+
+tau0 = 7.5 Pa: L_max(n_mid) = 82.10 m; geometric baseline (uniform n_mid, gravity off) up/down 1.0012 (up 81.87 / down 81.77 m, box False)
+       F | n(ymin) n(ymax) |   up [m] down [m]      2D |   factor     rays | box    neg status
+   -1.00 |  0.3915  0.1339 |    60.37   217.56  0.2775 |   0.2771   0.2752 | True     0 box-clipped
+   -0.50 |  0.2946  0.1629 |    63.34   156.21  0.4055 |   0.4050   0.4331 | True     0 box-clipped
+    0.00 |  0.1976  0.1976 |    67.33   110.65  0.6085 |   0.6078   0.6110 | False    0 ok
+    0.25 |  0.1677  0.2178 |    70.40    99.90  0.7048 |   0.7039   0.6985 | False    0 ok
+    0.50 |  0.1441  0.2402 |    73.17    91.50  0.7996 |   0.7987   0.7913 | False    0 ok
+    0.75 |  0.1259  0.2647 |    76.55    85.77  0.8925 |   0.8914   0.8902 | False    0 ok
+    1.00 |  0.1105  0.2913 |    80.34    80.95  0.9924 |   0.9911   0.9961 | False    0 ok
+    1.25 |  0.0976  0.3200 |    84.43    76.96  1.0971 |   1.0957   1.1098 | False    0 ok
+    1.50 |  0.0862  0.3531 |    88.63    73.69  1.2028 |   1.2013   1.2321 | False 5240 ok
+  F*: 2D 1.021, rays 1.009 (from the 7 usable F values)
+
+summary (large box): tau0 30.0: L_max 20.5 m, F*_2D 1.001, F*_rays 1.020; tau0 7.5: L_max 82.1 m, F*_2D 1.021, F*_rays 1.009
+reference (60 x 60 m case box, flip_criterion.txt group 1): F*_2D 0.958, F*_rays 1.020
+sha1 of all cost arrays: 7f5955d5ff16506feaec6693781ef9913dbc939d
