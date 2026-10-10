@@ -5,7 +5,7 @@ Verification ladder for the slurry-transport solver (Python 2.7 / unittest).
 Ladder (see CLAUDE.md for status tracking):
   Step 1: 1D linear Darcy degeneration (lambda=0)  -- full assertions
   Step 2: 1D Bingham stagnation front L_max = p0/lambda -- placeholder
-  Step 3: radial Gustafson-Stille benchmark            -- placeholder
+  Step 3: radial stall solution of the model's flow law -- placeholder
   Step 4: mesh-convergence order                       -- placeholder
   Step 7: between-stage closure conservation           -- full assertions
 
@@ -302,16 +302,28 @@ class TestStep2BinghamStagnation(unittest.TestCase):
 
 
 # --- Step 3 configuration ---------------------------------------------------
-# 2D planar radial constant-pressure injection (Gustafson-Stille stagnation
-# limit). Quarter symmetry on a Grid2D: the borehole of radius r0 sits at the
+# 2D planar radial constant-pressure injection, checked against the radial
+# stall solution of this model's own flow law (derived below, no formula
+# taken from the literature). Quarter symmetry on a Grid2D: the borehole of radius r0 sits at the
 # origin corner, represented by Dirichlet p0 on the bottom faces with x < r0
 # and the left faces with y < r0; the two axes are natural no-flux symmetry
 # planes, so this equals a full-plane borehole. Outer boundary (right/top,
 # r >= 1.1 m > 1.5*I_max) is held at the far-field p = 0.
 #
-# Stalled state: |dp/dr| = lambda pointwise along each ray, so along the +x
-# axis p(x) = p0 - lambda*(x - r0) and the front stalls at
-#     I_max = r0 + p0/lambda.
+# Derivation. With gravity off and S = 1 the flux is
+#     q = -(k/mu) * max(0, 1 - lambda/|grad p|) * grad p,
+# which is zero wherever |grad p| <= lambda. Constant-pressure injection
+# keeps pushing the front while the gradient behind it exceeds lambda, so
+# at the final stall q = 0 everywhere and the wetted region is as large as
+# it can be: |dp/dr| = lambda pointwise along each ray. Because q = 0 there
+# is no continuity (1/r spreading) term, so the radial stall profile is the
+# 1D one shifted by the borehole radius: integrating dp/dr = -lambda from
+# p(r0) = p0 to p = 0 gives, along the +x axis,
+#     p(x) = p0 - lambda*(x - r0),   I_max = r0 + p0/lambda.
+# The stall extent is independent of geometry and of mu; it has the same
+# form as the stall length of the Gustafson et al. plate solutions
+# (I_max = dp*b/(2*tau0), lambda = 2*tau0/b), i.e. the same type of
+# benchmark, but the formula here comes from this model's flow law.
 # All assertions sample the +x axis (bottom cell row, a symmetry plane where
 # dp/dy = 0 and the gradient is purely radial).
 S3_P0 = 1.0e5        # borehole pressure [Pa]
@@ -433,8 +445,9 @@ def _run_step3_march():
     return _STEP3_CACHE["state"], _STEP3_CACHE["front_history"]
 
 
-class TestStep3RadialGustafsonStille(unittest.TestCase):
-    """Step 3: radial constant-pressure grouting must stall at I_max."""
+class TestStep3RadialStallSolution(unittest.TestCase):
+    """Step 3: radial constant-pressure grouting must stall at I_max of
+    the model's own radial stall solution."""
 
     def test_stall_radius_matches_imax(self):
         state, front_history = _run_step3_march()

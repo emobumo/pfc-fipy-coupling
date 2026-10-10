@@ -7,7 +7,8 @@ full test run performs; nothing is re-implemented):
     step 2b  _run_step2b_march(): front position vs time, against the
              model's own 1D analytic curve _fill_front(t)
     step 3   _run_step3_march(): stalled pressure along the +x axis, against
-             max(0, p0 - lambda (r - r0)); stall radius vs I_max
+             the model's own radial stall solution max(0, p0 - lambda (r - r0));
+             stall radius vs I_max = r0 + p0/lambda
 
     powershell -File scripts\run_local.ps1 scripts\save_ladder_curves.py
 

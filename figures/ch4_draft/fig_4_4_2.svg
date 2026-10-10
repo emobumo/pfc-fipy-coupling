@@ -638,7 +638,7 @@ L299.772 18.7825" style="fill:none;stroke:#000000;stroke-linecap:square;stroke-l
    </g>
    <g id="text_35">
     <!-- $I_{\mathrm{max}}$ = $r_0$ + $p_0$/λ -->
-    <g style="fill:#52514e;" transform="translate(426.946433594 52.13603125)">
+    <g style="fill:#52514e;" transform="translate(426.946433594 118.84309375)">
      <text>
       <tspan style="font-family:cmr10;font-size:4.9px;font-style:regular;" x="3.07275390625 7.1544921875 9.6044921875 22.3652679443 36.4067565918" y="1.44190625">max00</tspan>
       <tspan style="font-family:cmmi10;font-size:7.0px;font-style:regular;" x="0.0 19.2070648193 32.8862487793" y="-0.34375">Irp</tspan>
@@ -652,28 +652,29 @@ L299.772 18.7825" style="fill:none;stroke:#000000;stroke-linecap:square;stroke-l
    <g id="legend_2">
     <g id="line2d_37">
      <path d="
-M408.105 28.5825
-L422.105 28.5825" style="fill:none;stroke:#eb6834;stroke-linecap:square;stroke-width:1.4;"/>
+M412.354 33.2515
+L426.354 33.2515" style="fill:none;stroke:#eb6834;stroke-linecap:square;stroke-width:1.4;"/>
     </g>
     <g id="line2d_38"/>
     <g id="text_37">
-     <!-- 解析 max(0, $p_0$ − λ(r − $r_0$)) -->
-     <g transform="translate(427.7048125 31.0325)">
+     <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;" transform="translate(431.95403125 29.974625)">本模型流动律径向停滞解</text>
+     <!-- max(0, $p_0$ − λ(r − $r_0$)) -->
+     <g transform="translate(431.95403125 38.4660625)">
       <text>
-       <tspan style="font-family:cmr10;font-size:4.9px;font-style:regular;" x="42.7624664307 72.4086151123" y="1.67628125">00</tspan>
-       <tspan style="font-family:cmmi10;font-size:7.0px;font-style:regular;" x="39.2419586182 69.2504119873" y="-0.109375">pr</tspan>
-       <tspan style="font-family:Noto Sans SC;font-size:7.0px;font-style:regular;" x="0.0 7.0 14.0 15.5679931641 22.049987793 25.9909820557 29.4769744873 31.8429718018 35.7279663086 37.6739654541 46.2624664307 47.8304595947 51.7154541016 53.2834472656 57.1474456787 59.5134429932 62.2294311523 63.7974243164 67.6824188232 75.9086151123 78.2746124268" y="-0.109375">解析 max(0,  − λ(r − ))</tspan>
+       <tspan style="font-family:cmr10;font-size:4.9px;font-style:regular;" x="27.1944732666 56.8406219482" y="1.50440625">00</tspan>
+       <tspan style="font-family:cmmi10;font-size:7.0px;font-style:regular;" x="23.6739654541 53.6824188232" y="-0.28125">pr</tspan>
+       <tspan style="font-family:Noto Sans SC;font-size:7.0px;font-style:regular;" x="0.0 6.48199462891 10.4229888916 13.9089813232 16.2749786377 20.1599731445 22.10597229 30.6944732666 32.2624664307 36.1474609375 37.7154541016 41.5794525146 43.9454498291 46.6614379883 48.2294311523 52.1144256592 60.3406219482 62.7066192627" y="-0.28125">max(0,  − λ(r − ))</tspan>
       </text>
      </g>
     </g>
     <g id="line2d_39"/>
     <g id="line2d_40">
      <g>
-      <use style="fill:#2a78d6;stroke:#000000;stroke-width:0.5;" x="415.1048125" xlink:href="#m2b767a59f3" y="39.6140625"/>
+      <use style="fill:#2a78d6;stroke:#000000;stroke-width:0.5;" x="419.35403125" xlink:href="#m2b767a59f3" y="47.3705"/>
      </g>
     </g>
     <g id="text_38">
-     <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 427.704813, 42.064062)" x="427.7048125" y="42.0640625">数值（沿轴，停滞后）</text>
+     <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 431.954031, 49.820500)" x="431.95403125" y="49.8205">数值（沿轴，停滞后）</text>
     </g>
    </g>
   </g>

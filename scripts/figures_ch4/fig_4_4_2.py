@@ -2,7 +2,7 @@
 """
 图 4.4-2 解析对比三联图：(a) 一维变饱和充填锋面—时间对本模型流动律一维解析解（台阶 2b；与 Gustafson 等平行板解同类型，
 非其式 9）；
-(b) 径向停滞沿轴压力剖面对 max(0, p₀ − λ(r − r₀))（台阶 3）；(c) 均质点源可达域对解析椭圆。
+(b) 径向停滞沿轴压力剖面对本模型流动律径向停滞解 max(0, p₀ − λ(r − r₀))（台阶 3）；(c) 均质点源可达域对解析椭圆。
 数据：(a)(b) outputs/verification_ladder/step2b_front_time.csv、step3_axis_profile.csv（scripts/save_ladder_curves.py
 运行测试夹具 _run_step2b_march、_run_step3_march 得到，两遍逐字节一致）；(c) scripts/conic_check.py 的 build/one
 （只算可达域，100 × 100 m，中心点源，n = 0.30，1.25 m，含重力；与 outputs/conic_check/conic_check.txt 同一计算）。
@@ -35,10 +35,10 @@ def main():
     b = np.loadtxt(os.path.join(VL, "step3_axis_profile.csv"), delimiter=",", skiprows=1)
     ax = axs[1]
     ok = ~np.isnan(b[:, 2])
-    ax.plot(b[ok, 0], b[ok, 2] / 1.0e5, "-", color=K.C2, lw=1.4, label=u"解析 max(0, $p_0$ − λ(r − $r_0$))")
+    ax.plot(b[ok, 0], b[ok, 2] / 1.0e5, "-", color=K.C2, lw=1.4, label=u"本模型流动律径向停滞解\nmax(0, $p_0$ − λ(r − $r_0$))")
     ax.plot(b[:, 0], b[:, 1] / 1.0e5, "o", color=K.C1, ms=3, label=u"数值（沿轴，停滞后）")
     ax.axvline(0.7, color=K.INK2, lw=0.8, ls=":")
-    ax.text(0.71, 0.85, u"$I_{\\mathrm{max}}$ = $r_0$ + $p_0$/λ", fontsize=7, color=K.INK2)
+    ax.text(0.71, 0.55,u"$I_{\\mathrm{max}}$ = $r_0$ + $p_0$/λ", fontsize=7, color=K.INK2)
     ax.set_xlabel(u"径向距离 r (m)"); ax.set_ylabel(u"压力 p / $p_0$")
     ax.legend(loc="upper right", frameon=False, fontsize=7, numpoints=1)
     ax.set_title(u"(b) 径向停滞：沿轴压力剖面（台阶 3）", fontsize=8)

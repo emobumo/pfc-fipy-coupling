@@ -84,7 +84,7 @@ def task1():
     lam_rad = P0 / (LMAX_FIELD - R0)
     print("  planar/first-order:  lambda = p0/L_max = %.3e Pa/m = %.1f kPa/m"
           % (lam0, lam0 / 1e3))
-    print("  radial (GS) form:    I_max = r0 + p0/lambda  ->  "
+    print("  radial stall form:   I_max = r0 + p0/lambda  ->  "
           "lambda = p0/(L_max - r0)")
     print("                       = %.3e Pa/m = %.1f kPa/m   (r0=%.2f m)"
           % (lam_rad, lam_rad / 1e3, R0))
