@@ -1,0 +1,111 @@
+tau0 = 7.5 Pa reach-only sensitivity (A, rho at v0.6; 1.25 m structural fields, 0.5 m case-study section); tau0 = 30 recomputed alongside
+
+A  Pi_g census and reach, 1.25 m, 16-neighbour, gravity on; Pi_g = rho g / lambda(n) per cell; 'neg' = directed reach-graph edges with cost < 0
+
+field                       tau0 | max Pi  Pi>=1 % Pi>=1 cells: n range, x / y range [m] |   neg solver        reach   box    finite   up/dn
+uniform 0.18                30.0 |  0.066     0.00 -                                  |     0 dijkstra        719    no 2304/2304   0.897
+uniform 0.18                 7.5 |  0.263     0.00 -                                  |     0 dijkstra       2284   yes 2304/2304   0.612
+gradient 0.12->0.30         30.0 |  0.127     0.00 -                                  |     0 dijkstra        927    no 2304/2304   1.179
+gradient 0.12->0.30          7.5 |  0.508     0.00 -                                  |     0 dijkstra       2284   yes 2304/2304   0.612
+channel toe n 0.30          30.0 |  0.128     0.00 -                                  |     0 dijkstra        874   yes 2304/2304   0.666
+channel toe n 0.30           7.5 |  0.513     0.00 -                                  |     0 dijkstra       2284   yes 2304/2304   0.612
+channel toe n 0.45          30.0 |  0.245     0.00 -                                  |     0 dijkstra       1030   yes 2304/2304   0.728
+channel toe n 0.45           7.5 |  0.979     0.00 -                                  |     0 dijkstra       2284   yes 2304/2304   0.612
+channel toe n 0.60          30.0 |  0.449     0.00 -                                  |     0 dijkstra       1120   yes 2304/2304   0.740
+channel toe n 0.60           7.5 |  1.795     4.17 n 0.60-0.60, x -11.9..-10.6 / y 0.6..59.4 |   280 bellman_ford   2284   yes 2304/2304   0.612
+channel collar n 0.45       30.0 |  0.245     0.00 -                                  |     0 dijkstra        857   yes 2304/2304   1.211
+channel collar n 0.45        7.5 |  0.979     0.00 -                                  |     0 dijkstra       2284   yes 2304/2304   0.612
+channel midhole n 0.45      30.0 |  0.245     0.00 -                                  |     0 dijkstra        938   yes 2304/2304   1.090
+channel midhole n 0.45       7.5 |  0.979     0.00 -                                  |     0 dijkstra       2284   yes 2304/2304   0.612
+random seed 1 (1.25 m)      30.0 |  0.152     0.00 -                                  |     0 dijkstra        733    no 2304/2304   1.163
+random seed 1 (1.25 m)       7.5 |  0.608     0.00 -                                  |     0 dijkstra       2284   yes 2304/2304   0.612
+random seed 2 (1.25 m)      30.0 |  0.167     0.00 -                                  |     0 dijkstra        821   yes 2304/2304   0.700
+random seed 2 (1.25 m)       7.5 |  0.670     0.00 -                                  |     0 dijkstra       2284   yes 2304/2304   0.612
+random seed 3 (1.25 m)      30.0 |  0.164     0.00 -                                  |     0 dijkstra        870   yes 2304/2304   0.598
+random seed 3 (1.25 m)       7.5 |  0.655     0.00 -                                  |     0 dijkstra       2284   yes 2304/2304   0.612
+
+  Pi_g = 1 at n = 0.4552 for tau0 7.5 and n = 0.7697 for tau0 30 (cell value, rho 1830, A 1.25e-07).
+  L_max(0.18) = 73.2 m at tau0 7.5 vs 18.3 m at 30; the box is 60 x 60 m, mouth on its left edge.
+
+B  flip criterion (scripts/flip_criterion.py, 1.25 m)
+
+  tau0 = 30.0:
+  V2 group A (v0.6, 1.25 m): 2D reach vs straight rays
+  
+  field      gravity  |       2D | rays max mid(wall) mid(free) | max ray clipped / rays stopped by a side
+  uniform    off      |    1.000 |    1.000     0.663     1.000 | False / 38 of 102
+  uniform    on       |    0.897 |    0.898     0.627     0.898 | False / 36 of 102
+  gradient   off      |    1.383 |    1.261     0.686     1.378 | True / 51 of 102
+  gradient   on       |    1.179 |    1.201     0.656     1.215 | True / 51 of 102
+  
+  tau0 = 7.5:
+  V2 group A (v0.6, 1.25 m): 2D reach vs straight rays
+  
+  field      gravity  |       2D | rays max mid(wall) mid(free) | max ray clipped / rays stopped by a side
+  uniform    off      |    0.612 |    0.647     0.384     1.319 | True / 102 of 102
+  uniform    on       |    0.612 |    0.647     0.384     1.319 | True / 102 of 102
+  gradient   off      |    0.612 |    0.647     0.384     1.319 | True / 102 of 102
+  gradient   on       |    0.612 |    0.647     0.384     1.319 | True / 102 of 102
+  
+  V3 flip criterion: n(y) = n_mid + n'(y - y_mid), y_mid = 25.875 m, n_mid = 0.19763, n' = F1 x 1.1387e-03 /m; the gradient field is F1 = 2.635
+  
+  group           F1  F(grp)   L_max |     n(0)    n(60) |       2D  2D/base     rays | clipped
+  1 v0.6      -1.000  -1.000   20.53 |   0.2271   0.1588 |    0.734    0.738    0.741 | True
+  1 v0.6       0.000   0.000   20.53 |   0.1976   0.1976 |    0.890    0.894    0.886 | True
+  1 v0.6       0.500   0.500   20.53 |   0.1829   0.2171 |    0.925    0.929    0.940 | True
+  1 v0.6       0.750   0.750   20.53 |   0.1755   0.2268 |    0.971    0.976    0.968 | True
+  1 v0.6       1.000   1.000   20.53 |   0.1682   0.2365 |    1.000    1.005    0.998 | False
+  1 v0.6       1.250   1.250   20.53 |   0.1608   0.2462 |    1.034    1.039    1.028 | False
+  1 v0.6       1.500   1.500   20.53 |   0.1534   0.2559 |    1.064    1.069    1.059 | False
+  1 v0.6       2.000   2.000   20.53 |   0.1387   0.2753 |    1.129    1.135    1.125 | False
+  1 v0.6       2.635   2.635   20.53 |   0.1200   0.3000 |    1.179    1.185    1.201 | True
+  1 v0.6       3.000   3.000   20.53 |   0.1092   0.3142 |    1.248    1.254    1.213 | True
+  5 tau0 7.5  -1.000  -1.000   82.10 |   0.2271   0.1588 |    0.612    1.000    0.647 | True
+  5 tau0 7.5   0.000   0.000   82.10 |   0.1976   0.1976 |    0.612    1.000    0.647 | True
+  5 tau0 7.5   0.500   0.500   82.10 |   0.1829   0.2171 |    0.612    1.000    0.647 | True
+  5 tau0 7.5   0.750   0.750   82.10 |   0.1755   0.2268 |    0.612    1.000    0.647 | True
+  5 tau0 7.5   1.000   1.000   82.10 |   0.1682   0.2365 |    0.612    1.000    0.647 | True
+  5 tau0 7.5   1.250   1.250   82.10 |   0.1608   0.2462 |    0.612    1.000    0.647 | True
+  5 tau0 7.5   1.500   1.500   82.10 |   0.1534   0.2559 |    0.612    1.000    0.647 | True
+  5 tau0 7.5   2.000   2.000   82.10 |   0.1387   0.2753 |    0.612    1.000    0.647 | True
+  5 tau0 7.5   2.635   2.635   82.10 |   0.1200   0.3000 |    0.612    1.000    0.647 | True
+  5 tau0 7.5   3.000   3.000   82.10 |   0.1092   0.3142 |    0.612    1.000    0.647 | True
+  
+  F* (factor = 1), on each group's own F axis; amplitude at F1 = 2:
+    1 v0.6      F*_2D = 0.958  F*_rays = 1.020 | L_max 20.53 m | at F1=2: 2D-1 = +0.135 ((2D-1)/L_max = 0.0066 /m), rays-1 = +0.125 ((rays-1)/L_max = 0.0061 /m)
+    5 tau0 7.5  F*_2D = nan  F*_rays = nan | L_max 82.10 m | at F1=2: 2D-1 = +0.000 ((2D-1)/L_max = 0.0000 /m), rays-1 = -0.353 ((rays-1)/L_max = -0.0043 /m)
+    check: group 1 at the gradient field (F1 = 2.635): 2D factor 1.185 (anchor 1.179 / baseline 0.995)
+  
+C  case-study contact threshold (scripts/zhaojin_c1c2.c1; 0.5 m, contacts 1 m, base shut, 35 deg, ore 0.35)
+
+  C1: contact threshold phi_c (cost ratio to the -63 m drift = 1); 0.5 m, contacts 1 m, base shut, 35 deg
+  
+       s  tau0  A x   rho | z1 (10%)  z2 (45%)  z3 (25%)  | 1D along-contact
+   1.000    30  1.0  1830 | 0.227     0.194     0.225     | 0.309 (2D - 1D: -0.082, -0.115, -0.084)
+  
+    z1 (10%): phi_c 0.227 .. 0.227
+    z2 (45%): phi_c 0.194 .. 0.194
+    z3 (25%): phi_c 0.225 .. 0.225
+    2D minus 1D: -0.115 .. -0.082 (all groups, all zones)
+
+  C1: contact threshold phi_c (cost ratio to the -63 m drift = 1); 0.5 m, contacts 1 m, base shut, 35 deg
+  
+       s  tau0  A x   rho | z1 (10%)  z2 (45%)  z3 (25%)  | 1D along-contact
+   4.000     8  1.0  1830 | 0.060     0.060     0.060     | 0.101 (2D - 1D: -0.041, -0.041, -0.041)
+  
+    z1 (10%): phi_c 0.060 .. 0.060
+    z2 (45%): phi_c 0.060 .. 0.060
+    z3 (25%): phi_c 0.060 .. 0.060
+    2D minus 1D: -0.041 .. -0.041 (all groups, all zones)
+
+  cost ratio to the -63 m drift (min path cost / p0) without a contact and with phi_c = 0.35;
+  'neg' = negative edges, solver as used:
+
+  tau0 30.0  z1_cuts1-6     no contact: 201.679 (neg 0, dijkstra+potential); with contact: 0.789 (neg 0, dijkstra+potential)
+  tau0 30.0  z2_cuts6-10    no contact: 220.089 (neg 0, dijkstra+potential); with contact: 0.770 (neg 0, dijkstra+potential)
+  tau0 30.0  z3_cuts10-15   no contact: 211.130 (neg 0, dijkstra+potential); with contact: 0.789 (neg 0, dijkstra+potential)
+  tau0  7.5  z1_cuts1-6     no contact: 50.314 (neg 42, dijkstra+potential); with contact: 0.091 (neg 43, dijkstra+potential)
+  tau0  7.5  z2_cuts6-10    no contact: 54.910 (neg 42, dijkstra+potential); with contact: 0.081 (neg 43, dijkstra+potential)
+  tau0  7.5  z3_cuts10-15   no contact: 52.676 (neg 42, dijkstra+potential); with contact: 0.091 (neg 43, dijkstra+potential)
+
+sha1 of all cost arrays: 66e136561b059e161afa8f2507b80cb070b66912
