@@ -515,27 +515,27 @@ L356.637 19.94" style="fill:none;stroke:#000000;stroke-linecap:square;stroke-lin
      </g>
     </g>
     <g id="text_31">
-     <text style="font-family:Noto Sans SC;font-size:9.0px;font-style:normal;text-anchor:middle;" transform="rotate(-90.000000, 333.351922, 127.982078)" x="333.351921875" y="127.982078125">后续段注浆量 (m³/m)</text>
+     <text style="font-family:Noto Sans SC;font-size:9.0px;font-style:normal;text-anchor:middle;" transform="rotate(-90.000000, 333.351922, 127.982078)" x="333.351921875" y="127.982078125">后续段注入量 (m³/m)</text>
     </g>
    </g>
    <g id="text_32">
-    <text style="font-family:Noto Sans SC;font-size:6.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 490.254232, 193.799315)" x="490.254231615" y="193.799314927">孔隙率 0.10，孔长 17 m</text>
+    <text style="font-family:Noto Sans SC;font-size:6.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 490.254232, 193.799315)" x="490.254231615" y="193.799314927">孔隙率 0.10，孔深 17 m</text>
    </g>
    <g id="text_33">
-    <text style="font-family:Noto Sans SC;font-size:6.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 464.672199, 221.498191)" x="464.672199365" y="221.498191374">孔隙率 0.12，孔长 17 m</text>
+    <text style="font-family:Noto Sans SC;font-size:6.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 464.672199, 221.498191)" x="464.672199365" y="221.498191374">孔隙率 0.12，孔深 17 m</text>
    </g>
    <g id="text_34">
-    <text style="font-family:Noto Sans SC;font-size:6.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 520.276442, 83.510367)" x="520.276442468" y="83.5103671181">孔隙率 0.14，孔长 25 m</text>
+    <text style="font-family:Noto Sans SC;font-size:6.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 520.276442, 83.510367)" x="520.276442468" y="83.5103671181">孔隙率 0.14，孔深 25 m</text>
    </g>
    <g id="text_35">
-    <text style="font-family:Noto Sans SC;font-size:6.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 581.969468, 27.123061)" x="581.969467838" y="27.1230611663">孔隙率 0.14，孔长 32 m</text>
+    <text style="font-family:Noto Sans SC;font-size:6.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 581.969468, 27.123061)" x="581.969467838" y="27.1230611663">孔隙率 0.14，孔深 32 m</text>
    </g>
    <g id="text_36">
-    <!-- (b) 后续段注浆量与 Δ/$x_f$ -->
+    <!-- (b) 后续段注入量与 Δ/$x_f$ -->
     <g transform="translate(445.722257813 14.94)">
      <text>
       <tspan style="font-family:cmmi10;font-size:6.3px;font-style:regular;" x="93.2471618652" y="1.90521875">f</tspan>
-      <tspan style="font-family:Noto Sans SC;font-size:9.0px;font-style:regular;" x="0.0 3.0419921875 8.60398864746 11.645980835 13.6619720459 22.6619720459 31.6619720459 40.6619720459 49.6619720459 58.6619720459 67.6619720459 76.6619720459 78.6779632568 84.5819549561" y="-0.390625">(b) 后续段注浆量与 Δ/</tspan>
+      <tspan style="font-family:Noto Sans SC;font-size:9.0px;font-style:regular;" x="0.0 3.0419921875 8.60398864746 11.645980835 13.6619720459 22.6619720459 31.6619720459 40.6619720459 49.6619720459 58.6619720459 67.6619720459 76.6619720459 78.6779632568 84.5819549561" y="-0.390625">(b) 后续段注入量与 Δ/</tspan>
       <tspan style="font-family:cmmi10;font-size:9.0px;font-style:regular;" x="88.109954834" y="-0.390625">x</tspan>
      </text>
     </g>

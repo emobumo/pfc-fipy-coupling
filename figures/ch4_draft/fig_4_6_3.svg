@@ -39,8 +39,8 @@ z
    </g>
    <g id="line2d_1">
     <path clip-path="url(#pa930409012)" d="
-M180.707 250.25
-L180.707 19.85" style="fill:none;stroke:#52514e;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;stroke-width:0.8;"/>
+M180.35 250.25
+L180.35 19.85" style="fill:none;stroke:#52514e;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;stroke-width:0.8;"/>
    </g>
    <g id="patch_4">
     <path d="
@@ -276,7 +276,7 @@ z
      </g>
     </g>
     <g id="text_24">
-     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 259.103750, 45.617500)" x="259.10375" y="45.6175">孔长组（n = 0.14，H = 10~32 m）</text>
+     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 259.103750, 45.617500)" x="259.10375" y="45.6175">孔深组（n = 0.14，H = 10~32 m）</text>
     </g>
    </g>
   </g>

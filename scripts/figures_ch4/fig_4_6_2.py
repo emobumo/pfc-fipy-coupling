@@ -3,7 +3,7 @@
 图 4.6-2 段长准则图（1.25 m，现行停注判据）。两格：
 (a) 各段停注时 x_f 对 L_max（过原点最小二乘斜率 c，按 19 个独立段：n 0.14 的 7 m 第 1 段在 4 个方案中
 是同一计算，只计一次）；
-(b) 后续段按 Δ/x_f 分为后续段有效 / 后续段失效（纵轴为后续段注浆量）。
+(b) 后续段按 Δ/x_f 分为后续段有效 / 后续段失效（纵轴为后续段注入量）。
 数据：outputs/rerun_rate/C/results.json（P2、P3，两遍一致；stages[].x_f、v_in、reason）。
 Δ 从上一有效段孔底起算（本组均为 7 m 第 1 段之后的第 2 段）。
 第二轮意见：删去原 (c) 格（x_f/L_max 随 ε）；分图标签不用算例代号。
@@ -55,16 +55,16 @@ def main():
         mk, col = ("D", K.C3) if marg else (("o", K.C1) if ok else ("x", K.C2))
         ax.plot([ratio], [s2["v_in"]], mk, color=col, ms=6, mew=1.4)
         if ok:
-            ax.annotate(u"孔隙率 %.2f，孔长 %g m" % (r["n_ref"], r["H"]), (ratio, s2["v_in"]), xytext=(5, 3),
+            ax.annotate(u"孔隙率 %.2f，孔深 %g m" % (r["n_ref"], r["H"]), (ratio, s2["v_in"]), xytext=(5, 3),
                         textcoords="offset points", fontsize=6)
     ax.axvline(1.0, color=K.INK2, lw=0.8, ls="--")
     ax.plot([], [], "o", color=K.C1, label=TERMS["stage_ok"])
     ax.plot([], [], "x", color=K.C2, mew=1.4, label=TERMS["stage_dead"])
     ax.plot([], [], "D", color=K.C3, label=u"临界（新出浆段仅剩 1 个未胶结单元）")
     ax.legend(loc="upper left", frameon=False, fontsize=7, numpoints=1)
-    ax.set_xlabel(u"Δ / " + K.XF); ax.set_ylabel(u"后续段注浆量 (m³/m)")
+    ax.set_xlabel(u"Δ / " + K.XF); ax.set_ylabel(u"后续段注入量 (m³/m)")
     ax.set_xlim(0, 2.6)
-    ax.set_title(u"(b) 后续段注浆量与 Δ/" + K.XF, fontsize=9)
+    ax.set_title(u"(b) 后续段注入量与 Δ/" + K.XF, fontsize=9)
     for a in axs:
         K.style(a)
     fig.tight_layout()
