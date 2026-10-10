@@ -65,6 +65,8 @@ def main():
     bx.set_xticklabels([c[0] for c in CASES], fontsize=8)
     for a_ in (ax, bx):
         K.style(a_)
+    fig.text(0.10, -0.03, u"未充填比例的分母为%s（不计钻孔单元，165 个单元）；%s为%s以外、计算域内的浆量（不计钻孔单元）"
+             % (TERMS["design"], TERMS["outside_V"], TERMS["design"]), fontsize=7.5, color=K.INK2)
     K.save(fig, "fig_4_5_5")
     for (n, _), a, b, c, r in zip(CASES, un, fr, bv, run):
         print(n.replace("\n", " "), "unreach %.1f front %.1f bypass %.1f runaway %.1f" % (a, b, c, r))

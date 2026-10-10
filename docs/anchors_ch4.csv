@@ -65,14 +65,16 @@ B08,55.8 / 28.7,%,P1 ② 分段（第 1 段经通道耗尽配额）目标区 / �
 B09,75.8 / 12.0；87.3 / 7.0,%,P1 ③ 预置封堵 h = 2.5 / 10 m 目标区 / 跑浆,同上,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L117；docs/results_log.md L604-605,outputs/rerun_rate/B/B_p1_preplug_*/cells.csv,是,
 C01,93.6 / 62.0,%,结构场 base 单段 / 分段 可达域覆盖,base，2.5 m，预算 185.86,速率判据 ε=0.1 或配额（实际配额先到）,docs/results_log.md L620-621,outputs/rerun_rate/C/results.json,是,
 C02,92.6 / 84.1,%,结构场 random 单段 / 分段 可达域覆盖,random seed1，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,docs/results_log.md L622-623,outputs/rerun_rate/C/results.json,是,
-C03,0.833~0.906,—,分段试算各段停止时 x_f/L_max（1.25 m 全部 22 个常规段；φ 0.12 临界第 2 段 0.486 除外）,P2/P3 均质，1.25 m,速率判据 ε=0.1,CLAUDE.md L112；docs/results_log.md L644,outputs/rerun_rate/two_grid_check.txt；outputs/rerun_rate/C/results.json,是,原记 0.86~0.89 只取自 P2 表，含 P3 后为 0.833~0.906（2026-10-09 更正）；ε = 0.05 时 0.90（E03）
-C04,0.74 / 1.08,—,P2 临界区间：Δ/L_max 0.74 第 2 段死，1.08 进浆,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L645,outputs/rerun_rate/C/results.json,是,
+C03,0.833~0.906,—,分段试算各段停止时 x_f/L_max（1.25 m 19 个独立段，按方案计 22 段；φ 0.12 临界第 2 段 0.486 除外）,P2/P3 均质，1.25 m,速率判据 ε=0.1,CLAUDE.md L112；docs/results_log.md L644,outputs/rerun_rate/two_grid_check.txt；outputs/rerun_rate/C/results.json,是,原记 0.86~0.89 只取自 P2 表，含 P3 后为 0.833~0.906（2026-10-09 更正）；ε = 0.05 时 0.90（E03）
+C03b,0.871,—,c：19 个独立段 x_f 对 L_max 的过原点最小二乘斜率（正文 c ≈ 0.87；22 段含重复为 0.873）,P2/P3 均质，1.25 m,速率判据 ε=0.1,CLAUDE.md 分段条；docs/results_log.md 锚点核对补充,outputs/rerun_rate/C/results.json（scripts/figures_ch4/fig_4_6_2.py 计算）,是（读两遍一致的结果）,完整值 0.8712；区间中点 0.8698、算术平均 0.8776。CLAUDE.md 与 results_log 原写 ≈ 0.88，2026-10-10 统一为 0.87
+C04,0.74 / 1.08,—,临界区间：Δ/L_max 0.74 为全部失效算例最大值，1.08 为全部有效算例最小值（n 0.12 临界 0.88 除外）,P2+P3，1.25 m,速率判据 ε=0.1,docs/results_log.md L645,outputs/rerun_rate/C/results.json,是,
 C05,4 / 4,—,Δ > x_f 判据与 P2 后续段是否进浆一致的个数,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L643,outputs/rerun_rate/C/results.json,是,
 C06,98.0 / 97.1 / 96.1,%,P2 单段可达域覆盖 φ 0.10 / 0.14 / 0.18,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L635-637,outputs/rerun_rate/C/results.json,是,
 C07,94.6 / 58.7 / 62.1 / 56.4,%,P2 分段覆盖：0.10 7→17、0.14 7→17、0.18 7→17、0.18 5→17,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L638-641,outputs/rerun_rate/C/results.json,是,
 C08,24.10 + 18.15,m³/m,P2 φ 0.10 7→17 各段注入量（Δ 10 > x_f 8.2）,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md L638,outputs/rerun_rate/C/results.json,是,
 C08b,8.248 / 12.037 / 15.826 / 15.778,m,P2 第 1 段 x_f：n 0.10 7→17 / n 0.14 7→17 / n 0.18 7→17 / n 0.18 5→17（本段停注时 S ≥ 0.5 新充填单元在孔轴一个单元条带内沿轴最远投影减本段孔底深度）,P2，1.25 m,速率判据 ε=0.1,docs/results_log.md P2 表（2026-10-10 更正）,outputs/rerun_rate/C/results.json stages[0].x_f,是（C 与 C_pass2 的 stages 逐项一致）,完整值 8.248104 / 12.036894 / 15.825685 / 15.777805 m；x_f/L_max 0.8908 / 0.8873 / 0.8652 / 0.8626。原 results_log 由两位小数 x_f/L_max 乘 L_max 反算记为 8.2 / 12.1 / 15.9 / 15.7，后三者有误
 C09,29.7 / 34.0 / 35.4 / 38.4 / 32.9 / 3.4,百分点,P3 孔隙率组覆盖损失 φ 0.22/0.18/0.16/0.14/0.12/0.10（H 17）,P2+P3，1.25 m,速率判据 ε=0.1,docs/results_log.md L655-660,outputs/rerun_rate/C/results.json；figs/p3_loss.csv,是,
+C09b,1.2~3.4 / 29.7~39.6,百分点,分段覆盖损失：后续段有效 / 失效（失效上限为 P2 n 0.18 5→17 的 39.648；10 m 短孔 13.8 另列）,P2+P3，1.25 m,速率判据 ε=0.1,docs/results_log.md P2、P3 节,outputs/rerun_rate/C/results.json（over_reach_filled）,是,完整值 有效 1.203 / 2.215 / 3.378，失效 29.691~39.648
 C10,13.8 / 38.4 / 2.2 / 1.2,百分点,P3 孔长组覆盖损失 H 10/17/25/32 m（φ 0.14）,P3，1.25 m,速率判据 ε=0.1,docs/results_log.md L658、L661-663,outputs/rerun_rate/C/results.json；figs/p3_loss.csv,是,
 C11,5.33,m³/m,P3 φ 0.12（Δ/L_max 0.88，临界）第 2 段注入量；20 个孔单元 19 个已埋,P3，1.25 m,速率判据 ε=0.1,docs/results_log.md L659,outputs/rerun_rate/C/results.json,是,
 C12,20.6,m,32 m 孔孔底距最近边界（> L_max 13.6 m，不触边界）,P3，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L667,outputs/rerun_rate/C/results.json（toe_to_wall）,是,

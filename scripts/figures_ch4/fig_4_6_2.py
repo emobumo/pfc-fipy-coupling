@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 图 4.6-2 段长准则图（1.25 m，现行停注判据）。两格：
-(a) 各段停注时 x_f 对 L_max（过原点拟合斜率 c）；
+(a) 各段停注时 x_f 对 L_max（过原点最小二乘斜率 c，按 19 个独立段：n 0.14 的 7 m 第 1 段在 4 个方案中
+是同一计算，只计一次）；
 (b) 后续段按 Δ/x_f 分为后续段有效 / 后续段失效（纵轴为后续段注浆量）。
 数据：outputs/rerun_rate/C/results.json（P2、P3，两遍一致；stages[].x_f、v_in、reason）。
 Δ 从上一有效段孔底起算（本组均为 7 m 第 1 段之后的第 2 段）。
 第二轮意见：删去原 (c) 格（x_f/L_max 随 ε）；分图标签不用算例代号。
+第五轮（框架 v1.7）：c 按 19 个独立段拟合（0.871），图注写 x_f ≈ 0.87 L_max，不写三位小数。
 """
 from __future__ import print_function
 
@@ -21,10 +23,14 @@ from common import plt, TERMS
 def main():
     C = json.load(open(os.path.join(K.RR, "C", "results.json")))
     C = [r for r in C if r["group"] in ("p2", "p3phi", "p3len")]
-    xf, lm = [], []
+    xf, lm, seen = [], [], set()
     for r in C:
         for st in r["stages"]:
             if st["reason"] == "rate" and st["v_in"] > 1.0 and not (r["n_ref"] == 0.12 and st["k"] == 2):
+                key = (r["n_ref"], r["depths"][st["k"] - 1], st["k"], round(st["x_f"], 9), round(st["v_in"], 9))
+                if key in seen:          # same computation repeated in another plan
+                    continue
+                seen.add(key)
                 xf.append(st["x_f"]); lm.append(r["L_max"])
     xf, lm = np.array(xf), np.array(lm)
     c = float(np.sum(xf * lm) / np.sum(lm * lm))
@@ -34,7 +40,7 @@ def main():
     xx = np.array([0, 25.0])
     ax.plot(xx, c * xx, "-", color=K.INK2, lw=1)
     ax.plot(xx, xx, ":", color=K.INK2, lw=0.8)
-    ax.text(15, c * 15 - 3.2, K.XF + u" = %.3f " % c + K.LMAX, fontsize=8)
+    ax.text(15, c * 15 - 3.2, K.XF + u" ≈ 0.87 " + K.LMAX, fontsize=8)
     ax.text(17.5, 19.6, K.XF + u" = " + K.LMAX, fontsize=7, color=K.INK2)
     ax.set_xlabel(K.LMAX + u" (m)"); ax.set_ylabel(u"停注时 " + K.XF + u" (m)")
     ax.set_title(u"(a) 各段 " + K.XF + u" 与 " + K.LMAX + u"（%d 段）" % len(xf), fontsize=9)

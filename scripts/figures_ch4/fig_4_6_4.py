@@ -61,6 +61,8 @@ def main():
         ru.append(100.0 * vout / (vin + vout))
     fig.text(0.05, 0.355, u"虚线：%s；实线：%s；橙线：孔口通道；深灰：预置封堵体；②中色斑为各段累计充填（含%s）"
              % (TERMS["design"], TERMS["reach"], TERMS["cement"]), fontsize=8, color=K.INK2)
+    fig.text(0.05, 0.325, u"%s与%s占比均不计钻孔单元；占比 = %s ÷ 计算域内浆量（不计钻孔单元），不是注入量"
+             % (TERMS["design_fill"], TERMS["outside_V"], TERMS["outside_V"]), fontsize=8, color=K.INK2)
     names = [u"①\n理想整孔", u"②\n等长分段", u"③\n封堵 h = 2.5 m", u"③\n封堵 h = 10 m"]
     for k, (vals, lab, col) in enumerate(((tg, TERMS["design_fill"] + u" (%)", K.C1), (ru, TERMS["outside_V"] + u"占比 (%)", K.C2))):
         ax = fig.add_axes([0.07 + k * 0.48, 0.07, 0.42, 0.22])
