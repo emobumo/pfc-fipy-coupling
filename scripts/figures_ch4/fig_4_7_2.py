@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 图 4.7-2 跑浆的可达性检验（案例工程断面，匿名，相对高程以注浆水平为 0）。
-(a) I 段（充填体 10%）无交界面 / 有交界面（φ_c 0.35、宽 2 m）的最小累积启动压力场 T/p₀（0.5 m，只算可达域，
-    存窿矿石 0.35、充填体底面连通、仰角 35°、未封底），实线为可达域边界（T = p₀）；
-(b) 三段到跑浆中段的累积启动压力比与交界面孔隙率的关系曲线、比值 = 1 线与一维沿交界面估算线。
+(a) I 段（充填体 10%）无交界面 / 有交界面（φ_c 0.35、宽 2 m）的所需源压场 p_req/p₀（0.5 m，只算可达域，
+    存窿矿石 0.35、充填体底面连通、仰角 35°、未封底），实线为可达域边界（p_req = p₀）；
+(b) 三段到跑浆中段的所需源压 p_req/p₀ 与交界面孔隙率的关系曲线、比值 = 1 线与一维沿交界面估算线。
 数据：(a) cases/zhaojin_section.py + 可达域（与 outputs/zhaojin_screen 同一计算）；(b) outputs/zhaojin_screen/
 contact_threshold.txt（交界面宽 2 m 行；第二遍一致见 outputs/rerun_reach/）；一维估算为闭式
 42.7·(λ(φ_c) − ρg·sin70°)/p₀（与 c1c2 的一维列相同）。
@@ -65,14 +65,14 @@ def main():
         K.outline(ax, mx, my, out, CELL, color="#e34948", x0=0.0, y0=Z.Y_LEVEL, lw=1.2)
         ax.plot(mx[src], my[src] - Z.Y_LEVEL, ".", color="k", ms=2)
         ax.set_aspect("equal")
-        ax.set_title(u"(a%d) I 段（孔隙率 10%%），%s交界面\n到跑浆中段 T/$p_0$ %s" % (j + 1, u"有" if contacts else u"无",
+        ax.set_title(u"(a%d) I 段（孔隙率 10%%），%s交界面\n到跑浆中段 $p_\mathrm{req}/p_0$ %s" % (j + 1, u"有" if contacts else u"无",
                      (u"= %.2f" % ratio) if ratio < 50 else u"> 50（不可达）"), fontsize=8)
         ax.set_xlabel(TERMS["x"]); K.style(ax)
         if j == 0:
             ax.set_ylabel(u"相对高程 (m)（注浆水平为 0）")
     cax = fig.add_axes([0.585, 0.15, 0.01, 0.6])
-    cb = fig.colorbar(im, cax=cax); cb.set_label(TERMS["T_rel"] + u"（截至 2）", fontsize=7)
-    fig.text(0.05, 0.015, u"蓝线：%s边界（T = $p_0$）；橙线：交界面；绿线：存窿矿石；红框：跑浆中段；黑点：钻孔出浆段；深灰：围岩与未采矿体（不透浆）"
+    cb = fig.colorbar(im, cax=cax); cb.set_label(TERMS["p_req_rel"] + u"（截至 2）", fontsize=7)
+    fig.text(0.05, 0.015, u"蓝线：%s边界（$p_\mathrm{req}$ = $p_0$）；橙线：交界面；绿线：存窿矿石；红框：跑浆中段；黑点：钻孔出浆段；深灰：围岩与未采矿体（不透浆）"
              % TERMS["reach"], fontsize=7, color=K.INK2)
     ax = fig.add_axes([0.68, 0.14, 0.30, 0.74])
     phis, rows = threshold_table()
@@ -85,10 +85,10 @@ def main():
     ax.axhline(1.0, color="k", lw=0.8)
     ax.axvspan(0.20, 0.25, color="#e4e3dd", zorder=0)
     ax.text(0.205, 0.30, TERMS["phi_c_min"] + u"\n约 0.20~0.25", fontsize=7, color=K.INK2)
-    ax.set_xlabel(u"交界面孔隙率 " + K.PHIC); ax.set_ylabel(TERMS["p_ratio"] + u"（到跑浆中段 / $p_0$）")
+    ax.set_xlabel(u"交界面孔隙率 " + K.PHIC); ax.set_ylabel(TERMS["p_req"] + u"（到跑浆中段）/ $p_0$")
     ax.set_ylim(0.2, 1.8); ax.set_xlim(0.1, 0.47)
     ax.legend(loc="upper right", frameon=False, fontsize=7, numpoints=1)
-    ax.set_title(u"(b) " + TERMS["p_ratio"] + u"与交界面孔隙率的关系", fontsize=8)
+    ax.set_title(u"(b) 到跑浆中段" + TERMS["p_req"] + u"与交界面孔隙率的关系", fontsize=8)
     K.style(ax)
     K.save(fig, "fig_4_7_2")
 

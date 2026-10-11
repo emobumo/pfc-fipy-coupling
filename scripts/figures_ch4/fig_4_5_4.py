@@ -2,10 +2,10 @@
 """
 图 4.5-4 通道位置与孔隙率的交叉对比（2.5 m，给定注浆量 185.86 m³/m 停止）。
 (a) 三个位置（孔口、孔中、孔底外，φ 0.45）的充填域，叠设计域（虚线）与可达域（实线）；
-(b) 给定注浆量的注入时间、目标区充填率与通道入口累积启动压力，左列随位置（φ 0.45）、右列随孔隙率（孔底外），
+(b) 给定注浆量的注入时间、目标区充填率与通道入口所需源压，左列随位置（φ 0.45）、右列随孔隙率（孔底外），
     两列共用"孔底外 φ 0.45"一点。分栏而不用双纵轴。
 数据：outputs/rerun_rate/B/<label>/cells.csv 与 results.json（两遍一致）；设计域 outputs/rerun_rate/A/target_mask.npy；
-入口累积启动压力 outputs/channel_entry_cost/entry_cost_1.25.txt（1.25 m，第二遍一致）。
+通道入口所需源压 outputs/channel_entry_cost/entry_cost_1.25.txt（1.25 m，第二遍一致）。
 目标区充填率按"设计域内除孔单元"计（与框架表一致）。
 """
 from __future__ import print_function

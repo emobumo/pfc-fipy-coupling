@@ -46,11 +46,11 @@ TERMS = {
     "fill": u"充填域",
     "sat": u"饱和度 S",
     "cum_p": u"累积启动压力",
-    "T_field": u"最小累积启动压力场 T(x)",
-    "T_rel": u"最小累积启动压力 T/$p_0$",
+    "T_field": u"最小累积启动压力场 T(x)",          # only lambda-only quantities (none drawn yet)
+    "p_req": u"所需源压",                            # reachable_domain output: least source pressure to reach x
+    "p_req_rel": u"所需源压 $p_\mathrm{req}/p_0$",
     "opt_path": u"最优路径",
-    "entry_p": u"通道入口累积启动压力",
-    "p_ratio": u"累积启动压力比",
+    "entry_p": u"通道入口所需源压",
     "net_grad": u"净启动压力梯度",
     "stage_loss": u"分段覆盖损失",
     "front_trunc": u"锋面截断区",

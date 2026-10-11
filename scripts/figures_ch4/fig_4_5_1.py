@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-图 4.5-1 均质与梯度场的充填与最小累积启动压力场（1.25 m，现行停注判据）。
-上排：求解器饱和度（停注时）叠可达域轮廓；下排：最小累积启动压力场 T(x)/p₀ 等值线与通往上下极值点的最优路径。
-数据：outputs/rerun_rate/A/final_{uniform,gradient}_1.25.npz（两遍一致）；T(x) 由同一孔隙率场重算可达域
-（后处理，不跑求解器）。最优路径为在 T(x) 上沿 16 邻域逐步下降的近似路径。
+图 4.5-1 均质与梯度场的充填与所需源压场（1.25 m，现行停注判据）。
+上排：求解器饱和度（停注时）叠可达域轮廓；下排：所需源压 p_req/p₀ 等值线与通往上下极值点的最优路径。
+数据：outputs/rerun_rate/A/final_{uniform,gradient}_1.25.npz（两遍一致）；p_req(x) 由同一孔隙率场重算可达域
+（后处理，不跑求解器）。最优路径为在 p_req(x) 上沿 16 邻域逐步下降的近似路径。
 """
 from __future__ import print_function
 
@@ -30,7 +30,7 @@ def field(kind):
 
 
 def descend(mx, my, cost, start):
-    """Greedy descent on T(x) over the 16-neighbour stencil (an approximate optimal path)."""
+    """Greedy descent on p_req(x) over the 16-neighbour stencil (an approximate optimal path)."""
     pts = np.column_stack([mx, my])
     path, cur = [start], start
     for _ in range(400):
@@ -76,7 +76,7 @@ def main():
         ax.set_aspect("equal")
         ax.set_xlim(e[0], e[1]); ax.set_ylim(e[2], e[3])
         ax.legend(loc="lower right", frameon=False, fontsize=7)
-        ax.set_title(TERMS["T_field"] + u"（等值线为 T/$p_0$）", fontsize=9)
+        ax.set_title(TERMS["p_req_rel"] + u"（等值线）", fontsize=9)
     for ax in axes.ravel():
         K.style(ax)
         ax.set_xlabel(TERMS["x"]); ax.set_ylabel(TERMS["y"])
