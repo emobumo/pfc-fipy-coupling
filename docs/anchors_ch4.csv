@@ -26,6 +26,7 @@ R05,0.947,—,2.5 m 均质无重力可达比（= 2.5 m 量化误差约 0.05）,�
 R06,10,组,τ₀/A/ρ 敏感性中均质与梯度都未触边界的组数（18 组中）,可达域，1.25 m,不涉及（无求解器 / 闭式）,CLAUDE.md L105；docs/results_log.md L369,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
 R07,1.03~1.25 / 0.90~1.02,—,上述 10 组可达上/下比 梯度 / 均质,可达域，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L364-365,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
 R08,0.0,%,V1 均质点源可达域三个轴向与焦点椭圆 r = L_max/(1+Π_g sinθ) 的偏差,100×100 m，点源，1.25 / 0.625 m,不涉及（无求解器 / 闭式）,docs/results_log.md L402,outputs/conic_check/conic_check.txt,是,
+R08b,2.63；2.72 / 2.80 / 2.99；432/432；0.10；0.96~0.98,% / — / % / —,二维点源可达域 36 扇区对焦点椭圆：无重力最大低估；有重力最大低估 n 0.10 / 0.18 / 0.30；全部扇区在 2.75%/(1 + Π_g sinθ) 上界之内且无高估；最小余量；面积比,100×100 m，点源，1.25 / 0.625 m,不涉及（无求解器 / 闭式）,docs/results_log.md 表 4.4-1 补充数值一节,outputs/ladder_extra/ladder_extra.txt（scripts/ladder_extra_check.py）,是（2026-10-14 两遍逐字节一致）,两种网格的最大低估与最小余量相同（至 0.001%），单个扇区之间最多差 0.40%；有重力的最大低估超过固定 2.75%，须写成与方向有关的上界
 R09,2.63 / 2.72~2.99,%,V1 扇区最大低估 无重力 / 含重力,同 R08,不涉及（无求解器 / 闭式）,docs/results_log.md L403,outputs/conic_check/conic_check.txt,是,
 R10,2.75%/(1 + Π_g sinθ),—,V1 含重力度量误差界（n 0.30 下方 3.15%）,同 R08,不涉及（无求解器 / 闭式）,docs/results_log.md L405-406,outputs/conic_check/conic_check.txt,是,
 R11,0.936 / 0.877 / 0.773,—,点源上/下比 (1−Π_g)/(1+Π_g)，n 0.10/0.18/0.30,解析,不涉及（无求解器 / 闭式）,docs/results_log.md L407,outputs/conic_check/conic_check.txt（0.9356/0.8767/0.7727）,是,
@@ -109,6 +110,7 @@ L05,1.98 / 1.993 / 0.0022,— / — / %,台阶 4a 收敛阶 / Roache 表观阶 /
 L06,1.0,—,台阶 4b 含停滞锋面收敛阶,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 4b,tests/test_verification_ladder.py,是,
 L07,0.60~0.67,—,Picard 末轮/首轮残差均值（极限环）；12 与 40 轮结果逐项一致,v0.6 线源 2.5 m,旧规则运行（只关迭代，不关停注）,docs/results_log.md L735-736,outputs/picard_scan/,是（12 vs 40 两次）,
 L08,9.1e-4 / 1.2e-3,—,二维线源相对守恒漂移 梯度 / 均质,线源，2.5 m,旧 60 步规则运行,cases/README.md L156,—,未注明,现行速率判据重算未记录漂移；量级不依赖停注规则
+L09,1.9e-16；逐单元相同,— ；—,台阶 7 段间凝固守恒：体积等式 Σ(n_k − n_{k+1})V + floor 截断 = Σ n_k S_k V 三段最大相对残差；n_{k+1} = max(n_k(1−S_k), floor) 逐单元与公式完全相同（array_equal）,台阶 7 一维 7.5 m，30 单元，3 段,不涉及（无求解器 / 闭式）,docs/results_log.md 表 4.4-1 补充数值一节,outputs/ladder_extra/ladder_extra.txt（scripts/ladder_extra_check.py）,是（2026-10-14 两遍逐字节一致）,三段残差 1.85e-16 / 1.48e-16 / 0；λ 比 428 见 P10
 O01,0 ~ 5,单元,速率判据重算中的越界（overshoot）单元数（A/B/C 层，含 1.25 m）,A/B/C 层,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt（scripts/overshoot_fill_reach.py）,是（读两遍一致的结果）,生成脚本 2026-10-10 补齐，重算与原文件逐字节一致；旧'越界均为 0'是旧规则数；越界单元所需源压 1.0065~1.0463 p₀（outputs/rerun_rate/overshoot_cost.txt），均在可达边界一个单元之内
 O02,0.926 ~ 0.987,—,单段运行充填占可达域（over_reach_filled）,C 层单段，2.5 / 1.25 m,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt（scripts/overshoot_fill_reach.py）,是,生成脚本 2026-10-10 补齐，重算与原文件逐字节一致；诊断回放的 0.88~0.97 为单遍
 O03,86 ~ 96,min,慢端黏度时钟下 P2 第 1 段按速率判据停注的实际时间（初凝取 240 min）,P2，1.25 m,速率判据 ε=0.1（慢端时钟回放）,—,outputs/rerun_rate/slow_end_stage1.txt（scripts/slow_end_stage1.py）,是（输入为两遍一致的序列）,生成脚本 2026-10-10 补齐，重算与原文件逐字节一致；旧'48~139 min'为旧规则
