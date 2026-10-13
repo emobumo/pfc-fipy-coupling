@@ -148,6 +148,17 @@ def main():
     for r in res:
         lines.append("  %-34s cells changed from the original field anywhere: %d" % (
             r["label"], int(np.sum(r["n_final"] != r["phi0"]))))
+    # Share of the coverage loss (single - staged, filled share of reach^w) that eq. (4-27) calls shadow.
+    # Unfilled cells in reach^w are the runs' `shadowed` counts (equal to the shortfall on full-depth runs).
+    lines += ["", "Coverage loss vs eq. (4-27) shadow (cells; loss cells = unfilled in reach^w, staged minus single):"]
+    for r in res:
+        st, si = rows[r["label"]], rows[r["label"].rsplit("/", 1)[0] + "/single"]
+        loss_cells = st["shadowed"] - si["shadowed"]
+        r["loss_points"] = 100.0 * (si["over_reach_filled"] - st["over_reach_filled"])
+        r["loss_cells"] = loss_cells
+        lines.append("  %-34s loss %5.1f pts = %3d cells | (4-27) shadow %3d = %5.1f%% of the loss cells | single quota-stopped: %s" % (
+            r["label"], r["loss_points"], loss_cells, r["shadow_all"], 100.0 * r["shadow_all"] / loss_cells,
+            "yes" if si["stages"][0]["reason"] == "quota" else "no"))
     for r in res:
         r.pop("n_final"); r.pop("phi0")
     text = "\n".join(lines)
