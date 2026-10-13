@@ -19,20 +19,20 @@ SR07,0.88 ~ 0.97,—,ε = 0.1 停止时充填占可达（诊断回放）,停注�
 SR08,≤ 5% / ≤ 0.9,% / m,分辨充分算例两网格 V_in 差 / x_f 差,停注诊断,诊断回放,docs/results_log.md L555,outputs/stop_rule_diagnostic/evaluation.txt,否,
 SR09,≥ 7,—,分辨率门槛 L_max/Δx（2.5 m 上 φ ≤ 0.12 不作定量锚点）,全部,不涉及（无求解器 / 闭式）,CLAUDE.md L85；docs/results_log.md L557,—,—,只有一个来源类型（规则），无输出文件
 R01,2.7,%,16 邻域可达域度量最坏误差（只低估；R/1.0275）,可达域诊断,不涉及（无求解器 / 闭式）,CLAUDE.md L98-99；docs/results_log.md L110,tests/test_fill_diagnostics.py,是,
-R02,1.179 / 0.897,—,可达域上/下比 梯度 / 均质,线源，1.25 m，16 邻域,不涉及（无求解器 / 闭式）,CLAUDE.md L102；docs/results_log.md L355,outputs/gravity_control/gravity_control.txt,是,
-R03,1.175 / 0.888,—,可达域上/下比 梯度 / 均质,线源，2.5 m，16 邻域,不涉及（无求解器 / 闭式）,docs/results_log.md L123,outputs/rerun_2026-09-24_metric16/headline_1.log,是,2.5 m 值，只作相对比较
-R04,1.000 / 0.897 / 1.383 / 1.179,—,可达域分解：几何 / 只有重力 / 只有结构 / 两者,线源，1.25 m,不涉及（无求解器 / 闭式）,CLAUDE.md L104-105；docs/results_log.md L355,outputs/gravity_control/gravity_control.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
-R05,0.947,—,2.5 m 均质无重力可达比（= 2.5 m 量化误差约 0.05）,线源，2.5 m,不涉及（无求解器 / 闭式）,docs/results_log.md L357,outputs/gravity_control/gravity_control.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
+R02,1.179 / 0.897,—,可达域上/下比 梯度 / 均质,线源，1.25 m，16 邻域,不涉及（无求解器 / 闭式）,CLAUDE.md L102；docs/results_log.md L355,outputs/gravity_control/gravity_control.txt,是,可信至两位小数，读数误差约 ±0.03（RD01）；均质场可达域 0.897 例外：单元中心与亚网格两种读法一致（0.8965 / 0.8968），可写三位
+R03,1.175 / 0.888,—,可达域上/下比 梯度 / 均质,线源，2.5 m，16 邻域,不涉及（无求解器 / 闭式）,docs/results_log.md L123,outputs/rerun_2026-09-24_metric16/headline_1.log,是,2.5 m 值，只作相对比较；可信至两位小数，读数误差约 ±0.04（2.5 m，RD01）
+R04,1.000 / 0.897 / 1.383 / 1.179,—,可达域分解：几何 / 只有重力 / 只有结构 / 两者,线源，1.25 m,不涉及（无求解器 / 闭式）,CLAUDE.md L104-105；docs/results_log.md L355,outputs/gravity_control/gravity_control.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,可信至两位小数，读数误差约 ±0.03（RD01）；均质场可达域 0.897 例外：单元中心与亚网格两种读法一致（0.8965 / 0.8968），可写三位
+R05,0.947,—,2.5 m 均质无重力可达比（= 2.5 m 量化误差约 0.05）,线源，2.5 m,不涉及（无求解器 / 闭式）,docs/results_log.md L357,outputs/gravity_control/gravity_control.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,可信至两位小数，读数误差约 ±0.04（2.5 m，RD01）
 R06,10,组,τ₀/A/ρ 敏感性中均质与梯度都未触边界的组数（18 组中）,可达域，1.25 m,不涉及（无求解器 / 闭式）,CLAUDE.md L105；docs/results_log.md L369,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
-R07,1.03~1.25 / 0.90~1.02,—,上述 10 组可达上/下比 梯度 / 均质,可达域，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L364-365,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,
+R07,1.03~1.25 / 0.90~1.02,—,上述 10 组可达上/下比 梯度 / 均质,可达域，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L364-365,outputs/reach_sensitivity/reach_sensitivity_1.25.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,可信至两位小数，读数误差约 ±0.03（RD01）
 R08,0.0,%,V1 均质点源可达域三个轴向与焦点椭圆 r = L_max/(1+Π_g sinθ) 的偏差,100×100 m，点源，1.25 / 0.625 m,不涉及（无求解器 / 闭式）,docs/results_log.md L402,outputs/conic_check/conic_check.txt,是,
 R08b,2.63；2.72 / 2.80 / 2.99；432/432；0.10；0.96~0.98,% / — / % / —,二维点源可达域 36 扇区对焦点椭圆：无重力最大低估；有重力最大低估 n 0.10 / 0.18 / 0.30；全部扇区在 2.75%/(1 + Π_g sinθ) 上界之内且无高估；最小余量；面积比,100×100 m，点源，1.25 / 0.625 m,不涉及（无求解器 / 闭式）,docs/results_log.md 表 4.4-1 补充数值一节,outputs/ladder_extra/ladder_extra.txt（scripts/ladder_extra_check.py）,是（2026-10-14 两遍逐字节一致）,两种网格的最大低估与最小余量相同（至 0.001%），单个扇区之间最多差 0.40%；有重力的最大低估超过固定 2.75%，须写成与方向有关的上界
 R09,2.63 / 2.72~2.99,%,V1 扇区最大低估 无重力 / 含重力,同 R08,不涉及（无求解器 / 闭式）,docs/results_log.md L403,outputs/conic_check/conic_check.txt,是,
 R10,2.75%/(1 + Π_g sinθ),—,V1 含重力度量误差界（n 0.30 下方 3.15%）,同 R08,不涉及（无求解器 / 闭式）,docs/results_log.md L405-406,outputs/conic_check/conic_check.txt,是,
 R11,0.936 / 0.877 / 0.773,—,点源上/下比 (1−Π_g)/(1+Π_g)，n 0.10/0.18/0.30,解析,不涉及（无求解器 / 闭式）,docs/results_log.md L407,outputs/conic_check/conic_check.txt（0.9356/0.8767/0.7727）,是,
-R12,1.000/1.000；0.898/0.897；1.261/1.383；1.201/1.179,—,V2 直射线 / 二维：均质无重力、只有重力、只有结构、两者,组 A，v0.6，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L412-413,outputs/flip_criterion/flip_criterion.txt,是,
+R12,1.000/1.000；0.898/0.897；1.261/1.383；1.201/1.179,—,V2 直射线 / 二维：均质无重力、只有重力、只有结构、两者,组 A，v0.6，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L412-413,outputs/flip_criterion/flip_criterion.txt,是,可信至两位小数，读数误差约 ±0.03（RD01）（指二维值；直射线为解析值）；均质场可达域 0.897 例外：单元中心与亚网格两种读法一致（0.8965 / 0.8968），可写三位
 R13,1.000 / 0.898 / 1.378 / 1.215,—,V2 忽略左右边界的孔中点自由射线,组 A，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L415-416,outputs/flip_criterion/flip_criterion.txt,是,
-R14,−0.029~+0.020 / −0.035~+0.043,—,V2 组 B（10 组）射线 − 二维 因子差 均质 / 梯度,1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L419-420,outputs/flip_criterion/flip_criterion.txt,是,
+R14,−0.029~+0.020 / −0.035~+0.043,—,V2 组 B（10 组）射线 − 二维 因子差 均质 / 梯度,1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L419-420,outputs/flip_criterion/flip_criterion.txt,是,可信至两位小数，读数误差约 ±0.03（RD01）（二维一侧）
 R15,2.635,—,v0.6 梯度场对应翻转数 F = γp₀/(2ρg),V3，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L423,outputs/flip_criterion/flip_criterion.txt,是,
 R16,1.015~1.021,—,V3 临界 F*（直射线，四组）,V3,不涉及（无求解器 / 闭式）,docs/results_log.md L425,outputs/flip_criterion/flip_criterion.txt,是,
 R17,0.958 / 1.052；1.003 / 1.052,—,V3 临界 F* 二维：组 1 / 组 4（1.25 m）；组 2 / 组 3（0.625 m）,V3,不涉及（无求解器 / 闭式）,docs/results_log.md L425-427,outputs/flip_criterion/flip_criterion.txt；flip_criterion_refine_0.625.txt,是,组 2/3 在 1.25 m 为 0.750/0.687（L_max/Δx 8~9，台阶），不引
@@ -45,13 +45,15 @@ R23,0.79 → 0.78,p₀,孔仰角 35° → 20° 到 −63 m 所需源压,招金�
 R24,z1 0.227~0.474；z2 0.194~0.474；z3 0.225~0.474,—,C1 各段交界面阈值 φ_c 范围（10 组参数中 8 组可达）,招金，0.5 m，可达域,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,2026-10-09 已登记 results_log；τ₀ 60 与 A×0.3 两组在 0.60 仍不可达
 R25,−0.115~−0.005,—,C1 二维 − 一维沿交界面估算,同 R24,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,只有一个来源
 R26,13 / 144,个,C2 浆液优先进入存窿矿石的配置数,招金 144 配置，0.5 m,不涉及（无求解器 / 闭式）,—,outputs/zhaojin_c1c2/c1c2.txt,是（2026-10-09 第二遍，outputs/rerun_reach/compare.txt）,只有一个来源
+RD01,0.029 / 0.021；0.030 / 0.038,—,辅助锚点：R_ud 亚网格插值读数与单元中心读数之差的最大值，可达域一侧 / 求解器一侧；1.25 m；2.5 m,线源，均质与梯度，有 / 无重力,速率判据 ε=0.1（求解器一侧）,docs/results_log.md R_ud 读数误差一节,outputs/updown_readout/updown_readout.txt（scripts/updown_readout.py）,是（2026-10-14 两遍逐字节一致）,只用于支撑读数误差约 ±0.03（2.5 m 约 ±0.04），不替代正式锚点；2.5 m 无重力求解器运行不存在，求解器一侧 2.5 m 只含两例
+RD02,0.921 / 0.897；1.227 / 1.208；1.011 / 1.000；1.390 / 1.391,—,辅助锚点：表 4.4-2 四组工况的亚网格读数（求解器 / 可达域）：均质；梯度；无重力均质；无重力梯度,线源，1.25 m,速率判据 ε=0.1（求解器一侧）,docs/results_log.md R_ud 读数误差一节,outputs/updown_readout/updown_readout.txt（scripts/updown_readout.py）,是（2026-10-14 两遍逐字节一致）,不替代 S03、S04、S06、R02、R04；求解器一侧 S 锋面只有一两个单元宽，插值读数本身也是近似
 S01,185.861,m³/m,新配额 = 均质 0.18 线源速率判据停止体积,均质 0.18，2.5 m,速率判据 ε=0.1,CLAUDE.md L107（185.86）；docs/results_log.md L571,outputs/rerun_rate/A/results.json,是,
 S02,175,单元,设计目标域 = 上述停止足迹（含 10 个孔单元）,均质 0.18，2.5 m,速率判据 ε=0.1,CLAUDE.md L107；docs/results_log.md L571,outputs/rerun_rate/A/target_mask.npy,是,
-S03,1.220,—,上/下比 梯度线源,梯度，1.25 m,速率判据 ε=0.1,CLAUDE.md L102；docs/results_log.md L575,outputs/rerun_rate/A/results.json,是,
-S04,0.912,—,上/下比 均质线源,均质 0.18，1.25 m,速率判据 ε=0.1,CLAUDE.md L102；docs/results_log.md L574,outputs/rerun_rate/A/results.json,是,
-S05,1.193 / 0.843,—,上/下比 梯度 / 均质,2.5 m,速率判据 ε=0.1,CLAUDE.md L106；docs/results_log.md L572-573,outputs/rerun_rate/A/results.json,是,2.5 m，只作同族相对比较
-S06,1.369 / 0.994,—,无重力上/下比 梯度 / 均质,1.25 m,速率判据 ε=0.1,CLAUDE.md L103；docs/results_log.md L576-577,outputs/rerun_rate/A/results.json,是,
-S07,1.159 / 1.220 / 1.331,—,梯度强度 φ_top 0.25 / 0.30 / 0.35 上/下比,1.25 m,速率判据 ε=0.1,CLAUDE.md L103-104；docs/results_log.md L578-579,outputs/rerun_rate/A/results.json,是,
+S03,1.220,—,上/下比 梯度线源,梯度，1.25 m,速率判据 ε=0.1,CLAUDE.md L102；docs/results_log.md L575,outputs/rerun_rate/A/results.json,是,可信至两位小数，读数误差约 ±0.03（RD01）
+S04,0.912,—,上/下比 均质线源,均质 0.18，1.25 m,速率判据 ε=0.1,CLAUDE.md L102；docs/results_log.md L574,outputs/rerun_rate/A/results.json,是,可信至两位小数，读数误差约 ±0.03（RD01）
+S05,1.193 / 0.843,—,上/下比 梯度 / 均质,2.5 m,速率判据 ε=0.1,CLAUDE.md L106；docs/results_log.md L572-573,outputs/rerun_rate/A/results.json,是,2.5 m，只作同族相对比较；可信至两位小数，读数误差约 ±0.04（2.5 m，RD01）
+S06,1.369 / 0.994,—,无重力上/下比 梯度 / 均质,1.25 m,速率判据 ε=0.1,CLAUDE.md L103；docs/results_log.md L576-577,outputs/rerun_rate/A/results.json,是,可信至两位小数，读数误差约 ±0.03（RD01）
+S07,1.159 / 1.220 / 1.331,—,梯度强度 φ_top 0.25 / 0.30 / 0.35 上/下比,1.25 m,速率判据 ε=0.1,CLAUDE.md L103-104；docs/results_log.md L578-579,outputs/rerun_rate/A/results.json,是,可信至两位小数，读数误差约 ±0.03（RD01）
 S08,8886.4 / 194.997 / 691,s / m³/m / 单元,均质 0.18 线源停止 t / V_in / 充填单元,1.25 m,速率判据 ε=0.1,docs/results_log.md L574,outputs/rerun_rate/A/results.json,是,
 S09,11579.7 / 299.587 / 898,s / m³/m / 单元,梯度线源停止 t / V_in / 充填单元,1.25 m,速率判据 ε=0.1,docs/results_log.md L575,outputs/rerun_rate/A/results.json,是,
 B01,87.3 / 72.7 / 64.8,%,孔底通道 φ 0.30 / 0.45 / 0.60 目标区充填,通道，2.5 m,速率判据 ε=0.1 或配额（实际配额先到）,CLAUDE.md L108（87/73/65）；docs/results_log.md L597-599,outputs/rerun_rate/B/results.json；B/*/cells.csv,是,
@@ -81,11 +83,11 @@ C11,5.33,m³/m,P3 φ 0.12（Δ/L_max 0.88，临界）第 2 段注入量；20 个
 C12,20.6,m,32 m 孔孔底距最近边界（> L_max 13.6 m，不触边界）,P3，1.25 m,不涉及（无求解器 / 闭式）,docs/results_log.md L667,outputs/rerun_rate/C/results.json（toe_to_wall）,是,
 C13,180 / 281.3,单元 / m²,图 4.6-1(c) 例：P2 n 0.14 7→17 段间阴影区（式（4-27）；与设计域取交前后相同）,P2，1.25 m，后处理,速率判据 ε=0.1,docs/results_log.md 段间阴影区按式（4-27）一节,outputs/shadow_eq427/shadow_eq427.txt（scripts/shadow_eq427.py）,是（2026-10-13 两遍 .txt 与 .json 逐字节一致）,Ω_reach^(1) 原始场静态计算；Ω_reach^(2) 以终态场近似（与 7→10 对照，近似误差 0 个单元）；设计域为 2.5 m 均质 0.18 停注足迹拆分（700 单元）
 C14,95.7 / 94.4 / 94.2 / 96.7 / 98.0 / 95.9 / 94.9,%,式（4-27）阴影区占分段覆盖损失（单元计）：P2 n 0.14 7→17 / n 0.18 7→17 / n 0.18 5→17 / P3 n 0.16 7→17 / n 0.22 7→17 / 孔深 10 m 7→10 / 结构场 base 8.5→17,P2+P3 1.25 m；结构场 2.5 m，后处理,速率判据 ε=0.1,docs/results_log.md 段间阴影区按式（4-27）一节,outputs/shadow_eq427/shadow_eq427.txt（scripts/shadow_eq427.py）,是（2026-10-13 两遍 .txt 与 .json 逐字节一致）,余下为第 1 段锋面截断区（过程层面）；结构场 random 单段按给定注浆量停止、不可比，不列入；现行 shadowed 列不得引用
-V01,1.17~1.22 / 0.91~0.97,—,黏度时变两端及各时刻上/下比 梯度 / 均质,线源，1.25 m,速率判据 ε=0.1（Q_ref 取初始 μ_p）,CLAUDE.md L103-104；docs/results_log.md L682,outputs/rerun_rate/D/aging_1.25/gradient_marks.txt,是,
-V02,1.186 / 0.922,—,慢端（τ = T = 4444 s）上/下比 梯度 / 均质,线源，1.25 m,速率判据 ε=0.1,docs/results_log.md L679,outputs/rerun_rate/D/aging_1.25/gradient_marks.txt,是,
+V01,1.17~1.22 / 0.91~0.97,—,黏度时变两端及各时刻上/下比 梯度 / 均质,线源，1.25 m,速率判据 ε=0.1（Q_ref 取初始 μ_p）,CLAUDE.md L103-104；docs/results_log.md L682,outputs/rerun_rate/D/aging_1.25/gradient_marks.txt,是,可信至两位小数，读数误差约 ±0.03（RD01）
+V02,1.186 / 0.922,—,慢端（τ = T = 4444 s）上/下比 梯度 / 均质,线源，1.25 m,速率判据 ε=0.1,docs/results_log.md L679,outputs/rerun_rate/D/aging_1.25/gradient_marks.txt,是,可信至两位小数，读数误差约 ±0.03（RD01）
 V03,81 / 88,%,慢端注入量占快端 梯度 / 均质,线源，1.25 m,速率判据 ε=0.1,docs/results_log.md L683,outputs/rerun_rate/D/aging_1.25/gradient_marks.txt,是,
 V04,74,min,黏度 e 折时间 T（Lv et al. 2021，W/C 0.5）,文献,不涉及（无求解器 / 闭式）,docs/results_log.md L305,scripts/viscosity_aging_bracket.py,—,文献值
-E01,1.258 / 0.925,—,ε = 0.05 上/下比 梯度 / 均质,线源，1.25 m,速率判据 ε=0.05,CLAUDE.md L105；docs/results_log.md L690,outputs/rerun_rate/E/results.json,否,敏感性，单遍，不作锚点
+E01,1.258 / 0.925,—,ε = 0.05 上/下比 梯度 / 均质,线源，1.25 m,速率判据 ε=0.05,CLAUDE.md L105；docs/results_log.md L690,outputs/rerun_rate/E/results.json,否,敏感性，单遍，不作锚点；可信至两位小数，读数误差约 ±0.03（RD01）
 E02,9~14,%,ε 减半注入量增加,线源，1.25 m,ε=0.05 vs 0.1,docs/results_log.md L695,outputs/rerun_rate/E/results.json,否,敏感性
 E03,0.90,—,ε = 0.05 时 P2 φ 0.18 7→17 第 1 段 x_f/L_max（第 2 段仍为 0）,P2，1.25 m,速率判据 ε=0.05,CLAUDE.md L113；docs/results_log.md L692,outputs/rerun_rate/E/results.json,否,敏感性
 K01,33.6（75%）/ 23.9（49%）/ 23.4（49%）,m³/m（占可达孔隙）,块石 A / B / C 首次封闭时注入量,块石，0.5 m,按注入量定义，与停注规则无关,docs/results_log.md L337-339,outputs/rerun_rate/D/boulder/results.jsonl（窗口 33.57.. / 23.88.. / 23.40..）,是,原值来自旧规则运行；速率判据重算窗口起点相同
@@ -110,7 +112,7 @@ L05,1.98 / 1.993 / 0.0022,— / — / %,台阶 4a 收敛阶 / Roache 表观阶 /
 L06,1.0,—,台阶 4b 含停滞锋面收敛阶,一维,不涉及（无求解器 / 闭式）,CLAUDE.md 台阶 4b,tests/test_verification_ladder.py,是,
 L07,0.60~0.67,—,Picard 末轮/首轮残差均值（极限环）；12 与 40 轮结果逐项一致,v0.6 线源 2.5 m,旧规则运行（只关迭代，不关停注）,docs/results_log.md L735-736,outputs/picard_scan/,是（12 vs 40 两次）,
 L08,9.1e-4 / 1.2e-3,—,二维线源相对守恒漂移 梯度 / 均质,线源，2.5 m,旧 60 步规则运行,cases/README.md L156,—,未注明,现行速率判据重算未记录漂移；量级不依赖停注规则
-L09,1.9e-16；逐单元相同,— ；—,台阶 7 段间凝固守恒：体积等式 Σ(n_k − n_{k+1})V + floor 截断 = Σ n_k S_k V 三段最大相对残差；n_{k+1} = max(n_k(1−S_k), floor) 逐单元与公式完全相同（array_equal）,台阶 7 一维 7.5 m，30 单元，3 段,不涉及（无求解器 / 闭式）,docs/results_log.md 表 4.4-1 补充数值一节,outputs/ladder_extra/ladder_extra.txt（scripts/ladder_extra_check.py）,是（2026-10-14 两遍逐字节一致）,三段残差 1.85e-16 / 1.48e-16 / 0；λ 比 428 见 P10
+L09,1.9e-16；逐单元相同,— ；—,"台阶 7 段间凝固守恒：体积等式 Σ(n_k − n_{k+1})V + floor 截断 = Σ n_k S_k V 三段最大相对残差；n_{k+1} = max(n_k(1−S_k), floor) 逐单元与公式完全相同（array_equal）",台阶 7 一维 7.5 m，30 单元，3 段,不涉及（无求解器 / 闭式）,docs/results_log.md 表 4.4-1 补充数值一节,outputs/ladder_extra/ladder_extra.txt（scripts/ladder_extra_check.py）,是（2026-10-14 两遍逐字节一致）,三段残差 1.85e-16 / 1.48e-16 / 0；λ 比 428 见 P10
 O01,0 ~ 5,单元,速率判据重算中的越界（overshoot）单元数（A/B/C 层，含 1.25 m）,A/B/C 层,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt（scripts/overshoot_fill_reach.py）,是（读两遍一致的结果）,生成脚本 2026-10-10 补齐，重算与原文件逐字节一致；旧'越界均为 0'是旧规则数；越界单元所需源压 1.0065~1.0463 p₀（outputs/rerun_rate/overshoot_cost.txt），均在可达边界一个单元之内
 O02,0.926 ~ 0.987,—,单段运行充填占可达域（over_reach_filled）,C 层单段，2.5 / 1.25 m,速率判据 ε=0.1 或配额（实际配额先到）,—,outputs/rerun_rate/overshoot_fill_reach.txt（scripts/overshoot_fill_reach.py）,是,生成脚本 2026-10-10 补齐，重算与原文件逐字节一致；诊断回放的 0.88~0.97 为单遍
 O03,86 ~ 96,min,慢端黏度时钟下 P2 第 1 段按速率判据停注的实际时间（初凝取 240 min）,P2，1.25 m,速率判据 ε=0.1（慢端时钟回放）,—,outputs/rerun_rate/slow_end_stage1.txt（scripts/slow_end_stage1.py）,是（输入为两遍一致的序列）,生成脚本 2026-10-10 补齐，重算与原文件逐字节一致；旧'48~139 min'为旧规则
