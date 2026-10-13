@@ -414,6 +414,12 @@ all round, so no further pass from it can reach them (the `shadow` column,
 reachable in the virgin field and unreachable from the last pass in the cemented
 field, equals the shortfall for every full-depth run).
 
+> **Note (2026-10-13): the `shadow` / `shadowed` column is NOT eq. (4-27) of the thesis and must not be cited.**
+> It is reach^w & unfilled & ~(reach of one more full-hole pass in the post-sequence ground); it is not
+> intersected with the design domain and does not subtract the union of the per-stage reaches. The
+> eq. (4-27) shadow for the two-stage plans with a failed second stage is `scripts/shadow_eq427.py`
+> (`outputs/shadow_eq427/`); see `docs/results_log.md`. The code is left as is.
+
 † *Correction 2026-09-27:* this "collar band" is `make_field("collar")`, x = −13.75 — the collar column of
 the OLD 30 × 30 m domain. On the v0.6 domain it lies about 1 m past the toe (no hole cell inside), so these
 rows and the next paragraph describe a **near-toe channel**. The real collar channel is `collar_v06`
