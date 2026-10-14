@@ -1,0 +1,40 @@
+Non-multiplicativity of R_ud: P = R(uni, g) x R(grad, no g) / R(uni, no g) vs R(grad, g); D = P - R(grad, g)
+read-outs: cell centres (official) / bilinear sub-grid dx/10; line source 17 m, 35 deg
+
+hole (source) cells: 1.25 m 20
+hole (source) cells: 0.625 m 37
+hole (source) cells: 2.5 m 10
+
+reach 1.25 m
+  uniform, gravity       cell up  17.765 down  19.816 R 0.8965 | sub up  17.898 down  19.959 R 0.8968 | sub-cell +0.0002
+  gradient, no gravity   cell up  26.981 down  19.511 R 1.3829 | sub up  27.319 down  19.644 R 1.3907 | sub-cell +0.0078
+  uniform, no gravity    cell up  18.789 down  18.792 R 0.9999 | sub up  18.840 down  18.843 R 0.9999 | sub-cell +0.0000
+  gradient, gravity      cell up  24.216 down  20.535 R 1.1793 | sub up  24.810 down  20.535 R 1.2082 | sub-cell +0.0289
+  cell centres product 1.2399  combined 1.1793  D = +0.0607 | error (e = 0.03): worst 0.1356, rss 0.0688 | error (observed |sub-cell|): worst 0.0363, rss 0.0298
+  sub-grid     product 1.2473  combined 1.2082  D = +0.0391 | error (e = 0.03): worst 0.1361, rss 0.0690 | error (observed |sub-cell|): worst 0.0363, rss 0.0298
+
+reach 0.625 m (error bound taken as the observed |sub-cell|; RD01 has no 0.625 m value)
+  uniform, gravity       cell up  17.330 down  19.433 R 0.8918 | sub up  17.494 down  19.592 R 0.8929 | sub-cell +0.0011
+  gradient, no gravity   cell up  27.211 down  19.229 R 1.4151 | sub up  27.216 down  19.316 R 1.4090 | sub-cell -0.0061
+  uniform, no gravity    cell up  18.354 down  18.409 R 0.9970 | sub up  18.467 down  18.470 R 0.9998 | sub-cell +0.0028
+  gradient, gravity      cell up  24.651 down  20.100 R 1.2264 | sub up  24.677 down  20.227 R 1.2200 | sub-cell -0.0065
+  cell centres product 1.2657  combined 1.2264  D = +0.0393 | error (e = 0.03): worst 0.1375, rss 0.0699 | error (observed |sub-cell|): worst 0.0171, rss 0.0093
+  sub-grid     product 1.2584  combined 1.2200  D = +0.0384 | error (e = 0.03): worst 0.1368, rss 0.0695 | error (observed |sub-cell|): worst 0.0171, rss 0.0093
+
+solver 1.25 m (rate rule, outputs/rerun_rate/A)
+  uniform, gravity       cell up  18.072 down  19.816 R 0.9120 | sub up  18.533 down  20.124 R 0.9210 | sub-cell +0.0089
+  gradient, no gravity   cell up  26.981 down  19.715 R 1.3686 | sub up  27.697 down  19.930 R 1.3897 | sub-cell +0.0212
+  uniform, no gravity    cell up  18.789 down  18.895 R 0.9944 | sub up  19.404 down  19.201 R 1.0105 | sub-cell +0.0161
+  gradient, gravity      cell up  24.933 down  20.432 R 1.2203 | sub up  25.445 down  20.739 R 1.2269 | sub-cell +0.0066
+  cell centres product 1.2552  combined 1.2203  D = +0.0349 | error (e = 0.03): worst 0.1367, rss 0.0692 | error (observed |sub-cell|): worst 0.0587, rss 0.0314
+  sub-grid     product 1.2665  combined 1.2269  D = +0.0396 | error (e = 0.03): worst 0.1362, rss 0.0690 | error (observed |sub-cell|): worst 0.0584, rss 0.0312
+
+straight rays (scripts/flip_criterion.py ray_ratio, analytic: no read-out error)
+  uniform, gravity       max 0.8979 (clipped False)  mid_wall 0.6274  mid_free 0.8979
+  gradient, no gravity   max 1.2611 (clipped True)  mid_wall 0.6862  mid_free 1.3784
+  uniform, no gravity    max 1.0000 (clipped False)  mid_wall 0.6631  mid_free 1.0000
+  gradient, gravity      max 1.2006 (clipped True)  mid_wall 0.6558  mid_free 1.2152
+  max       product 1.1323  combined 1.2006  D = -0.0682
+  mid_free  product 1.2377  combined 1.2152  D = +0.0224
+
+md5 of all reach p_req fields: 3c2c10056c17587014cd981cac3cd0b6
