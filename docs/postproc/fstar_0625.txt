@@ -1,0 +1,44 @@
+case box 0.625 m  1 v0.6      base 0.9973 / 0.9973 | F*_2D cell 0.983  sub 0.965  (diff -0.018) | amp (2D-1)/L_max at F1=2: cell 0.0065  sub 0.0065 /m (L_max 20.53 m)
+    F -1.000  factor cell 0.7511  sub 0.7455
+    F  0.000  factor cell 0.8835  sub 0.8824
+    F  0.500  factor cell 0.9451  sub 0.9418
+    F  0.750  factor cell 0.9664  sub 0.9726
+    F  1.000  factor cell 1.0025  sub 1.0044
+    F  1.250  factor cell 1.0369  sub 1.0363
+    F  1.500  factor cell 1.0694  sub 1.0693
+    F  2.000  factor cell 1.1329  sub 1.1343
+    F  2.635  factor cell 1.2297  sub 1.2235
+    F  3.000  factor cell 1.2830  sub 1.2792
+case box 0.625 m  2 tau0 60   base 1.0046 / 1.0046 | F*_2D cell 1.003  sub 1.100  (diff +0.097) | amp (2D-1)/L_max at F1=2: cell 0.0061  sub 0.0062 /m (L_max 10.26 m)
+    F -1.000  factor cell 0.8566  sub 0.8643
+    F  0.000  factor cell 0.9384  sub 0.9417
+    F  0.500  factor cell 0.9620  sub 0.9608
+    F  0.750  factor cell 0.9714  sub 0.9762
+    F  1.000  factor cell 0.9998  sub 0.9932
+    F  1.250  factor cell 1.0142  sub 1.0103
+    F  1.500  factor cell 1.0334  sub 1.0279
+    F  2.000  factor cell 1.0622  sub 1.0632
+    F  2.635  factor cell 1.1006  sub 1.1094
+    F  3.000  factor cell 1.1293  sub 1.1373
+case box 0.625 m  3 A x0.3    base 1.0042 / 1.0042 | F*_2D cell 1.052  sub 1.078  (diff +0.026) | amp (2D-1)/L_max at F1=2: cell 0.0063  sub 0.0062 /m (L_max 11.24 m)
+    F -1.000  factor cell 0.8388  sub 0.8521
+    F  0.000  factor cell 0.9308  sub 0.9369
+    F  0.500  factor cell 0.9567  sub 0.9585
+    F  0.750  factor cell 0.9824  sub 0.9756
+    F  1.000  factor cell 0.9954  sub 0.9942
+    F  1.250  factor cell 1.0174  sub 1.0129
+    F  1.500  factor cell 1.0305  sub 1.0317
+    F  2.000  factor cell 1.0705  sub 1.0699
+    F  2.635  factor cell 1.1146  sub 1.1208
+    F  3.000  factor cell 1.1507  sub 1.1521
+case box 0.625 m  4 rho 1450  base 0.9973 / 0.9973 | F*_2D cell 0.970  sub 0.968  (diff -0.003) | amp (2D-1)/L_max at F1=2: cell 0.0079  sub 0.0080 /m (L_max 20.53 m)
+    F -1.262  factor cell 0.7624  sub 0.7651
+    F  0.000  factor cell 0.9031  sub 0.9050
+    F  0.631  factor cell 0.9661  sub 0.9656
+    F  0.947  factor cell 0.9976  sub 0.9978
+    F  1.262  factor cell 1.0295  sub 1.0300
+    F  1.578  factor cell 1.0646  sub 1.0630
+    F  1.893  factor cell 1.0976  sub 1.0972
+    F  2.524  factor cell 1.1621  sub 1.1650
+    F  3.326  factor cell 1.2572  sub 1.2593
+    F  3.786  factor cell 1.3188  sub 1.3177
