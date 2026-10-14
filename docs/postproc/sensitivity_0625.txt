@@ -1,0 +1,27 @@
+sensitivity rows: L_max / dx on 1.25 m (threshold 7); rows below it recomputed on 0.625 m (reach, 16-neighbour)
+
+ tau0  A x   rho      s |  Pi_g.18 Pi_g mid | Lmax.18/dx Lmax mid/dx | below
+   60  0.3  1450  0.217 |   0.0143   0.0160 |      4.01      4.50 | yes
+   60  0.3  1830  0.274 |   0.0180   0.0202 |      4.01      4.50 | yes
+   60  1.0  1450  0.396 |   0.0260   0.0292 |      7.32      8.21 | 
+   30  0.3  1450  0.434 |   0.0285   0.0320 |      8.02      8.99 | 
+   60  1.0  1830  0.500 |   0.0328   0.0368 |      7.32      8.21 | 
+   30  0.3  1830  0.548 |   0.0360   0.0404 |      8.02      8.99 | 
+   60  3.0  1450  0.686 |   0.0451   0.0506 |     12.67     14.22 | 
+   30  1.0  1450  0.792 |   0.0520   0.0584 |     14.63     16.42 | 
+   60  3.0  1830  0.866 |   0.0569   0.0638 |     12.67     14.22 | 
+   30  1.0  1830  1.000 |   0.0657   0.0737 |     14.63     16.42 | 
+
+tau0 60  A x0.3  rho 1450  (s 0.217)
+  1.250 m | baseline up   5.375 down   5.274 R 1.0191 | uniform up   5.375 down   5.274 R 1.0191 | gradient up   6.603 down   6.197 R 1.0654
+          factor uniform 1.0000  gradient 1.0455 | uniform down-up -0.100 m (no gravity -0.100 m), gravity part 0.000 m vs one cell 1.250 m
+  0.625 m | baseline up   5.298 down   5.250 R 1.0091 | uniform up   5.298 down   5.250 R 1.0091 | gradient up   6.373 down   5.967 R 1.0679
+          factor uniform 1.0000  gradient 1.0583 | uniform down-up -0.048 m (no gravity -0.048 m), gravity part 0.000 m vs one cell 0.625 m
+
+tau0 60  A x0.3  rho 1830  (s 0.274)
+  1.250 m | baseline up   5.375 down   5.274 R 1.0191 | uniform up   5.375 down   5.274 R 1.0191 | gradient up   6.399 down   6.197 R 1.0325
+          factor uniform 1.0000  gradient 1.0132 | uniform down-up -0.100 m (no gravity -0.100 m), gravity part 0.000 m vs one cell 1.250 m
+  0.625 m | baseline up   5.298 down   5.250 R 1.0091 | uniform up   5.298 down   5.404 R 0.9805 | gradient up   6.373 down   6.121 R 1.0411
+          factor uniform 0.9716  gradient 1.0317 | uniform down-up 0.106 m (no gravity -0.048 m), gravity part 0.153 m vs one cell 0.625 m
+
+md5 of the p_req fields: 5b1b9b557fd3798268e45bc7df8fc63b
