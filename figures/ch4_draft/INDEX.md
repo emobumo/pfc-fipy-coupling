@@ -1,7 +1,7 @@
 # 第 4 章草图索引
 
 2026-10-09，第三轮。依据《第 4 章论证框架 v1.2》"三、图表总清单"，数字口径同锚点核对（`docs/anchors_ch4.csv`）。
-- 术语：`docs/术语对照表_2026-10-11.md`，集中在 `scripts/figures_ch4/common.py` 的 TERMS 中；孔隙率符号为 n。
+- 术语：`docs/术语对照表_2026-10-12.md`，集中在 `scripts/figures_ch4/common.py` 的 TERMS 中；孔隙率符号为 n。
 - 视觉语法：设计域虚线，可达域实线，充填域为统一饱和度色斑，固体与胶结体深灰，钻孔为黑粗线、孔口为方块，高程一律相对。
 - 字体：Noto Sans SC；x_f、L_max、p₀、Π_g、n_c 等下标符号用 mathtext。
 - 设计域按不计钻孔单元的 165 个单元计。
