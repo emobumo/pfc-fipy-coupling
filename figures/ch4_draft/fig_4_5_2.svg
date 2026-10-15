@@ -500,7 +500,7 @@ L56.0613 75.7131" style="fill:none;stroke:#52514e;stroke-dasharray:6.000000,6.00
     </g>
     <g id="line2d_43"/>
     <g id="text_25">
-     <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 61.661250, 78.163125)" x="61.66125" y="78.163125">直射线估计（一阶近似）</text>
+     <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 61.661250, 78.163125)" x="61.66125" y="78.163125">直射线估计（孔轴 51 点取最大，射线止于计算域边界）</text>
     </g>
     <g id="line2d_44"/>
     <g id="line2d_45">
@@ -523,7 +523,7 @@ z
      </g>
     </g>
     <g id="text_26">
-     <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 61.661250, 88.838125)" x="61.66125" y="88.838125">空心：可达域触及计算域边界</text>
+     <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 61.661250, 88.838125)" x="61.66125" y="88.838125">空心：可达域或定界射线触及计算域边界</text>
     </g>
    </g>
   </g>
