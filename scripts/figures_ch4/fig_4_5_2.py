@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-图 4.5-2 翻转判据验证图：横轴翻转判据 F（各组按自身 ρ 计），纵轴相对几何基线的上下扩散距离比因子。
-直射线估计（虚线）、二维可达域（标记）、四组参数；求解器梯度强度扫描（φ_top 0.25/0.30/0.35）；现梯度场位置。
+图 4.5-2 翻转判据验证图：横轴翻转判据 F（各组按自身 ρ 计），纵轴相对因子（R_ud 与同一网格、同一参数组的
+无重力均质场 R_ud 之比）。直射线估计（虚线）、二维可达域（标记，单元中心读数）、四组参数；求解器梯度强度扫描
+（n_top 0.25/0.30/0.35）；梯度场算例位置（F ≈ 2.6）。
 数据：outputs/flip_criterion/flip_criterion.txt（组 1、4：1.25 m）与 flip_criterion_refine_0.625.txt（组 2、3：
-0.625 m，L_max ≈ 10 m 须用细网格）；求解器扫描取 outputs/rerun_rate/A/results.json（1.25 m），因子 = 比值 / 无重力
-均质 0.994，F 按各扫描场孔轴中点的 γ 计算。
+0.625 m，L_max ≈ 10 m 须用细网格，1.25 m 上的台阶读数不画；R17、R17c）；求解器扫描取 outputs/rerun_rate/A/results.json
+（1.25 m），相对因子 = 比值 / 无重力均质 0.994（正文两位小数写 0.99，S06），F 按各扫描场孔轴中点的 γ 计算。
 """
 from __future__ import print_function
 
@@ -41,7 +42,7 @@ def sweep_F(top, bottom=0.12, y_mid=25.875, H=60.0):
 def main():
     base = table(os.path.join(FC, "flip_criterion.txt"))
     fine = table(os.path.join(FC, "flip_criterion_refine_0.625.txt"))
-    names = {1: u"组 1 基准参数（1.25 m）", 2: u"组 2 $\\tau_0$ 加倍（0.625 m）", 3: u"组 3 A × 0.3（0.625 m）", 4: u"组 4 ρ = 1450 kg/m³（1.25 m）"}
+    names = {1: u"组 1 基准参数（1.25 m）", 2: u"组 2 $\\tau_0$ = 60 Pa（0.625 m）", 3: u"组 3 A × 0.3（0.625 m）", 4: u"组 4 ρ = 1450 kg/m³（1.25 m）"}
     cols = {1: K.C1, 2: K.C2, 3: K.C3, 4: "#4a3aa7"}
     mk = {1: "o", 2: "s", 3: "^", 4: "D"}
     fig, ax = plt.subplots(figsize=(6.4, 4.4))
@@ -60,12 +61,12 @@ def main():
     ax.axhline(1.0, color=K.INK2, lw=0.8)
     ax.axvline(1.0, color=K.INK2, lw=0.8, ls=":")
     ax.axvline(2.635, color=K.INK2, lw=0.8, ls="--")
-    ax.text(2.66, 0.76, u"梯度场算例\nF = 2.635", fontsize=7, color=K.INK2)
+    ax.text(2.66, 0.76, u"梯度场算例\nF ≈ 2.6", fontsize=7, color=K.INK2)
     ax.text(1.03, 0.74, u"F = 1", fontsize=7, color=K.INK2)
     ax.plot([], [], "--", color=K.INK2, lw=1.0, label=u"直射线估计（一阶近似）")
-    ax.plot([], [], "o", mfc="white", mec=K.INK2, mew=1.1, ms=5, label=u"空心：可达域触及计算边界")
+    ax.plot([], [], "o", mfc="white", mec=K.INK2, mew=1.1, ms=5, label=u"空心：可达域触及计算域边界")
     ax.set_xlabel(u"翻转判据 F = γ$p_0$/(2ρg)")
-    ax.set_ylabel(TERMS["updown"] + u"（相对几何基线的因子）")
+    ax.set_ylabel(TERMS["rel_factor"])
     ax.legend(loc="upper left", frameon=False, fontsize=7, numpoints=1)
     K.style(ax)
     K.save(fig, "fig_4_5_2")

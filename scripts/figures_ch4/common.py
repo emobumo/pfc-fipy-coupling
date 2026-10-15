@@ -61,6 +61,8 @@ TERMS = {
     "given_t": u"给定注浆量的注入时间",
     "phi_c_min": u"交界面临界孔隙率下限",
     "updown": u"上下扩散距离比",
+    "rel_factor": u"相对因子",
+    "concave": u"凹形空间",
     "unreach": u"不可达区",
     "bypass": u"绕流空区",
     "dense": u"致密包裹体",
@@ -71,8 +73,8 @@ TERMS = {
     "hole": u"钻孔",
     "design_fill": u"设计域充填率",
     "outside_V": u"设计域外浆量",
-    "unreach_lvl": u"不可达区（可达层面缺陷）",
-    "front_lvl": u"锋面截断区（过程层面缺陷）",
+    "unreach_lvl": u"可达层面缺陷（不可达区）",
+    "front_lvl": u"过程层面缺陷（锋面截断区）",
 }
 
 # mathtext for symbols with subscripts (round-2 comments: x_f, L_max, lambda_c ...)

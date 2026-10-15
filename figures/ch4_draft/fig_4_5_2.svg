@@ -430,12 +430,12 @@ L4 0" id="m728421d6d4" style="stroke:#000000;stroke-width:0.5;"/>
      </g>
     </g>
     <g id="text_17">
-     <text style="font-family:Noto Sans SC;font-size:9.0px;font-style:normal;text-anchor:middle;" transform="rotate(-90.000000, 14.363438, 138.020000)" x="14.3634375" y="138.02">上下扩散距离比（相对几何基线的因子）</text>
+     <text style="font-family:Noto Sans SC;font-size:9.0px;font-style:normal;text-anchor:middle;" transform="rotate(-90.000000, 14.363438, 138.020000)" x="14.3634375" y="138.02">相对因子</text>
     </g>
    </g>
    <g id="text_18">
     <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;" transform="translate(313.12445 234.727258929)">梯度场算例</text>
-    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;" transform="translate(313.12445 243.016571429)">F = 2.635</text>
+    <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;" transform="translate(313.12445 243.016571429)">F ≈ 2.6</text>
    </g>
    <g id="text_19">
     <text style="fill:#52514e;font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 216.106850, 250.257714)" x="216.10685" y="250.257714286">F = 1</text>
@@ -457,12 +457,12 @@ L4 0" id="m728421d6d4" style="stroke:#000000;stroke-width:0.5;"/>
      </g>
     </g>
     <g id="text_21">
-     <!-- 组 2 $\tau_0$ 加倍（0.625 m） -->
+     <!-- 组 2 $\tau_0$ = 60 Pa（0.625 m） -->
      <g transform="translate(61.66125 34.295)">
       <text>
        <tspan style="font-family:cmr10;font-size:4.9px;font-style:regular;" x="17.0800628662" y="1.77003125">0</tspan>
        <tspan style="font-family:cmmi10;font-size:7.0px;font-style:regular;" x="14.020980835" y="-0.015625">¿</tspan>
-       <tspan style="font-family:Noto Sans SC;font-size:7.0px;font-style:regular;" x="0.0 7.0 8.56799316406 12.4529876709 20.5800628662 22.1480560303 29.1480560303 36.1480560303 43.1480560303 47.0330505371 48.9790496826 52.8640441895 56.7490386963 60.6340332031 62.2020263672 68.6840209961" y="-0.015625">组 2  加倍（0.625 m）</tspan>
+       <tspan style="font-family:Noto Sans SC;font-size:7.0px;font-style:regular;" x="0.0 7.0 8.56799316406 12.4529876709 20.5800628662 22.1480560303 26.0330505371 27.6010437012 31.486038208 35.3710327148 36.9390258789 41.3700256348 45.3110198975 52.3110198975 56.1960144043 58.1420135498 62.0270080566 65.9120025635 69.7969970703 71.3649902344 77.8469848633" y="-0.015625">组 2  = 60 Pa（0.625 m）</tspan>
       </text>
      </g>
     </g>
@@ -523,7 +523,7 @@ z
      </g>
     </g>
     <g id="text_26">
-     <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 61.661250, 88.838125)" x="61.66125" y="88.838125">空心：可达域触及计算边界</text>
+     <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 61.661250, 88.838125)" x="61.66125" y="88.838125">空心：可达域触及计算域边界</text>
     </g>
    </g>
   </g>
