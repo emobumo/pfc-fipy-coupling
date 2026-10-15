@@ -92,6 +92,18 @@ C1, C2, C3 = "#2a78d6", "#eb6834", "#1baf7a"     # validated categorical slots 1
 
 MOUTH = (-30.0, 21.0)                              # inclined-hole cases: relative coords from the mouth
 
+# 4.6 staged cases, codes of table 4.6-1: (n, final depth H, first-stage depth d1) -> code
+S_CODES = {(0.10, 17.0, 7.0): "S1", (0.12, 17.0, 7.0): "S2", (0.14, 17.0, 7.0): "S3", (0.16, 17.0, 7.0): "S4",
+           (0.18, 17.0, 7.0): "S5", (0.22, 17.0, 7.0): "S6", (0.18, 17.0, 5.0): "S7",
+           (0.14, 10.0, 7.0): "S8", (0.14, 25.0, 7.0): "S9", (0.14, 32.0, 7.0): "S10"}
+
+
+def s_code(r):
+    """Code S1..S10 of a two-stage P2/P3 run in outputs/rerun_rate/C/results.json (None otherwise)."""
+    if r["group"] not in ("p2", "p3phi", "p3len") or len(r["depths"]) != 2:
+        return None
+    return S_CODES.get((round(r["n_ref"], 2), float(r["H"]), float(r["depths"][0])))
+
 
 def grid(x, y, v, cell):
     """Cell-centre arrays -> 2D image (rows = y) and its extent."""
