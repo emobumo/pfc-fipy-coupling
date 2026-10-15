@@ -1,0 +1,15 @@
+Enclosed unfilled cells at the stop, 4.4.1 rule (4-adjacency, boundary-touching components open, no solids)
+
+case                        grid | closed  bypass  dense |  bypass(D)    dense(D) D cells
+uniform baseline 2.5        2.50 |      0       0      0 |          0           0     165
+channel collar n 0.45       2.50 |      0       0      0 |          0           0     165
+channel mid-hole n 0.45     2.50 |      0       0      0 |          0           0     165
+channel past toe n 0.30     2.50 |      0       0      0 |          0           0     165
+channel past toe n 0.45     2.50 |      0       0      0 |          0           0     165
+channel past toe n 0.60     2.50 |      0       0      0 |          0           0     165
+random seed 1               2.50 |      0       0      0 |          0           0     165
+random seed 2               2.50 |      0       0      0 |          0           0     165
+random seed 3               2.50 |      0       0      0 |          0           0     165
+gradient field              2.50 |      0       0      0 |          0           0     165
+gradient field              1.25 |      0       0      0 |          -           -       -
+uniform field               1.25 |      0       0      0 |          -           -       -
