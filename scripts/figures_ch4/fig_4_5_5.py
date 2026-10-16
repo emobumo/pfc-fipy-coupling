@@ -48,16 +48,16 @@ def main():
         run.append(100.0 * float(np.sum(vol[~target & notsrc])) / float(np.sum(vol[notsrc])))
     xs = np.arange(len(CASES))
     fig, (ax, bx) = plt.subplots(2, 1, figsize=(7.2, 5.6), sharex=True, gridspec_kw={"height_ratios": [2.2, 1]})
-    ax.bar(xs, un, 0.6, color=K.SOLID, edgecolor="white", label=TERMS["unreach_lvl"])
-    ax.bar(xs, fr, 0.6, bottom=un, color=K.C1, edgecolor="white", label=TERMS["front_lvl"])
+    ax.bar(xs, un, 0.6, color=K.SOLID, edgecolor="white", align="center", label=TERMS["unreach_lvl"])
+    ax.bar(xs, fr, 0.6, bottom=un, color=K.C1, edgecolor="white", align="center", label=TERMS["front_lvl"])
     if max(bv) > 0:
-        ax.bar(xs, bv, 0.6, bottom=np.array(un) + np.array(fr), color=K.C3, edgecolor="white", label=TERMS["bypass"])
+        ax.bar(xs, bv, 0.6, bottom=np.array(un) + np.array(fr), color=K.C3, edgecolor="white", align="center", label=TERMS["bypass"])
     for xi, a, b, c in zip(xs, un, fr, bv):
         ax.text(xi, a + b + c + 0.6, "%.1f" % (a + b + c), ha="center", fontsize=7)
     ax.set_ylabel(u"设计域未充填比例 (%)")
     ax.set_ylim(0, 46)
     ax.legend(loc="upper right", frameon=False, fontsize=8, ncol=2)
-    bx.bar(xs, run, 0.6, color=K.C2, edgecolor="white")
+    bx.bar(xs, run, 0.6, color=K.C2, edgecolor="white", align="center")
     for xi, v in zip(xs, run):
         bx.text(xi, v + 0.5, "%.1f" % v, ha="center", fontsize=7)
     bx.set_ylabel(TERMS["outside_V"] + u"占比 (%)")

@@ -74,7 +74,7 @@ def main():
     cb = fig.colorbar(im, cax=cax); cb.set_label(TERMS["p_req_rel"] + u"（截至 2）", fontsize=7)
     fig.text(0.05, 0.015, u"蓝线：%s边界（$p_\mathrm{req}$ = $p_0$）；橙线：交界面；绿线：存窿矿石；红框：跑浆中段；黑点：钻孔出浆段；深灰：围岩与未采矿体（不透浆）"
              % TERMS["reach"], fontsize=7, color=K.INK2)
-    ax = fig.add_axes([0.68, 0.14, 0.30, 0.74])
+    ax = fig.add_axes([0.71, 0.14, 0.27, 0.74])
     phis, rows = threshold_table()
     for zone, col, mk in (("z1_cuts1-6", K.C1, "o"), ("z2_cuts6-10", K.C2, "s"), ("z3_cuts10-15", K.C3, "^")):
         ax.plot(phis, rows[zone], "-" + mk, color=col, ms=4, label=ZONE_NAME[zone])
@@ -85,10 +85,10 @@ def main():
     ax.axhline(1.0, color="k", lw=0.8)
     ax.axvspan(0.20, 0.25, color="#e4e3dd", zorder=0)
     ax.text(0.205, 0.30, TERMS["phi_c_min"] + u"\n约 0.20~0.25", fontsize=7, color=K.INK2)
-    ax.set_xlabel(u"交界面孔隙率 " + K.PHIC); ax.set_ylabel(TERMS["p_req"] + u"（到跑浆中段）/ $p_0$")
+    ax.set_xlabel(u"交界面孔隙率 " + K.PHIC); ax.set_ylabel(u"到跑浆中段所需源压比 $p_\mathrm{req}/p_0$")
     ax.set_ylim(0.2, 1.8); ax.set_xlim(0.1, 0.47)
     ax.legend(loc="upper right", frameon=False, fontsize=7, numpoints=1)
-    ax.set_title(u"(b) 到跑浆中段" + TERMS["p_req"] + u"与交界面孔隙率的关系", fontsize=8)
+    ax.set_title(u"(b) 到跑浆中段所需源压比与交界面孔隙率的关系", fontsize=8)
     K.style(ax)
     K.save(fig, "fig_4_7_2")
 

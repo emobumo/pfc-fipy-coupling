@@ -48,8 +48,8 @@ def main():
     sv = [A[c[2]]["ratio"] for c in combos]
     yv = [ray[c[1]] for c in combos]
     fig, ax = plt.subplots(figsize=(6.4, 3.8))
-    b1 = ax.bar(x - w / 2 - 0.01, rv, w, color=K.C1, edgecolor="white", label=TERMS["reach"] + u"（路径积分）")
-    b2 = ax.bar(x + w / 2 + 0.01, sv, w, color=K.C2, edgecolor="white", label=u"求解器（停注时充填域）")
+    b1 = ax.bar(x - w / 2 - 0.01, rv, w, color=K.C1, edgecolor="white", align="center", label=TERMS["reach"] + u"（路径积分）")
+    b2 = ax.bar(x + w / 2 + 0.01, sv, w, color=K.C2, edgecolor="white", align="center", label=u"求解器（停注时充填域）")
     ax.plot(x, yv, "kD", ms=5, label=u"直射线估计（孔中点，不计左右边界）")
     for xi, a, b in zip(x, rv, sv):
         ax.text(xi - w / 2 - 0.01, a + 0.015, "%.2f" % a, ha="center", fontsize=7)

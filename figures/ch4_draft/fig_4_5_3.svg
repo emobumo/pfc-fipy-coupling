@@ -30,73 +30,73 @@ z
    </g>
    <g id="patch_3">
     <path clip-path="url(#pdbf6291d91)" d="
-M60.3628 421.7
-L88.9324 421.7
-L88.9324 148.137
-L60.3628 148.137
+M47.3677 421.7
+L79.5085 421.7
+L79.5085 148.137
+L47.3677 148.137
 z
 " style="fill:#2a78d6;stroke:#ffffff;stroke-linejoin:miter;"/>
    </g>
    <g id="patch_4">
     <path clip-path="url(#pdbf6291d91)" d="
-M139.723 421.7
-L168.292 421.7
-L168.292 176.411
-L139.723 176.411
+M136.648 421.7
+L168.788 421.7
+L168.788 176.411
+L136.648 176.411
 z
 " style="fill:#2a78d6;stroke:#ffffff;stroke-linejoin:miter;"/>
    </g>
    <g id="patch_5">
     <path clip-path="url(#pdbf6291d91)" d="
-M219.083 421.7
-L247.652 421.7
-L247.652 43.3501
-L219.083 43.3501
+M225.928 421.7
+L258.068 421.7
+L258.068 43.3501
+L225.928 43.3501
 z
 " style="fill:#2a78d6;stroke:#ffffff;stroke-linejoin:miter;"/>
    </g>
    <g id="patch_6">
     <path clip-path="url(#pdbf6291d91)" d="
-M298.443 421.7
-L327.012 421.7
-L327.012 99.0542
-L298.443 99.0542
+M315.208 421.7
+L347.348 421.7
+L347.348 99.0542
+L315.208 99.0542
 z
 " style="fill:#2a78d6;stroke:#ffffff;stroke-linejoin:miter;"/>
    </g>
    <g id="patch_7">
     <path clip-path="url(#pdbf6291d91)" d="
-M90.5196 421.7
-L119.089 421.7
-L119.089 149.629
-L90.5196 149.629
+M81.294 421.7
+L113.435 421.7
+L113.435 149.629
+L81.294 149.629
 z
 " style="fill:#eb6834;stroke:#ffffff;stroke-linejoin:miter;"/>
    </g>
    <g id="patch_8">
     <path clip-path="url(#pdbf6291d91)" d="
-M169.88 421.7
-L198.449 421.7
-L198.449 172.172
-L169.88 172.172
+M170.574 421.7
+L202.715 421.7
+L202.715 172.172
+L170.574 172.172
 z
 " style="fill:#eb6834;stroke:#ffffff;stroke-linejoin:miter;"/>
    </g>
    <g id="patch_9">
     <path clip-path="url(#pdbf6291d91)" d="
-M249.24 421.7
-L277.809 421.7
-L277.809 47.2639
-L249.24 47.2639
+M259.854 421.7
+L291.995 421.7
+L291.995 47.2639
+L259.854 47.2639
 z
 " style="fill:#eb6834;stroke:#ffffff;stroke-linejoin:miter;"/>
    </g>
    <g id="patch_10">
     <path clip-path="url(#pdbf6291d91)" d="
-M328.6 421.7
-L357.169 421.7
-L357.169 87.8263
-L328.6 87.8263
+M349.134 421.7
+L381.275 421.7
+L381.275 87.8263
+L349.134 87.8263
 z
 " style="fill:#eb6834;stroke:#ffffff;stroke-linejoin:miter;"/>
    </g>
@@ -111,10 +111,10 @@ z
 " id="mc0a890a3ea" style="stroke:#000000;stroke-linejoin:miter;stroke-width:0.5;"/>
     </defs>
     <g clip-path="url(#pdbf6291d91)">
-     <use style="stroke:#000000;stroke-linejoin:miter;stroke-width:0.5;" x="75.44125" xlink:href="#mc0a890a3ea" y="148.1"/>
-     <use style="stroke:#000000;stroke-linejoin:miter;stroke-width:0.5;" x="154.80125" xlink:href="#mc0a890a3ea" y="176.03456"/>
-     <use style="stroke:#000000;stroke-linejoin:miter;stroke-width:0.5;" x="234.16125" xlink:href="#mc0a890a3ea" y="44.56976"/>
-     <use style="stroke:#000000;stroke-linejoin:miter;stroke-width:0.5;" x="313.52125" xlink:href="#mc0a890a3ea" y="89.22128"/>
+     <use style="stroke:#000000;stroke-linejoin:miter;stroke-width:0.5;" x="80.40125" xlink:href="#mc0a890a3ea" y="148.1"/>
+     <use style="stroke:#000000;stroke-linejoin:miter;stroke-width:0.5;" x="169.68125" xlink:href="#mc0a890a3ea" y="176.03456"/>
+     <use style="stroke:#000000;stroke-linejoin:miter;stroke-width:0.5;" x="258.96125" xlink:href="#mc0a890a3ea" y="44.56976"/>
+     <use style="stroke:#000000;stroke-linejoin:miter;stroke-width:0.5;" x="348.24125" xlink:href="#mc0a890a3ea" y="89.22128"/>
     </g>
    </g>
    <g id="line2d_2">
@@ -124,7 +124,7 @@ L392.881 148.1" style="fill:none;stroke:#52514e;stroke-linecap:square;stroke-wid
    </g>
    <g id="patch_11">
     <path d="
-M35.7612 230.18
+M35.7613 230.18
 L392.881 230.18" style="fill:none;stroke:#000000;stroke-linecap:square;stroke-linejoin:miter;"/>
    </g>
    <g id="patch_12">
@@ -141,45 +141,45 @@ M0 0
 L0 -4" id="m93b0483c22" style="stroke:#000000;stroke-width:0.5;"/>
       </defs>
       <g>
-       <use style="stroke:#000000;stroke-width:0.5;" x="75.44125" xlink:href="#m93b0483c22" y="230.18"/>
+       <use style="stroke:#000000;stroke-width:0.5;" x="80.40125" xlink:href="#m93b0483c22" y="230.18"/>
       </g>
      </g>
      <g id="text_1">
-      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(67.765625 240.5475)">几何</text>
-      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(49.00125 250.021)">（均质、无重力）</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(72.725625 240.5475)">几何</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(53.96125 250.021)">（均质、无重力）</text>
      </g>
     </g>
     <g id="xtick_2">
      <g id="line2d_4">
       <g>
-       <use style="stroke:#000000;stroke-width:0.5;" x="154.80125" xlink:href="#m93b0483c22" y="230.18"/>
+       <use style="stroke:#000000;stroke-width:0.5;" x="169.68125" xlink:href="#m93b0483c22" y="230.18"/>
       </g>
      </g>
      <g id="text_2">
-      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(139.369375 240.5475)">只有重力</text>
-      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(144.36125 250.021)">（均质）</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(154.249375 240.5475)">只有重力</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(159.24125 250.021)">（均质）</text>
      </g>
     </g>
     <g id="xtick_3">
      <g id="line2d_5">
       <g>
-       <use style="stroke:#000000;stroke-width:0.5;" x="234.16125" xlink:href="#m93b0483c22" y="230.18"/>
+       <use style="stroke:#000000;stroke-width:0.5;" x="258.96125" xlink:href="#m93b0483c22" y="230.18"/>
       </g>
      </g>
      <g id="text_3">
-      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(218.605625 240.5475)">只有结构</text>
-      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(207.72125 250.021)">（梯度、无重力）</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(243.405625 240.5475)">只有结构</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(232.52125 250.021)">（梯度、无重力）</text>
      </g>
     </g>
     <g id="xtick_4">
      <g id="line2d_6">
       <g>
-       <use style="stroke:#000000;stroke-width:0.5;" x="313.52125" xlink:href="#m93b0483c22" y="230.18"/>
+       <use style="stroke:#000000;stroke-width:0.5;" x="348.24125" xlink:href="#m93b0483c22" y="230.18"/>
       </g>
      </g>
      <g id="text_4">
-      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(305.9775 240.5475)">两者</text>
-      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(287.08125 250.021)">（梯度、有重力）</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(340.6975 240.5475)">两者</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(321.80125 250.021)">（梯度、有重力）</text>
      </g>
     </g>
    </g>
@@ -284,28 +284,28 @@ L4 0" id="m728421d6d4" style="stroke:#000000;stroke-width:0.5;"/>
     </g>
    </g>
    <g id="text_15">
-    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 60.362850, 144.033128)" x="60.36285" y="144.033128111">1.00</text>
+    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 63.438050, 144.033128)" x="63.43805" y="144.033128111">1.00</text>
    </g>
    <g id="text_16">
-    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 90.519650, 145.524842)" x="90.51965" y="145.524842063">0.99</text>
+    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 97.364450, 145.524842)" x="97.36445" y="145.524842063">0.99</text>
    </g>
    <g id="text_17">
-    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 139.722850, 172.306792)" x="139.72285" y="172.306791751">0.90</text>
+    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 152.718050, 172.306792)" x="152.71805" y="172.306791751">0.90</text>
    </g>
    <g id="text_18">
-    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 169.879650, 168.068389)" x="169.87965" y="168.068388558">0.91</text>
+    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 186.644450, 168.068389)" x="186.64445" y="168.068388558">0.91</text>
    </g>
    <g id="text_19">
-    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 219.082850, 39.246138)" x="219.08285" y="39.2461384471">1.38</text>
+    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 241.998050, 39.246138)" x="241.99805" y="39.2461384471">1.38</text>
    </g>
    <g id="text_20">
-    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 249.239650, 43.159949)" x="249.23965" y="43.1599492103">1.37</text>
+    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 275.924450, 43.159949)" x="275.92445" y="43.1599492103">1.37</text>
    </g>
    <g id="text_21">
-    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 298.442850, 94.950205)" x="298.44285" y="94.9502046695">1.18</text>
+    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 331.278050, 94.950205)" x="331.27805" y="94.9502046695">1.18</text>
    </g>
    <g id="text_22">
-    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 328.599650, 83.722295)" x="328.59965" y="83.7222945601">1.22</text>
+    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 365.204450, 83.722295)" x="365.20445" y="83.7222945601">1.22</text>
    </g>
    <g id="legend_1">
     <g id="line2d_16"/>

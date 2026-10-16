@@ -50,26 +50,27 @@ def main():
                 ax.set_ylabel(title + u"\n相对高程 (m)", fontsize=8)
             else:
                 ax.set_yticklabels([])
-    fig.text(0.04, 0.005, u"色斑：%s；深灰：围岩、未采矿体与封底；红框：跑浆中段；点线：注浆水平。上排 E 为封底后按变更设计浆量停止。"
+    fig.text(0.04, 0.005, u"色斑：%s；深灰：围岩、未采矿体与封底；红框：跑浆中段；点线：注浆水平。上排 E 为封底后按变更设计浆量停止。\n"
+             u"到达倍数 = 到达跑浆中段时的累计注入量 ÷ 原设计浆量 28.6 m³/m；注浆水平以下占比 = 按原设计浆量停止时注浆水平以下浆量 ÷ 储存浆量（不计出浆单元）"
              % TERMS["fill"], fontsize=7, color=K.INK2)
     names = [u"II 段\n孔隙率 45%", u"I 段\n孔隙率 10%", u"III 段\n孔隙率 25%", u"I 段\n无交界面"]
     mult = [5.17, 4.51, 4.36, None]
     below = [8.3, 23.9, 19.5, 62.6]
     ax = fig.add_axes([0.66, 0.57, 0.31, 0.33])
     xs = np.arange(4)
-    ax.bar(xs[:3], mult[:3], 0.6, color=K.C2, edgecolor="white")
+    ax.bar(xs[:3], mult[:3], 0.6, color=K.C2, edgecolor="white", align="center")
     for xi, v in zip(xs[:3], mult[:3]):
         ax.text(xi, v + 0.1, "%.2f" % v, ha="center", fontsize=7)
     ax.text(3, 0.2, u"不到达", ha="center", fontsize=7, color=K.INK2)
     ax.set_xticks(xs); ax.set_xticklabels(names, fontsize=7); ax.set_xlim(-0.6, 3.6)
-    ax.set_ylabel(u"到达跑浆中段所需\n原设计浆量倍数", fontsize=8); ax.set_ylim(0, 6.2)
+    ax.set_ylabel(u"到达倍数", fontsize=8); ax.set_ylim(0, 6.2)
     K.style(ax)
     ax = fig.add_axes([0.66, 0.10, 0.31, 0.33])
-    ax.bar(xs, below, 0.6, color=K.C1, edgecolor="white")
+    ax.bar(xs, below, 0.6, color=K.C1, edgecolor="white", align="center")
     for xi, v in zip(xs, below):
         ax.text(xi, v + 1.2, "%.1f" % v, ha="center", fontsize=7)
     ax.set_xticks(xs); ax.set_xticklabels(names, fontsize=7); ax.set_xlim(-0.6, 3.6)
-    ax.set_ylabel(u"原设计浆量下注浆水平\n以下占比 (%)", fontsize=8); ax.set_ylim(0, 75)
+    ax.set_ylabel(u"注浆水平以下占比/%", fontsize=8); ax.set_ylim(0, 75)
     K.style(ax)
     K.save(fig, "fig_4_7_3")
 
