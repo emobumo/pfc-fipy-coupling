@@ -1,0 +1,698 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Created with matplotlib (http://matplotlib.org/) -->
+<svg height="244pt" version="1.1" viewBox="0 0 576 244" width="576pt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <style type="text/css">
+*{stroke-linecap:butt;stroke-linejoin:round;}
+  </style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="
+M0 244.8
+L576 244.8
+L576 0
+L0 0
+z
+" style="fill:#ffffff;"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="
+M46.4153 191.765
+L566.28 191.765
+L566.28 24.62
+L46.4153 24.62
+z
+" style="fill:#ffffff;"/>
+   </g>
+   <g id="patch_3">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M59.4119 191.765
+L72.4085 191.765
+L72.4085 78.1592
+L59.4119 78.1592
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_4">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M72.4085 191.765
+L85.4052 191.765
+L85.4052 79.27
+L72.4085 79.27
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_5">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M91.9035 191.765
+L104.9 191.765
+L104.9 98.3489
+L91.9035 98.3489
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_6">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M104.9 191.765
+L117.897 191.765
+L117.897 102.33
+L104.9 102.33
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_7">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M124.395 191.765
+L137.392 191.765
+L137.392 92.8439
+L124.395 92.8439
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_8">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M137.392 191.765
+L150.388 191.765
+L150.388 95.7472
+L137.392 95.7472
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_9">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M176.381 191.765
+L189.378 191.765
+L189.378 38.7693
+L176.381 38.7693
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_10">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M189.378 191.765
+L202.375 191.765
+L202.375 39.4111
+L189.378 39.4111
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_11">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M208.873 191.765
+L221.87 191.765
+L221.87 108.806
+L208.873 108.806
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_12">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M221.87 191.765
+L234.866 191.765
+L234.866 112.811
+L221.87 112.811
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_13">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M241.365 191.765
+L254.361 191.765
+L254.361 110.954
+L241.365 110.954
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_14">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M254.361 191.765
+L267.358 191.765
+L267.358 117.417
+L254.361 117.417
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_15">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M293.351 191.765
+L306.348 191.765
+L306.348 83.4626
+L293.351 83.4626
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_16">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M306.348 191.765
+L319.344 191.765
+L319.344 85.1558
+L306.348 85.1558
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_17">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M325.843 191.765
+L338.839 191.765
+L338.839 104.69
+L325.843 104.69
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_18">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M338.839 191.765
+L351.836 191.765
+L351.836 108
+L338.839 108
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_19">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M358.334 191.765
+L371.331 191.765
+L371.331 94.9558
+L358.334 94.9558
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_20">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M371.331 191.765
+L384.327 191.765
+L384.327 97.1001
+L371.331 97.1001
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_21">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M410.321 191.765
+L423.317 191.765
+L423.317 97.5247
+L410.321 97.5247
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_22">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M423.317 191.765
+L436.314 191.765
+L436.314 124.77
+L423.317 124.77
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_23">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M442.812 191.765
+L455.809 191.765
+L455.809 109.457
+L442.812 109.457
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_24">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M455.809 191.765
+L468.805 191.765
+L468.805 146.886
+L455.809 146.886
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_25">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M475.304 191.765
+L488.3 191.765
+L488.3 115.165
+L475.304 115.165
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_26">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M488.3 191.765
+L501.297 191.765
+L501.297 148.028
+L488.3 148.028
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_27">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M527.29 191.765
+L540.287 191.765
+L540.287 117.461
+L527.29 117.461
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_28">
+    <path clip-path="url(#pf9b2ba5bfd)" d="
+M540.287 191.765
+L553.283 191.765
+L553.283 152.147
+L540.287 152.147
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_29">
+    <path d="
+M46.4153 191.765
+L566.28 191.765" style="fill:none;stroke:#000000;stroke-linecap:square;stroke-linejoin:miter;"/>
+   </g>
+   <g id="patch_30">
+    <path d="
+M46.4153 191.765
+L46.4153 24.62" style="fill:none;stroke:#000000;stroke-linecap:square;stroke-linejoin:miter;"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <defs>
+       <path d="
+M0 0
+L0 4" id="m741efc42ff" style="stroke:#000000;stroke-width:0.5;"/>
+      </defs>
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="72.408546875" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_2">
+      <defs>
+       <path d="
+M0 0
+L0 -4" id="m93b0483c22" style="stroke:#000000;stroke-width:0.5;"/>
+      </defs>
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="72.408546875" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(64.804796875 206.1326875)">下盘</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(64.428546875 215.6061875)">0～1</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="104.900089844" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_4">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="104.900089844" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(97.2963398438 206.1326875)">下盘</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(97.0119648438 215.6061875)">1～2</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="137.391632813" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_6">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="137.391632813" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(129.787882813 206.1326875)">下盘</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(129.335382813 215.6061875)">2～3</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="189.378101563" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_8">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="189.378101563" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(181.758101563 206.1326875)">上盘</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(181.398101563 215.6061875)">0～1</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="221.869644531" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_10">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="221.869644531" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(214.249644531 206.1326875)">上盘</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(213.981519531 215.6061875)">1～2</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_11">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="254.3611875" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_12">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="254.3611875" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(246.7411875 206.1326875)">上盘</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(246.3049375 215.6061875)">2～3</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_13">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="306.34765625" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_14">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="306.34765625" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(298.62390625 206.1326875)">矿柱</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(298.36765625 215.6061875)">0～1</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_15">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="338.839199219" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_16">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="338.839199219" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(331.115449219 206.1326875)">矿柱</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(330.951074219 215.6061875)">1～2</text>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_17">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="371.330742188" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_18">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="371.330742188" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(363.606992188 206.1326875)">矿柱</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(363.274492188 215.6061875)">2～3</text>
+     </g>
+    </g>
+    <g id="xtick_10">
+     <g id="line2d_19">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="423.317210938" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_20">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="423.317210938" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(411.724710938 206.1326875)">空区边</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(415.337210938 215.6061875)">0～1</text>
+     </g>
+    </g>
+    <g id="xtick_11">
+     <g id="line2d_21">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="455.808753906" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_22">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="455.808753906" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(444.216253906 206.1326875)">空区边</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(447.920628906 215.6061875)">1～2</text>
+     </g>
+    </g>
+    <g id="xtick_12">
+     <g id="line2d_23">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="488.300296875" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_24">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="488.300296875" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_12">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(476.707796875 206.1326875)">空区边</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(480.244046875 215.6061875)">2～3</text>
+     </g>
+    </g>
+    <g id="xtick_13">
+     <g id="line2d_25">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="540.286765625" xlink:href="#m741efc42ff" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_26">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="540.286765625" xlink:href="#m93b0483c22" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_13">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(532.891140625 206.1326875)">内部</text>
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(535.174265625 215.6061875)">&gt; 3</text>
+     </g>
+    </g>
+    <g id="text_14">
+     <!-- 条带（距接触面，以 $d_{50}$ 计） -->
+     <g transform="translate(255.66765625 229.3186875)">
+      <text>
+       <tspan style="font-family:cmmi10;font-size:8.0px;font-style:regular;" x="73.7918548584" y="-0.15625">d</tspan>
+       <tspan style="font-family:cmr10;font-size:5.6px;font-style:regular;" x="77.9520111084 80.7520111084" y="1.8845">50</tspan>
+       <tspan style="font-family:Noto Sans SC;font-size:8.0px;font-style:regular;" x="0.0 7.99998474121 15.9999694824 23.9999542236 31.9999389648 39.9999237061 47.9999084473 55.9998931885 63.9998779297 71.9998626709 83.5520111084 85.3440032959 93.3439880371" y="-0.15625">条带（距接触面，以  计）</tspan>
+      </text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_27">
+      <defs>
+       <path d="
+M0 0
+L-4 0" id="mcb0005524f" style="stroke:#000000;stroke-width:0.5;"/>
+      </defs>
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="46.4153125" xlink:href="#mcb0005524f" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="line2d_28">
+      <defs>
+       <path d="
+M0 0
+L4 0" id="m728421d6d4" style="stroke:#000000;stroke-width:0.5;"/>
+      </defs>
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="566.28" xlink:href="#m728421d6d4" y="191.7651875"/>
+      </g>
+     </g>
+     <g id="text_15">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 38.415312, 194.032688)" x="38.4153125" y="194.0326875">0.00</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_29">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="46.4153125" xlink:href="#mcb0005524f" y="170.872039062"/>
+      </g>
+     </g>
+     <g id="line2d_30">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="566.28" xlink:href="#m728421d6d4" y="170.872039062"/>
+      </g>
+     </g>
+     <g id="text_16">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 38.415312, 173.139539)" x="38.4153125" y="173.139539062">0.05</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_31">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="46.4153125" xlink:href="#mcb0005524f" y="149.978890625"/>
+      </g>
+     </g>
+     <g id="line2d_32">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="566.28" xlink:href="#m728421d6d4" y="149.978890625"/>
+      </g>
+     </g>
+     <g id="text_17">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 38.415312, 152.246391)" x="38.4153125" y="152.246390625">0.10</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_33">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="46.4153125" xlink:href="#mcb0005524f" y="129.085742187"/>
+      </g>
+     </g>
+     <g id="line2d_34">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="566.28" xlink:href="#m728421d6d4" y="129.085742187"/>
+      </g>
+     </g>
+     <g id="text_18">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 38.415312, 131.353242)" x="38.4153125" y="131.353242187">0.15</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_35">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="46.4153125" xlink:href="#mcb0005524f" y="108.19259375"/>
+      </g>
+     </g>
+     <g id="line2d_36">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="566.28" xlink:href="#m728421d6d4" y="108.19259375"/>
+      </g>
+     </g>
+     <g id="text_19">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 38.415312, 110.460094)" x="38.4153125" y="110.46009375">0.20</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_37">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="46.4153125" xlink:href="#mcb0005524f" y="87.2994453125"/>
+      </g>
+     </g>
+     <g id="line2d_38">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="566.28" xlink:href="#m728421d6d4" y="87.2994453125"/>
+      </g>
+     </g>
+     <g id="text_20">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 38.415312, 89.566945)" x="38.4153125" y="89.5669453125">0.25</text>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_39">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="46.4153125" xlink:href="#mcb0005524f" y="66.406296875"/>
+      </g>
+     </g>
+     <g id="line2d_40">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="566.28" xlink:href="#m728421d6d4" y="66.406296875"/>
+      </g>
+     </g>
+     <g id="text_21">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 38.415312, 68.673797)" x="38.4153125" y="68.673796875">0.30</text>
+     </g>
+    </g>
+    <g id="ytick_8">
+     <g id="line2d_41">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="46.4153125" xlink:href="#mcb0005524f" y="45.5131484375"/>
+      </g>
+     </g>
+     <g id="line2d_42">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="566.28" xlink:href="#m728421d6d4" y="45.5131484375"/>
+      </g>
+     </g>
+     <g id="text_22">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 38.415312, 47.780648)" x="38.4153125" y="47.7806484375">0.35</text>
+     </g>
+    </g>
+    <g id="ytick_9">
+     <g id="line2d_43">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="46.4153125" xlink:href="#mcb0005524f" y="24.62"/>
+      </g>
+     </g>
+     <g id="line2d_44">
+      <g>
+       <use style="stroke:#000000;stroke-width:0.5;" x="566.28" xlink:href="#m728421d6d4" y="24.62"/>
+      </g>
+     </g>
+     <g id="text_23">
+      <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 38.415312, 26.887500)" x="38.4153125" y="26.8875">0.40</text>
+     </g>
+    </g>
+    <g id="text_24">
+     <text style="font-family:Noto Sans SC;font-size:9.0px;font-style:normal;text-anchor:middle;" transform="rotate(-90.000000, 16.602500, 108.192594)" x="16.6025" y="108.19259375">二维面积孔隙率</text>
+    </g>
+   </g>
+   <g id="text_25">
+    <!-- 距接触面 0～1、1～2、2～3 倍 $d_{50}$ 的条带与内部（$d_{50}$ = 0.75 m） -->
+    <g transform="translate(176.88265625 19.62)">
+     <text>
+      <tspan style="font-family:cmr10;font-size:6.3px;font-style:regular;" x="130.698120117 133.848120117 206.694287109 209.844287109" y="1.99896875">5050</tspan>
+      <tspan style="font-family:Noto Sans SC;font-size:9.0px;font-style:regular;" x="0.0 9.0 18.0 27.0 36.0 38.0159912109 43.0109863281 52.0109863281 57.0059814453 66.0059814453 71.0009765625 80.0009765625 84.9959716797 93.9959716797 98.9909667969 107.990966797 112.985961914 115.001953125 124.001953125 136.998120117 139.014111328 148.014111328 157.014111328 166.014111328 175.014111328 184.014111328 193.014111328 212.994287109 215.01027832 220.005273438 222.021264648 227.016259766 229.518258667 234.513253784 239.508248901 241.524240112 249.858239746" y="-0.296875">距接触面 0～1、1～2、2～3 倍  的条带与内部（ = 0.75 m）</tspan>
+      <tspan style="font-family:cmmi10;font-size:9.0px;font-style:regular;" x="126.017944336 202.014111328" y="-0.296875">dd</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="legend_1">
+    <g id="patch_31">
+     <path d="
+M505.271 38.1875
+L521.271 38.1875
+L521.271 32.5875
+L505.271 32.5875
+z
+" style="fill:#2a78d6;stroke:#000000;stroke-linejoin:miter;"/>
+    </g>
+    <g id="text_26">
+     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 527.671250, 38.187500)" x="527.67125" y="38.1875">颗粒尺度</text>
+    </g>
+    <g id="patch_32">
+     <path d="
+M505.271 50.3875
+L521.271 50.3875
+L521.271 44.7875
+L505.271 44.7875
+z
+" style="fill:#e8743b;stroke:#000000;stroke-linejoin:miter;"/>
+    </g>
+    <g id="text_27">
+     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 527.671250, 50.387500)" x="527.67125" y="50.3875">块体尺度</text>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pf9b2ba5bfd">
+   <rect height="167.1451875" width="519.8646875" x="46.4153125" y="24.62"/>
+  </clipPath>
+ </defs>
+</svg>

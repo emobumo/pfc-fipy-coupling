@@ -1,0 +1,4 @@
+; PFC2D 6.0 batch entry: set PFCX_SAVES (';'-separated .sav paths) and PFCX_OUT, then run
+;   pfc2d600_console.exe scripts/pfc_collapse/run_export.p2dat
+program call 'D:/work/pfc-fipy-coupling/scripts/pfc_collapse/export_states.py'
+program quit
