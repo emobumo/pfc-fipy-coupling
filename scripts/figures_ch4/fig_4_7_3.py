@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 图 4.7-3 两种停注规则下的浆液分布（案例工程断面，匿名：相对高程以注浆水平为 0，I/II/III 段，无名称与编号）。
-上排：按原设计浆量 28.6 m³/m 停止（A3–D3）+ 封底后按变更设计浆量停止（E）；
-下排：按终压持续注（A2–C2 到达跑浆中段即止；D2、E2 按现行停注判据）；
-右下：到达跑浆中段所需原设计浆量倍数与原设计浆量下注浆水平以下占比（分栏）。
-数据：outputs/zhaojin_runs/final_{A3,B3,C3,D3,E,A2,B2,C2}.npz（A3–D3、A2–C2 两遍一致）、
+上排：按原设计浆量 28.6 m³/m 停止（A3–D3）；
+下排：A2–C2 不设浆量上限，持续注浆至浆液到达跑浆中段；D2、E2 按式（4-29）停注（ε 0.1）；
+右侧：到达倍数与注浆水平以下占比（分栏）。
+数据：outputs/zhaojin_runs/final_{A3,B3,C3,D3,A2,B2,C2}.npz（A3–D3、A2–C2 两遍一致）、
 outputs/rerun_rate/D/zhaojin/final_{D2,E2}.npz（速率判据，两遍一致）；倍数与占比取 outputs/zhaojin_runs/original_design.txt
 与 docs/results_log.md T2 表。
 """
@@ -24,7 +24,7 @@ ZD = os.path.join(K.RR, "D", "zhaojin")
 CELL = 1.0
 LAB = {"A": u"II 段（孔隙率 45%）", "B": u"I 段（孔隙率 10%）", "C": u"III 段（孔隙率 25%）", "D": u"I 段，无交界面", "E": u"II 段，封底"}
 TOP = [("A", os.path.join(ZR, "final_A3.npz")), ("B", os.path.join(ZR, "final_B3.npz")), ("C", os.path.join(ZR, "final_C3.npz")),
-       ("D", os.path.join(ZR, "final_D3.npz")), ("E", os.path.join(ZR, "final_E.npz"))]
+       ("D", os.path.join(ZR, "final_D3.npz"))]
 BOT = [("A", os.path.join(ZR, "final_A2.npz")), ("B", os.path.join(ZR, "final_B2.npz")), ("C", os.path.join(ZR, "final_C2.npz")),
        ("D", os.path.join(ZD, "final_D2.npz")), ("E", os.path.join(ZD, "final_E2.npz"))]
 
@@ -40,17 +40,24 @@ def panel(ax, path):
 
 
 def main():
-    fig = plt.figure(figsize=(11.0, 7.4))
-    for r, (row, title) in enumerate(((TOP, u"按原设计浆量停止"), (BOT, u"按终压持续注"))):
+    fig = plt.figure(figsize=(11.0, 6.2))
+    tops = []
+    for r, row in enumerate((TOP, BOT)):
         for j, (tag, path) in enumerate(row):
-            ax = fig.add_axes([0.04 + j * 0.115, 0.53 - r * 0.47, 0.105, 0.40])
+            ax = fig.add_axes([0.04 + j * 0.115, 0.53 - r * 0.45, 0.105, 0.37])
             panel(ax, path)
             ax.set_title(LAB[tag], fontsize=7)
             if j == 0:
-                ax.set_ylabel(title + u"\n相对高程 (m)", fontsize=8)
+                ax.set_ylabel(u"相对高程 (m)", fontsize=8)
             else:
                 ax.set_yticklabels([])
-    fig.text(0.04, 0.005, u"色斑：%s；深灰：围岩、未采矿体与封底；红框：跑浆中段；点线：注浆水平。上排 E 为封底后按变更设计浆量停止。\n"
+        ax.apply_aspect()
+        tops.append(ax.get_position().y1 + 0.05)
+    fig.text(0.04, tops[0], u"按原设计浆量 28.6 m³/m 停止", fontsize=8.5)
+    fig.text(0.04, tops[1], u"不设浆量上限，持续注浆至浆液到达跑浆中段", fontsize=8.5)
+    fig.text(0.04 + 3 * 0.115, tops[1], u"按式（4-29）停注", fontsize=8.5)
+    fig.text(0.04, 0.005, u"色斑：%s；深灰：围岩、未采矿体与封底；红框：跑浆中段；点线：注浆水平。下排前三列不设浆量上限，持续注浆至浆液到达跑浆中段；"
+             u"后两列按式（4-29）停注（ε 0.1）。\n"
              u"到达倍数 = 到达跑浆中段时的累计注入量 ÷ 原设计浆量 28.6 m³/m；注浆水平以下占比 = 按原设计浆量停止时注浆水平以下浆量 ÷ 储存浆量（不计出浆单元）"
              % TERMS["fill"], fontsize=7, color=K.INK2)
     names = [u"II 段\n孔隙率 45%", u"I 段\n孔隙率 10%", u"III 段\n孔隙率 25%", u"I 段\n无交界面"]
