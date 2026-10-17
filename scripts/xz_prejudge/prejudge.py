@@ -1,31 +1,39 @@
 # -*- coding: utf-8 -*-
-"""Structure pre-judgement of the caved rubble for section 4.8, step 1 (reach and closed forms only, no solver).
+"""Structure pre-judgement of the caved rubble for section 4.8, step 1, request v2 + drift supplement
+(reach and closed forms only, no solver).
 
     powershell -File scripts\\run_local.ps1 scripts\\xz_prejudge\\prejudge.py
 
 Input: the PFC2D final state (save 50) through scripts/pfc_collapse/analyze.py (same pixel classification;
-export directory from $PFC_COLLAPSE_EXPORT). Output: outputs/xz_prejudge/prejudge.txt and prejudge.npz
-(for plot.py).
+export directory from $PFC_COLLAPSE_EXPORT). Output: outputs/xz_prejudge/prejudge.txt, prejudge.npz (figures)
+and data/xz_prejudge/base_geometry_K1.25.npz (base geometry + both porosity fields, for step 2).
 
-Grid 0.5 m. Coordinates: X = x + 14, Z = y - 40 (origin = the footwall corner of the original stope's lower
-end, Z up); s = normal distance from the footwall contact (towards the hanging wall), t = up-dip distance
-from the same corner. A 0.5 m cell takes the class of its 10 x 10 pixels: void if >= half void, otherwise
-rubble if the rubble-region share >= the rock share, otherwise rock (side of the largest rock share).
-Void components touching no rock cell (cavities enclosed by rubble) are turned into rubble.
-Rock (footwall, hanging wall, ore pillar) n = 1e-3; residual void n = 1e-3 too, i.e. effectively a no-flow
-region for the reach graph (a 0.5 m step through it costs 30 MPa).
+Grid 0.25 m. Coordinates X = x + 14, Z = y - 40 (origin = the footwall corner of the original stope's lower end,
+Z up); s = normal distance from the footwall contact (towards the hanging wall), t = up-dip distance from the
+same corner. A 0.25 m cell (5 x 5 pixels) belongs to the cavity when the PFC rubble-region and void pixels make
+at least half of it, otherwise it is rock of the side with the largest share. Cavity = PFC rubble region + all
+residual voids.
 
-Porosity: the PFC particle-scale s-profile (1.5 m slabs, whole rubble region, as analyze.py) smoothed by a
-5-point moving average (window shrinks at the ends), its min / max mapped linearly to 0.13 / 0.29 -> n_s(s)
-(ends held beyond the profile). Scenario 1: n = n_s(s). Scenario 2: n = n_s(s) + Delta(t), Delta linear
-from -0.08 at the lower end to +0.08 at the upper end of the rubble (t range of rubble cells), clipped to
-0.10..0.35.
+Rubble extent by bulking: A0 = PFC rubble solid area / (1 - 0.1416). y_top(x) = top of the PFC rubble in each
+0.25 m column of the cavity; new rubble = cavity cells with y <= y_top(x) + D, D bisected so that the area is
+the first one >= K A0 (K = 1.25 base; 1.15 and 1.40 for the sensitivity check). The rest of the cavity is
+residual void: n = 1e-3, i.e. a no-flow region for the reach graph; rock and drifts also n = 1e-3.
 
-v0.6 grout: tau0 30 Pa, mu_p 0.15 Pa s, rho 1830 kg/m3, A 1.25e-7 m2 -> lambda(n) = 6.00e4 (1 - n) / n Pa/m,
-L_max = p0 / lambda. Local F = gamma p0 / (2 rho g), gamma = -d ln(lambda) / dZ from a least-squares plane on
-the rubble cells of a 3 m window (7 x 7 cell centres). p_req by the 16-neighbour reach graph with gravity
-(src.analysis.fill_diagnostics.reachable_domain); it does not depend on p0, so each scenario x hole is
-priced once and thresholded at p0 = 1, 2, 3, 5 MPa.
+Porosity: PFC particle-scale s-profile (1.5 m slabs, analyze.py), 5-point moving average (window shrinks at
+the ends). Slabs with centre s <= 3 m keep their s; the rest are stretched linearly in s so that the PFC
+rubble's maximum s maps to the new rubble's maximum s. Min / max of the smoothed profile -> 0.13 / 0.29 =
+n_s(s); ends held. Scenario 1 n = n_s(s); scenario 2 adds Delta n(t), linear from -0.08 at the lower end to
++0.08 at the upper end of the new rubble, clipped to 0.10..0.35.
+
+Drifts: footwall drifts every 10 m from the original stope floor (y = 40) upwards; centre 5 m horizontally
+from the footwall contact at its own level, 2.5 m x 2.5 m impermeable square. Collar = mid-point of the drift
+wall facing the orebody (the -x wall); hole along +s (normal to the orebody, up towards the hanging wall);
+2 m standpipe, grouting from 2 m to 1 m short of the first non-rubble cell after the hole has entered the
+rubble. Drifts stop at the first one whose hole misses the rubble.
+
+v0.6 grout: lambda(n) = 6.00e4 (1 - n) / n Pa/m, L_max = p0 / lambda; F = gamma p0 / (2 rho g),
+gamma = -d ln(lambda)/dZ from a least-squares plane on the rubble cells of a 3 m window (13 x 13 centres,
+>= 40 rubble cells). p_req from the 16-neighbour reach graph with gravity (independent of p0).
 """
 from __future__ import print_function
 
@@ -48,322 +56,468 @@ from src.models.slurry_transport.variables import initialize_slurry_variables
 from src.analysis.fill_diagnostics import reachable_domain
 
 OUT = os.path.join(REPO, "outputs", "xz_prejudge")
-CELL = 0.5
-DOM = (-53.0, 64.0, 29.0, 92.0)         # model x, y; >= 10 m of rock around the rubble region (checked below)
+DATA = os.path.join(REPO, "data", "xz_prejudge")
+CELL = 0.25
+DOM = (-53.0, 64.0, 29.0, 107.0)          # model x, y: >= 10 m of rock around the cavity (checked below)
 ORIGIN = (-14.0, 40.0)
-P0S = (1.0e6, 2.0e6, 3.0e6, 5.0e6)
+N_HW = 0.1416                             # PFC report: intact hanging-wall disc-assembly porosity
+KS = (1.15, 1.25, 1.40)
+K_BASE = 1.25
+P0S = (1.0e6, 2.0e6)
+P0_REF = 5.0e6
 N_LO, N_HI = 0.13, 0.29
 DELTA = 0.08
 CLIP = (0.10, 0.35)
 ROCK_N = 1.0e-3
-BASAL = 3.0                               # loose footwall layer, s <= 3 m
+BASAL = 3.0
 PIPE = 2.0
-COLLAR_S = -5.0
 STOP_GAP = 1.0
-HOLE_F = (1.0 / 6.0, 0.5, 5.0 / 6.0)
+DRIFT_DX = 5.0                            # drift centre to footwall contact, horizontal
+DRIFT_HALF = 1.25
+DRIFT_DY = 10.0
 RHO, G = 1830.0, 9.81
 LAM0 = 6.00e4
 SN, CS = math.sin(math.radians(30.0)), math.cos(math.radians(30.0))
-CLS = {"rubble": 0, "footwall": 1, "hanging wall": 2, "ore pillar": 3, "void": 4}
+COT = CS / SN
+RUB, FW, HW, PIL, VOID, DRIFT = 0, 1, 2, 3, 4, 5
+NAME = {RUB: "rubble", FW: "footwall", HW: "hanging wall", PIL: "ore pillar", VOID: "void", DRIFT: "drift"}
 
 
 def lam(n):
     return LAM0 * (1.0 - n) / n
 
 
-def t_coord(x, y):
+def s_of(x, y):
+    return A.s_coord(x, y)
+
+
+def t_of(x, y):
     return (x - ORIGIN[0]) * CS + (y - ORIGIN[1]) * SN
 
 
-def cells_from_pfc():
+def x_fw(y):
+    return ORIGIN[0] + (y - ORIGIN[1]) * COT
+
+
+def pfc_cells():
     A.BOX = DOM
-    b, m = A.load("local_stope_result_50")
+    b, _ = A.load("local_stope_result_50")
     d50 = float(np.median(2 * b["radius"]))
     rub = np.hypot(b["dx"], b["dy"]) > A.DISP_RUBBLE
-    img = A.raster(b, rub)
-    c = A.classify(img, d50)
+    c = A.classify(A.raster(b, rub), d50)
     k = int(round(CELL / A.H))
     ny, nx = c["region"].shape[0] // k, c["region"].shape[1] // k
 
     def frac(mask):
         return mask[:ny * k, :nx * k].reshape(ny, k, nx, k).mean(axis=(1, 3))
-    f_void = frac(c["void"])
-    f_reg = frac(c["region"])
+    f_reg, f_void = frac(c["region"]), frac(c["void"])
     f_side = [frac(c["rock"] & (c["rock_side"] == sd)) for sd in (1, 2, 3)]
-    f_rock = f_side[0] + f_side[1] + f_side[2]
-    cls = np.full((ny, nx), -1, dtype=int)
-    cls[f_void >= 0.5] = CLS["void"]
-    rest = cls < 0
-    cls[rest & (f_reg >= f_rock)] = CLS["rubble"]
+    cav = (f_reg + f_void) >= 0.5
+    pfc_rub = cav & (f_reg >= f_void)
     side = np.argmax(np.array(f_side), axis=0) + 1
-    rest = cls < 0
-    cls[rest] = side[rest]
-    # void components not touching rock -> rubble
-    lab, nl = ndimage.label(cls == CLS["void"])
-    rock = (cls >= 1) & (cls <= 3)
-    rock_adj = ndimage.binary_dilation(rock)
-    enclosed = []
-    for q in range(1, nl + 1):
-        mk = lab == q
-        if not (mk & rock_adj).any():
-            enclosed.append(mk.sum())
-            cls[mk] = CLS["rubble"]
-    xs = DOM[0] + (np.arange(nx) + 0.5) * CELL
-    ys = DOM[2] + (np.arange(ny) + 0.5) * CELL
-    X, Y = np.meshgrid(xs, ys)
     Sp = A.s_coord(*np.meshgrid(*A.grid()))
     zs, ns, ar = A.profile(c, Sp, -2.0, 44.0, A.SLAB_D * d50)
-    return cls, X, Y, zs, ns, ar, enclosed, d50, c
+    solid = float(np.sum(np.pi * b["radius"][rub] ** 2))
+    return cav, pfc_rub, side, zs, ns, ar, solid, d50, c
 
 
 def smooth5(v):
-    out = np.empty_like(v)
-    for i in range(len(v)):
-        out[i] = v[max(i - 2, 0):i + 3].mean()
-    return out
+    return np.array([v[max(i - 2, 0):i + 3].mean() for i in range(len(v))])
 
 
-def window_gamma(cls, lnlam, half=3):
-    """gamma = -d ln(lambda)/dZ from a plane fitted to the rubble cells of a (2 half + 1)^2 window."""
-    M = (cls == CLS["rubble"]).astype(float)
+def rubble_for(cav, ytop, Y, target):
+    lo, hi = -5.0, 80.0
+    for _ in range(60):
+        mid = 0.5 * (lo + hi)
+        if (cav & (Y <= ytop[None, :] + mid)).sum() * CELL * CELL >= target:
+            hi = mid
+        else:
+            lo = mid
+    return cav & (Y <= ytop[None, :] + hi), hi
+
+
+def neighbours_count(a, b):
+    """Number of 4-neighbour faces between mask a and mask b (per cell of a)."""
+    f = np.zeros(a.shape, dtype=int)
+    for dj, di in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        sh = np.zeros_like(b)
+        sj = slice(max(dj, 0), b.shape[0] + min(dj, 0))
+        si = slice(max(di, 0), b.shape[1] + min(di, 0))
+        tj = slice(max(-dj, 0), b.shape[0] + min(-dj, 0))
+        ti = slice(max(-di, 0), b.shape[1] + min(-di, 0))
+        sh[sj, si] = b[tj, ti]
+        f += (a & sh).astype(int)
+    return f
+
+
+def mapping(zs, ns, s_pfc_max, s_new_max):
+    sm = smooth5(ns)
+    mapped = N_LO + (sm - sm.min()) / (sm.max() - sm.min()) * (N_HI - N_LO)
+    zst = np.where(zs <= BASAL, zs, BASAL + (zs - BASAL) * (s_new_max - BASAL) / (s_pfc_max - BASAL))
+    return sm, mapped, zst
+
+
+def zones(rub, S, T):
+    basal = rub & (S <= BASAL)
+    tb = np.floor(T / 0.5).astype(int)
+    hang = np.zeros_like(rub)
+    for q in np.unique(tb[rub]):
+        m = rub & (tb == q)
+        lo, hi = S[m].min(), S[m].max()
+        hang |= m & (S > lo + 2.0 / 3.0 * (hi - lo))
+    interior = rub & ~basal & ~hang
+    return basal, interior, hang
+
+
+def window_gamma(rub, lnlam, half=6):
+    M = rub.astype(float)
     off = np.arange(-half, half + 1) * CELL
     DX, DZ = np.meshgrid(off, off)
     corr = lambda a, kern: ndimage.correlate(a, kern, mode="constant", cval=0.0)
-    L = np.where(M > 0, lnlam, 0.0)
-    S1, Sx, Sz = corr(M, np.ones_like(DX)), corr(M, DX), corr(M, DZ)
+    L = np.where(rub, lnlam, 0.0)
+    one = np.ones_like(DX)
+    S1, Sx, Sz = corr(M, one), corr(M, DX), corr(M, DZ)
     Sxx, Szz, Sxz = corr(M, DX * DX), corr(M, DZ * DZ), corr(M, DX * DZ)
-    Sy, Sxy, Szy = corr(L, np.ones_like(DX)), corr(L, DX), corr(L, DZ)
+    Sy, Sxy, Szy = corr(L, one), corr(L, DX), corr(L, DZ)
+
     def det3(a, b, c, d, e, f, g, h, i):
         return a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g)
     det = det3(S1, Sx, Sz, Sx, Sxx, Sxz, Sz, Sxz, Szz)
-    ok = (M > 0) & (S1 >= 10) & (np.abs(det) > 1e-6)
-    # Cramer's rule for the Z coefficient (third unknown)
+    ok = rub & (S1 >= 40) & (np.abs(det) > 1e-9)
     dz = det3(S1, Sx, Sy, Sx, Sxx, Sxy, Sz, Sxz, Szy)
-    gam = np.where(ok, -dz / np.where(ok, det, 1.0), np.nan)
-    return gam, ok
+    return np.where(ok, -dz / np.where(ok, det, 1.0), np.nan)
 
 
-def hole(cls, X, Y, tk):
-    """Cells of the grouting section; collar at s = COLLAR_S, t = tk, drilled along +s."""
+def drift_mask(X, Y, yd):
+    xc = x_fw(yd) + DRIFT_DX
+    return (np.abs(X - xc) <= DRIFT_HALF) & (np.abs(Y - yd) <= DRIFT_HALF), (xc, yd)
+
+
+def hole(cls, yd):
+    """Hole from the -x wall of the drift at level yd; None if it misses the rubble."""
     ny, nx = cls.shape
+    xc = x_fw(yd) + DRIFT_DX
+    x0, y0 = xc - DRIFT_HALF, yd
     ex, ey = -SN, CS
-    # collar: point with t = tk, s = COLLAR_S; s grows along (ex, ey) from the footwall line
-    xc0 = ORIGIN[0] + tk * CS + COLLAR_S * ex
-    yc0 = ORIGIN[1] + tk * SN + COLLAR_S * ey
-    u = np.arange(0.0, 80.0, 0.02)
-    px, py = xc0 + u * ex, yc0 + u * ey
+    u = np.arange(0.0, 90.0, 0.01)
+    px, py = x0 + u * ex, y0 + u * ey
     ix = np.floor((px - DOM[0]) / CELL).astype(int)
     iy = np.floor((py - DOM[2]) / CELL).astype(int)
     inside = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny)
     cl = np.where(inside, cls[np.clip(iy, 0, ny - 1), np.clip(ix, 0, nx - 1)], -9)
-    first_rub = np.argmax(cl == CLS["rubble"])
-    after = np.where((np.arange(len(u)) > first_rub) & (cl != CLS["rubble"]))[0]
+    hit = np.where((cl == RUB) & (u > 0.0))[0]
+    if hit.size == 0:
+        return None
+    first = hit[0]
+    after = np.where((np.arange(len(u)) > first) & (cl != RUB))[0]
     u_out = u[after[0]]
     u_end = u_out - STOP_GAP
     sel = (u >= PIPE) & (u <= u_end)
     cells = sorted(set(zip(iy[sel], ix[sel])))
     flat = np.array([j * nx + i for j, i in cells])
-    stop_cls = [k for k, v in CLS.items() if v == cl[after[0]]][0]
-    return {"collar": (xc0, yc0), "end": (xc0 + u_end * ex, yc0 + u_end * ey), "u_in": u[first_rub],
-            "u_out": u_out, "u_end": u_end, "stop": stop_cls, "cells": flat,
-            "rubble_cells": int(sum(cls[j, i] == CLS["rubble"] for j, i in cells)), "n_cells": len(cells)}
+    s0 = s_of(x0, y0)
+    pipe_cell = cls[int((y0 + PIPE * ey - DOM[2]) / CELL), int((x0 + PIPE * ex - DOM[0]) / CELL)]
+    return {"collar": (x0, y0), "end": (x0 + u_end * ex, y0 + u_end * ey), "u_in": u[first], "u_out": u_out,
+            "u_end": u_end, "stop": NAME[int(cl[after[0]])], "cells": flat, "t": t_of(x0, y0), "s_collar": s0,
+            "s_pipe_end": s0 + PIPE, "pipe_cell": NAME[int(pipe_cell)],
+            "rubble_cells": int(sum(cls[j, i] == RUB for j, i in cells)), "n_cells": len(cells)}
 
 
 def make_state(mesh, phi):
-    params = Z.slurry_params()
     st = {"mesh": mesh}
-    st.update(initialize_slurry_variables(mesh, params=params))
+    st.update(initialize_slurry_variables(mesh, params=Z.slurry_params()))
     Z.set_porosity(st, phi)
     return st
 
 
+def geometry(cav, pfc_rub, side, ytop, X, Y, A0, K, drifts):
+    rub, d = rubble_for(cav, ytop, Y, K * A0)
+    cls = np.where(cav, VOID, side)
+    cls[rub] = RUB
+    for m in drifts:
+        cls[m] = DRIFT
+    return cls, rub, d
+
+
 def main():
-    if not os.path.isdir(OUT):
-        os.makedirs(OUT)
+    for dd in (OUT, DATA):
+        if not os.path.isdir(dd):
+            os.makedirs(dd)
     L = []
     w = L.append
-    cls, X, Y, zs, ns, ar, enclosed, d50, c = cells_from_pfc()
-    ny, nx = cls.shape
-    rubm = cls == CLS["rubble"]
-    S = A.s_coord(X, Y)
-    T = t_coord(X, Y)
+    cav, pfc_rub, side, zs, ns, ar, solid, d50, c = pfc_cells()
+    ny, nx = cav.shape
+    xs = DOM[0] + (np.arange(nx) + 0.5) * CELL
+    ys = DOM[2] + (np.arange(ny) + 0.5) * CELL
+    X, Y = np.meshgrid(xs, ys)
+    S, T = s_of(X, Y), t_of(X, Y)
     XR, ZR = X - ORIGIN[0], Y - ORIGIN[1]
-    w("Rubble structure pre-judgement, step 1 (reach and closed forms; v0.6 grout; 2D)")
-    w("grid %.1f m, %d x %d cells; domain X %.1f..%.1f, Z %.1f..%.1f m (model x %.1f..%.1f, y %.1f..%.1f)"
+    a2 = CELL * CELL
+    w("Rubble structure pre-judgement, step 1 (request v2 + drift supplement; reach and closed forms; v0.6; 2D)")
+    w("grid %.2f m, %d x %d cells; domain X %.2f..%.2f, Z %.2f..%.2f m (model x %.1f..%.1f, y %.1f..%.1f)"
       % ((CELL, nx, ny, DOM[0] - ORIGIN[0], DOM[1] - ORIGIN[0], DOM[2] - ORIGIN[1], DOM[3] - ORIGIN[1]) + DOM))
-    w("origin = footwall corner of the original stope lower end (model (%.1f, %.1f)); Z up; s normal from the"
+    w("origin = footwall corner of the original stope lower end, model (%.1f, %.1f); Z up; s normal from the"
       " footwall contact; t up-dip" % ORIGIN)
     w("")
-    w("1. Masks")
-    for nm in ("rubble", "footwall", "hanging wall", "ore pillar", "void"):
-        w("  %-12s %6d cells  %8.2f m2" % (nm, (cls == CLS[nm]).sum(), (cls == CLS[nm]).sum() * CELL * CELL))
-    w("  enclosed cavities turned into rubble: %d component(s), %s cells" % (len(enclosed), ", ".join(str(q) for q in enclosed)))
-    jj, ii = np.where(rubm)
-    w("  rubble cells: X %.2f..%.2f, Z %.2f..%.2f m; margin to the domain edge: left %.2f, right %.2f, bottom %.2f,"
-      " top %.2f m" % (XR[rubm].min(), XR[rubm].max(), ZR[rubm].min(), ZR[rubm].max(),
-                       XR[rubm].min() - (DOM[0] - ORIGIN[0]) - CELL / 2, (DOM[1] - ORIGIN[0]) - XR[rubm].max() - CELL / 2,
-                       ZR[rubm].min() - (DOM[2] - ORIGIN[1]) - CELL / 2, (DOM[3] - ORIGIN[1]) - ZR[rubm].max() - CELL / 2))
-    w("  rubble s %.2f..%.2f m, t %.2f..%.2f m" % (S[rubm].min(), S[rubm].max(), T[rubm].min(), T[rubm].max()))
-    vmask = cls == CLS["void"]
-    vb = np.zeros_like(rubm)
-    faces = np.zeros(rubm.shape, dtype=int)
-    for dj, di in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-        nb = np.roll(np.roll(vmask, dj, 0), di, 1)
-        if dj == 1:
-            nb[0, :] = False
-        if dj == -1:
-            nb[-1, :] = False
-        if di == 1:
-            nb[:, 0] = False
-        if di == -1:
-            nb[:, -1] = False
-        faces += (rubm & nb).astype(int)
-    vb = faces > 0
-    w("  rubble cells on the void boundary: %d cells, %d faces = %.1f m of boundary" % (vb.sum(), faces.sum(), faces.sum() * CELL))
-    w("  domain void cells are given n = %.0e (no-flow for the reach graph)" % ROCK_N)
+
+    # ---- 1. cavity and masks ---------------------------------------------------------------------------
+    w("1. Cavity and masks")
+    w("  cavity (PFC rubble region + residual voids) %d cells = %.2f m2 (PFC report at 0.05 m: 1923.16 + 990.07 ="
+      " 2913.23 m2); PFC rubble cells %.2f m2, PFC void cells %.2f m2"
+      % (cav.sum(), cav.sum() * a2, pfc_rub.sum() * a2, (cav & ~pfc_rub).sum() * a2))
+    for sd in (FW, HW, PIL):
+        w("  %-12s %.2f m2 (rock, n = 1e-3)" % (NAME[sd], (~cav & (side == sd)).sum() * a2))
+    w("  cavity: X %.2f..%.2f, Z %.2f..%.2f m; margin to the domain edge: left %.2f, right %.2f, bottom %.2f, top %.2f m"
+      % (XR[cav].min(), XR[cav].max(), ZR[cav].min(), ZR[cav].max(),
+         XR[cav].min() - (DOM[0] - ORIGIN[0]) - CELL / 2, (DOM[1] - ORIGIN[0]) - XR[cav].max() - CELL / 2,
+         ZR[cav].min() - (DOM[2] - ORIGIN[1]) - CELL / 2, (DOM[3] - ORIGIN[1]) - ZR[cav].max() - CELL / 2))
     w("")
 
-    # ---- 2. porosity scenarios -----------------------------------------------------------------------
-    w("2. Porosity mapping")
-    sm = smooth5(ns)
-    mmin, mmax = sm.min(), sm.max()
-    mapped = N_LO + (sm - mmin) / (mmax - mmin) * (N_HI - N_LO)
-    w("  PFC particle-scale s-profile (1.5 m slabs, whole rubble region), 5-point moving average, linear map"
-      " min %.4f -> %.2f, max %.4f -> %.2f" % (mmin, N_LO, mmax, N_HI))
-    w("  slab s / area m2 / PFC / smoothed / mapped:")
-    for q in zip(zs, ar, ns, sm, mapped):
-        w("    %6.2f  %6.1f  %.4f  %.4f  %.4f" % q)
-    w("  smoothed minimum at s = %.2f m, maximum at s = %.2f m" % (zs[np.argmin(sm)], zs[np.argmax(sm)]))
-    ns_cell = np.interp(S, zs, mapped)
-    n1 = np.where(rubm, ns_cell, ROCK_N)
-    tmin, tmax = T[rubm].min(), T[rubm].max()
-    delta = -DELTA + 2 * DELTA * (T - tmin) / (tmax - tmin)
-    raw2 = ns_cell + delta
-    n2 = np.where(rubm, np.clip(raw2, CLIP[0], CLIP[1]), ROCK_N)
-    lo_c = (rubm & (raw2 < CLIP[0])).sum()
-    hi_c = (rubm & (raw2 > CLIP[1])).sum()
-    w("  scenario 2: Delta from -%.2f at t %.2f to +%.2f at t %.2f m; clipped cells: %d below %.2f, %d above %.2f"
-      " (of %d rubble cells)" % (DELTA, tmin, DELTA, tmax, lo_c, CLIP[0], hi_c, CLIP[1], rubm.sum()))
-    scen = {1: n1, 2: n2}
-    s13 = S[rubm].min() + 2.0 / 3.0 * (S[rubm].max() - S[rubm].min())
-    zone = {"basal (s <= 3 m)": rubm & (S <= BASAL), "interior": rubm & (S > BASAL) & (S <= s13),
-            "hanging side (s > %.2f m)" % s13: rubm & (S > s13)}
-    for k in (1, 2):
-        nv = scen[k][rubm]
-        w("  scenario %d: rubble porosity min / median / mean / max %.4f / %.4f / %.4f / %.4f; " % (k, nv.min(), np.median(nv), nv.mean(), nv.max())
-          + "; ".join("%s median %.4f" % (zn, np.median(scen[k][zm])) for zn, zm in sorted(zone.items())))
+    # ---- 2. bulking -------------------------------------------------------------------------------------
+    w("2. Rubble extent by bulking")
+    A0 = solid / (1.0 - N_HW)
+    w("  PFC rubble solid area %.2f m2; A0 = %.2f / (1 - %.4f) = %.2f m2 (PFC rubble region %.2f m2 = %.3f A0)"
+      % (solid, solid, N_HW, A0, pfc_rub.sum() * a2, pfc_rub.sum() * a2 / A0))
+    colr = pfc_rub.any(axis=0)
+    ytop = np.full(nx, np.nan)
+    for i in np.where(colr)[0]:
+        ytop[i] = ys[np.where(pfc_rub[:, i])[0].max()] + CELL / 2
+    i_lo, i_hi = np.where(colr)[0].min(), np.where(colr)[0].max()
+    cav_cols = np.where(cav.any(axis=0))[0]
+    ext_cols = [i for i in cav_cols if not colr[i]]
+    ytop[:i_lo] = ytop[i_lo]
+    ytop[i_hi + 1:] = ytop[i_hi]
+    inner_gap = [i for i in range(i_lo, i_hi + 1) if not colr[i]]
+    w("  y_top(x) = top of the PFC rubble in each 0.25 m column; PFC rubble spans X %.2f..%.2f m; cavity columns"
+      " outside that span: %d (held at the end value); columns inside the span without PFC rubble: %d"
+      % (xs[i_lo] - ORIGIN[0], xs[i_hi] - ORIGIN[0], len(ext_cols), len(inner_gap)))
+    for i in inner_gap:
+        ytop[i] = np.interp(i, [j for j in range(nx) if np.isfinite(ytop[j]) and colr[j]],
+                            [ytop[j] for j in range(nx) if colr[j]])
+    w("  K     rubble m2   void m2    D (m)    rubble / A0")
+    drift_levels = []
+    geo = {}
+    for K in KS:
+        cls_k, rub_k, d_k = geometry(cav, pfc_rub, side, ytop, X, Y, A0, K, [])
+        geo[K] = (cls_k, rub_k, d_k)
+        w("  %.2f  %9.2f  %8.2f  %+7.3f   %.4f" % (K, rub_k.sum() * a2, (cav & ~rub_k).sum() * a2, d_k, rub_k.sum() * a2 / A0))
+    # drifts (on the base geometry)
+    cls0, rub0, _ = geo[K_BASE]
+    holes = []
+    yd = ORIGIN[1]
+    drifts = []
+    while True:
+        dm, ctr = drift_mask(X, Y, yd)
+        cls_try = cls0.copy()
+        for m in drifts + [dm]:
+            cls_try[m] = DRIFT
+        h = hole(cls_try, yd)
+        drift_levels.append((yd, ctr, h is not None))
+        if h is None:
+            break
+        drifts.append(dm)
+        holes.append(h)
+        yd += DRIFT_DY
+    for K in KS:
+        cls_k, rub_k, d_k = geometry(cav, pfc_rub, side, ytop, X, Y, A0, K, drifts)
+        geo[K] = (cls_k, rub_k, d_k)
+    cls, rub, _ = geo[K_BASE]
+    vb_faces = neighbours_count(rub, cls == VOID)
+    w("  base geometry K = %.2f: rubble cells on the void boundary %d, %d faces = %.2f m" % (K_BASE, (vb_faces > 0).sum(),
+                                                                                         vb_faces.sum(), vb_faces.sum() * CELL))
+    w("  base rubble: X %.2f..%.2f, Z %.2f..%.2f, s %.2f..%.2f, t %.2f..%.2f m"
+      % (XR[rub].min(), XR[rub].max(), ZR[rub].min(), ZR[rub].max(), S[rub].min(), S[rub].max(), T[rub].min(), T[rub].max()))
     w("")
 
-    # ---- 3. closed forms -------------------------------------------------------------------------------
-    w("3. L_max, local F, gradient decomposition")
-    res3 = {}
+    # ---- 3. porosity and closed forms ---------------------------------------------------------------------
+    w("3. Porosity fields (base geometry) and closed forms")
+    s_pfc_max = S[pfc_rub].max()
+    fields = {}
+    for K in KS:
+        cls_k, rub_k, _ = geo[K]
+        sm, mapped, zst = mapping(zs, ns, s_pfc_max, S[rub_k].max())
+        nsc = np.interp(S, zst, mapped)
+        n1 = np.where(rub_k, nsc, ROCK_N)
+        tmin, tmax = T[rub_k].min(), T[rub_k].max()
+        raw2 = nsc + (-DELTA + 2 * DELTA * (T - tmin) / (tmax - tmin))
+        n2 = np.where(rub_k, np.clip(raw2, CLIP[0], CLIP[1]), ROCK_N)
+        fields[K] = (n1, n2, sm, mapped, zst, (rub_k & (raw2 < CLIP[0])).sum(), (rub_k & (raw2 > CLIP[1])).sum(), tmin, tmax)
+    n1, n2, sm, mapped, zst, clo, chi, tmin, tmax = fields[K_BASE]
+    w("  PFC s-profile smoothed (5-point): min %.4f at s %.2f -> %.2f, max %.4f at s %.2f -> %.2f"
+      % (sm.min(), zs[np.argmin(sm)], N_LO, sm.max(), zs[np.argmax(sm)], N_HI))
+    w("  stretch for s > %.0f m: PFC rubble max s %.2f -> new rubble max s %.2f (factor %.4f)"
+      % (BASAL, s_pfc_max, S[rub].max(), (S[rub].max() - BASAL) / (s_pfc_max - BASAL)))
+    w("  slab: PFC s / stretched s / area m2 / PFC n / smoothed / mapped")
+    for q in zip(zs, zst, ar, ns, sm, mapped):
+        w("    %6.2f  %6.2f  %6.1f  %.4f  %.4f  %.4f" % q)
+    w("  scenario 2: Delta n from -%.2f at t %.2f to +%.2f at t %.2f m; clipped %d cells below %.2f, %d above %.2f"
+      " (of %d rubble cells)" % (DELTA, tmin, DELTA, tmax, clo, CLIP[0], chi, CLIP[1], rub.sum()))
+    basal, interior, hang = zones(rub, S, T)
+    zl = (("basal", basal), ("interior", interior), ("hanging side", hang))
+    w("  zones: basal (s <= 3 m) %.2f m2, interior %.2f m2, hanging side (s above 2/3 of the local thickness,"
+      " 0.5 m t-bins) %.2f m2" % (basal.sum() * a2, interior.sum() * a2, hang.sum() * a2))
+    sc = {1: n1, 2: n2}
     for k in (1, 2):
-        lmb = lam(scen[k])
-        for p0 in P0S:
-            Lm = p0 / lmb[rubm]
-            row = [Lm.min(), np.median(Lm), Lm.max()] + [np.median(p0 / lmb[zm]) for zn, zm in sorted(zone.items())]
-            res3[(k, p0)] = row
-            w("  scenario %d, p0 %.0f MPa: L_max min / median / max %.3f / %.3f / %.3f m; zone medians (%s) %s;"
-              " min L_max / dx %.2f%s" % ((k, p0 / 1e6) + tuple(row[:3]) + (", ".join(sorted(zone)),
-                                          " / ".join("%.3f" % v for v in row[3:]), row[0] / CELL,
-                                          "  < 7" if row[0] / CELL < 7 else "")))
+        nv = sc[k][rub]
+        w("  scenario %d: n min / median / mean / max %.4f / %.4f / %.4f / %.4f; medians basal / interior / hanging side"
+          " %.4f / %.4f / %.4f" % ((k, nv.min(), np.median(nv), nv.mean(), nv.max()) +
+                                   tuple(np.median(sc[k][zm]) for _, zm in zl)))
+    w("  L_max (m): scenario, p0: min / median / max; medians basal / interior / hanging side; min L_max / dx")
+    lres = {}
+    for k in (1, 2):
+        for p0 in P0S + (P0_REF,):
+            Lm = p0 / lam(sc[k])
+            row = (Lm[rub].min(), np.median(Lm[rub]), Lm[rub].max()) + tuple(np.median(Lm[zm]) for _, zm in zl)
+            lres[(k, p0)] = row
+            w("    %d  %.0f MPa: %.3f / %.3f / %.3f; %.3f / %.3f / %.3f; %.2f%s" % ((k, p0 / 1e6) + row + (row[0] / CELL,
+                                                                                    "  (< 7)" if row[0] / CELL < 7 else "")))
     gam = {}
     for k in (1, 2):
-        g_, ok = window_gamma(cls, np.log(lam(np.where(rubm, scen[k], 0.5))))
-        gam[k] = g_
-        gv = g_[rubm & ok]
-        w("  scenario %d: gamma = -dln(lambda)/dZ over %d cells (3 m window): percentiles 5/25/50/75/95 %s 1/m;"
-          " F < 0 share %.4f" % (k, gv.size, " / ".join("%+.4f" % q for q in np.percentile(gv, [5, 25, 50, 75, 95])),
-                                 (gv < 0).mean()))
-        for p0 in P0S:
-            F = gv * p0 / (2 * RHO * G)
-            w("    p0 %.0f MPa: F percentiles 5/25/50/75/95 %s; area share F > 1 %.4f, F < 0 %.4f"
-              % (p0 / 1e6, " / ".join("%+.3f" % q for q in np.percentile(F, [5, 25, 50, 75, 95])), (F > 1).mean(), (F < 0).mean()))
-    both = rubm & np.isfinite(gam[1]) & np.isfinite(gam[2])
-    w("  cell-wise sign agreement of F between the scenarios: %.4f of %d cells (same sign or both zero)"
-      % ((np.sign(gam[1][both]) == np.sign(gam[2][both])).mean(), both.sum()))
-    for zn, zm in sorted(zone.items()):
-        w("    %-26s F < 0 share: scenario 1 %.4f, scenario 2 %.4f; median gamma %+.4f / %+.4f 1/m"
-          % (zn, (gam[1][zm & both] < 0).mean(), (gam[2][zm & both] < 0).mean(), np.median(gam[1][zm & both]),
-             np.median(gam[2][zm & both])))
+        gam[k] = window_gamma(rub, np.log(lam(np.where(rub, sc[k], 0.5))))
+    okg = rub & np.isfinite(gam[1]) & np.isfinite(gam[2])
     for k in (1, 2):
-        ll = np.log(lam(scen[k][rubm]))
-        Mx = np.column_stack([np.ones(ll.size), T[rubm], S[rubm]])
+        gv = gam[k][okg]
+        w("  scenario %d: gamma (3 m window, %d cells) percentiles 5/25/50/75/95 %s 1/m" % (
+            k, gv.size, " / ".join("%+.4f" % q for q in np.percentile(gv, [5, 25, 50, 75, 95]))))
+        for p0 in P0S + (P0_REF,):
+            F = gv * p0 / (2 * RHO * G)
+            w("    p0 %.0f MPa: F percentiles 5/25/50/75/95 %s; share F > 1 %.4f, F < 0 %.4f"
+              % (p0 / 1e6, " / ".join("%+.3f" % q for q in np.percentile(F, [5, 25, 50, 75, 95])), (F > 1).mean(), (F < 0).mean()))
+        w("    F < 0 share by zone: " + "; ".join("%s %.4f" % (zn, (gam[k][zm & okg] < 0).mean()) for zn, zm in zl))
+    w("  cell-wise sign agreement of F between the scenarios: %.4f of %d cells" % (
+        (np.sign(gam[1][okg]) == np.sign(gam[2][okg])).mean(), okg.sum()))
+    for k in (1, 2):
+        ll = np.log(lam(sc[k][rub]))
+        Mx = np.column_stack([np.ones(ll.size), T[rub], S[rub]])
         cf = np.linalg.lstsq(Mx, ll)[0]
         gz = -(cf[1] * SN + cf[2] * CS)
-        w("  scenario %d: whole-rubble plane fit of ln(lambda) on t, s: vertical gamma %+.5f 1/m -> F %s (p0 1/2/3/5 MPa)"
-          % (k, gz, " / ".join("%+.3f" % (gz * p0 / (2 * RHO * G)) for p0 in P0S)))
-    for k in (1, 2):
-        nv = scen[k][rubm]
-        Mx = np.column_stack([np.ones(nv.size), T[rubm], S[rubm]])
-        coef, _, _, _ = np.linalg.lstsq(Mx, nv)
-        r = nv - Mx.dot(coef)
+        nv = sc[k][rub]
+        cn = np.linalg.lstsq(Mx, nv)[0]
+        r = nv - Mx.dot(cn)
         r2 = 1 - (r ** 2).sum() / ((nv - nv.mean()) ** 2).sum()
-        w("  scenario %d: n = a + b_t t + b_s s over rubble cells: b_t %+.5f /m, b_s %+.5f /m, R2 %.3f;"
-          " b_s cos30 %+.5f vs b_t sin30 %+.5f; vertical gradient %+.5f /m"
-          % (k, coef[1], coef[2], r2, coef[2] * CS, coef[1] * SN, coef[2] * CS + coef[1] * SN))
-    w("  (PFC particle scale, analyze.py: b_s -0.00182, b_t -0.00051)")
+        w("  scenario %d: n = a + b_t t + b_s s: b_t %+.5f, b_s %+.5f /m, R2 %.3f; b_s cos30 %+.5f vs b_t sin30 %+.5f;"
+          " vertical %+.5f /m. Whole-rubble ln(lambda) plane: vertical gamma %+.5f 1/m -> F %s (p0 1 / 2 / 5 MPa)"
+          % (k, cn[1], cn[2], r2, cn[2] * CS, cn[1] * SN, cn[2] * CS + cn[1] * SN, gz,
+             " / ".join("%+.3f" % (gz * p0 / (2 * RHO * G)) for p0 in P0S + (P0_REF,))))
     w("")
 
-    # ---- 4. holes and reach ----------------------------------------------------------------------------
-    w("4. Holes, required source pressure and reach")
-    basal = zone["basal (s <= 3 m)"]
+    # ---- 4. drifts, holes, reach ------------------------------------------------------------------------------
+    w("4. Drifts, holes, required source pressure and reach (base geometry K = %.2f)" % K_BASE)
+    for yd, ctr, ok in drift_levels:
+        w("  drift at y %.1f (Z %.1f): centre X %.2f, Z %.2f (s %.2f); hole %s the rubble"
+          % (yd, yd - ORIGIN[1], ctr[0] - ORIGIN[0], ctr[1] - ORIGIN[1], s_of(ctr[0], ctr[1]),
+             "crosses" if ok else "misses"))
+    for i, h in enumerate(holes):
+        w("  hole %d: collar X %.2f, Z %.2f (s %.3f, t %.2f); standpipe end s %+.3f m (cell: %s); enters rubble at"
+          " %.2f m, rubble ends at %.2f m (%s), grouting to %.2f m, end X %.2f, Z %.2f; grouting cells %d (rubble %d)"
+          % (i + 1, h["collar"][0] - ORIGIN[0], h["collar"][1] - ORIGIN[1], h["s_collar"], h["t"], h["s_pipe_end"],
+             h["pipe_cell"], h["u_in"], h["u_out"], h["stop"], h["u_end"], h["end"][0] - ORIGIN[0],
+             h["end"][1] - ORIGIN[1], h["n_cells"], h["rubble_cells"]))
     tb = T[basal]
-    tlo, thi = tb.min(), tb.max()
-    w("  hole positions along the footwall: t range of the basal layer %.2f..%.2f m; holes at 1/6, 1/2, 5/6" % (tlo, thi))
-    low_end = basal & (T <= tlo + 2.0)
-    w("  lower end of the basal layer (target): basal cells with t <= %.2f m: %d cells, Z %.2f..%.2f m"
-      % (tlo + 2.0, low_end.sum(), ZR[low_end].min(), ZR[low_end].max()))
-    hang = zone[[q for q in zone if q.startswith("hanging")][0]]
-    holes = []
-    for f in HOLE_F:
-        h = hole(cls, X, Y, tlo + f * (thi - tlo))
-        holes.append(h)
-        w("  hole t %.2f m: collar (X %.2f, Z %.2f), end (X %.2f, Z %.2f); enters rubble at %.2f m, rubble ends at %.2f m"
-          " (%s), stops at %.2f m; grouting cells %d (rubble %d)"
-          % (tlo + f * (thi - tlo), h["collar"][0] - ORIGIN[0], h["collar"][1] - ORIGIN[1], h["end"][0] - ORIGIN[0],
-             h["end"][1] - ORIGIN[1], h["u_in"], h["u_out"], h["stop"], h["u_end"], h["n_cells"], h["rubble_cells"]))
+    low_end = basal & (T <= tb.min() + 2.0)
+    w("  lower end of the basal layer: basal cells with t <= %.2f m: %d cells, X %.2f..%.2f, Z %.2f..%.2f"
+      % (tb.min() + 2.0, low_end.sum(), XR[low_end].min(), XR[low_end].max(), ZR[low_end].min(), ZR[low_end].max()))
+    top_face = rub & (vb_faces > 0)
     mesh = build_mesh_for_domain(DOM[0], DOM[1], DOM[2], DOM[3], CELL)[0]
     costs = {}
-    w("  scen hole  p0   reach/rubble  basal entry p_req  to lower end p_req/p0 (any path; basal only)  hanging-side reach"
-      "  void contact")
+    w("  scen hole p0     reach/rubble  basal entry  lower end p_req/p0 (any; basal only)  hanging-side reach  void contact")
     for k in (1, 2):
-        st = make_state(mesh, scen[k].ravel())
-        nb_only = np.where(basal, scen[k], ROCK_N)
-        st_b = make_state(mesh, nb_only.ravel())
+        st = make_state(mesh, sc[k].ravel())
+        st_b = make_state(mesh, np.where(basal, sc[k], ROCK_N).ravel())
         for hi, h in enumerate(holes):
-            cost = np.asarray(reachable_domain(st, h["cells"], p0=P0S[-1], use_gravity=True)["cost"], float).reshape(ny, nx)
-            src_b = np.array([q for q in h["cells"] if basal.ravel()[q]])
-            cost_b = np.asarray(reachable_domain(st_b, src_b, p0=P0S[-1], use_gravity=True)["cost"], float).reshape(ny, nx)
+            cost = np.asarray(reachable_domain(st, h["cells"], p0=P0S[-1])["cost"], float).reshape(ny, nx)
+            srcb = np.array([q for q in h["cells"] if basal.ravel()[q]])
+            cb = np.asarray(reachable_domain(st_b, srcb, p0=P0S[-1])["cost"], float).reshape(ny, nx) if srcb.size else \
+                np.full((ny, nx), np.inf)
             costs[(k, hi)] = cost
             hc = np.zeros(ny * nx, bool)
             hc[h["cells"]] = True
             hc = hc.reshape(ny, nx)
             entry = cost[basal & hc].min() if (basal & hc).any() else float("nan")
-            lowv = cost[low_end].min()
-            lowb = cost_b[low_end].min()
+            lowv, lowb = cost[low_end].min(), cb[low_end].min()
             for p0 in P0S:
-                rch = (cost <= p0) & rubm
-                vc = (faces * (rch & vb)).sum() * CELL
-                w("  %d    %d   %.0f MPa   %.4f       %.3f MPa            %.3f ; %.3f                        %.4f"
-                  "            %s" % (k, hi + 1, p0 / 1e6, rch.sum() / float(rubm.sum()), entry / 1e6, lowv / p0, lowb / p0,
-                                     ((cost <= p0) & hang).sum() / float(hang.sum()),
-                                     ("yes, %.1f m" % vc) if vc > 0 else "no"))
-            w("          p_req to the lower end of the basal layer: %.3f MPa (any path), %.3f MPa (basal layer only)"
-              % (lowv / 1e6, lowb / 1e6))
+                rch = (cost <= p0) & rub
+                vc = (vb_faces * rch).sum() * CELL
+                w("   %d   %d   %.0f MPa   %.4f       %.3f MPa    %.3f ; %.3f                       %.4f            %s"
+                  % (k, hi + 1, p0 / 1e6, rch.sum() / float(rub.sum()), entry / 1e6, lowv / p0, lowb / p0,
+                     (rch & hang).sum() / float(hang.sum()), ("yes, %.2f m" % vc) if vc > 0 else "no"))
+            w("          p_req: lower end of the basal layer %.3f MPa (any path) / %.3f MPa (basal only); rubble top"
+              " surface (rubble cells on the void boundary) min %.3f MPa" % (lowv / 1e6, lowb / 1e6, cost[top_face].min() / 1e6))
     w("")
-    w("  resolution: min L_max / dx over the rubble (dx = %.1f m); < 7 marked" % CELL)
+    w("  union of the single-hole reach domains")
+    top_band = rub & (ndimage.distance_transform_edt(~(cls == VOID)) * CELL <= 3.0)
+    union = {}
     for k in (1, 2):
-        w("   scenario %d: " % k + "; ".join("%.0f MPa %.2f%s" % (p0 / 1e6, res3[(k, p0)][0] / CELL,
-                                                                 " (<7)" if res3[(k, p0)][0] / CELL < 7 else "") for p0 in P0S))
+        for p0 in P0S:
+            u = np.zeros((ny, nx), bool)
+            for hi in range(len(holes)):
+                u |= costs[(k, hi)] <= p0
+            u &= rub
+            union[(k, p0)] = u
+            miss = rub & ~u
+            w("   scenario %d, %.0f MPa: union %.4f of the rubble; not covered %.2f m2: hanging side %.4f of its zone"
+              " uncovered, top band (rubble within 3 m of the void) %.4f uncovered, basal layer %.4f uncovered, interior %.4f"
+              % (k, p0 / 1e6, u.sum() / float(rub.sum()), miss.sum() * a2, (miss & hang).sum() / float(hang.sum()),
+                 (miss & top_band).sum() / float(top_band.sum()), (miss & basal).sum() / float(basal.sum()),
+                 (miss & interior).sum() / float(interior.sum())))
+            lab, nl = ndimage.label(miss, structure=np.ones((3, 3), int))
+            comp = []
+            for q in range(1, nl + 1):
+                mk = lab == q
+                comp.append((mk.sum() * a2, XR[mk].mean(), ZR[mk].mean(), XR[mk].min(), XR[mk].max(), ZR[mk].min(),
+                             ZR[mk].max(), (mk & hang).sum() / float(mk.sum()), (mk & top_band).sum() / float(mk.sum())))
+            comp.sort(key=lambda r: -r[0])
+            for r_ in comp[:4]:
+                w("      uncovered %7.2f m2  centroid (%.2f, %.2f)  X %.2f..%.2f  Z %.2f..%.2f  hanging-side share %.2f,"
+                  " top-band share %.2f" % r_)
+            w("      (%d uncovered components in all)" % len(comp))
+    w("")
+    # ---- 4.3 geometry sensitivity -----------------------------------------------------------------------------
+    tm = 0.5 * (T[rub].min() + T[rub].max())
+    hm = int(np.argmin([abs(h["t"] - tm) for h in holes]))
+    w("  geometry sensitivity: scenario 1, hole %d (t %.2f m; middle of the base rubble t %.2f m)" % (hm + 1, holes[hm]["t"], tm))
+    w("   K     D (m)   hole end (m)  hanging-side reach 1 / 2 MPa   p_req to the top surface / p0 (1 / 2 MPa)   void contact 1 / 2 MPa")
+    sens = []
+    for K in KS:
+        cls_k, rub_k, d_k = geo[K]
+        n1k = fields[K][0]
+        hk = hole(cls_k, drift_levels[hm][0])
+        vbk = neighbours_count(rub_k, cls_k == VOID)
+        _, _, hang_k = zones(rub_k, S, T)
+        st = make_state(mesh, n1k.ravel())
+        ck = np.asarray(reachable_domain(st, hk["cells"], p0=P0S[-1])["cost"], float).reshape(ny, nx)
+        topk = rub_k & (vbk > 0)
+        row = [K, d_k, hk["u_end"]]
+        for p0 in P0S:
+            row.append(((ck <= p0) & hang_k).sum() / float(hang_k.sum()))
+        for p0 in P0S:
+            row.append(ck[topk].min() / p0)
+        for p0 in P0S:
+            row.append((vbk * ((ck <= p0) & rub_k)).sum() * CELL)
+        sens.append(row)
+        w("   %.2f  %+6.3f   %6.2f        %.4f / %.4f                %.3f / %.3f                               %.2f / %.2f m" % tuple(row))
+    w("")
+
     text = "\n".join(L) + "\n"
     open(os.path.join(OUT, "prejudge.txt"), "w").write(text)
-    np.savez_compressed(os.path.join(OUT, "prejudge.npz"), cls=cls, X=XR, Z=ZR, S=S, T=T, n1=n1, n2=n2,
-                        gam1=gam[1], gam2=gam[2], zs=zs, ns=ns, sm=sm, mapped=mapped, ar=ar,
-                        cost=np.array([costs[(k, hi)] for k in (1, 2) for hi in range(3)]),
-                        holes=np.array([[h["collar"][0] - ORIGIN[0], h["collar"][1] - ORIGIN[1], h["end"][0] - ORIGIN[0],
-                                         h["end"][1] - ORIGIN[1]] for h in holes]), vb=vb, basal=basal, low_end=low_end,
-                        hang=hang, s13=s13)
+    hole_cells = np.concatenate([h["cells"] for h in holes])
+    hole_ptr = np.cumsum([0] + [len(h["cells"]) for h in holes])
+    hole_line = np.array([[h["collar"][0] - ORIGIN[0], h["collar"][1] - ORIGIN[1], h["end"][0] - ORIGIN[0],
+                           h["end"][1] - ORIGIN[1]] for h in holes])
+    np.savez_compressed(os.path.join(DATA, "base_geometry_K1.25.npz"), cls=cls, X=XR, Z=ZR, S=S, T=T, n1=n1, n2=n2,
+                        cell=CELL, origin_model=np.array(ORIGIN), domain_model=np.array(DOM), basal=basal, hanging=hang,
+                        void_boundary_faces=vb_faces, hole_cells=hole_cells, hole_ptr=hole_ptr, hole_line=hole_line,
+                        classes=np.array(["rubble", "footwall", "hanging wall", "ore pillar", "void", "drift"]),
+                        note=np.array("cls codes 0..5 as in classes; n1, n2 = scenario porosity (rock, void, drift 1e-3);"
+                                      " hole_cells[hole_ptr[i]:hole_ptr[i+1]] = flat cell indices (iy * nx + ix) of the"
+                                      " grouting section of hole i; X, Z cell centres relative to the origin"))
+    np.savez_compressed(os.path.join(OUT, "prejudge.npz"), cls=cls, X=XR, Z=ZR, S=S, n1=n1, n2=n2, gam1=gam[1],
+                        gam2=gam[2], zs=zs, zst=zst, ns=ns, sm=sm, mapped=mapped, ar=ar, basal=basal, hang=hang,
+                        cost=np.array([costs[(k, hi)] for k in (1, 2) for hi in range(len(holes))]),
+                        holes=hole_line, ytop=ytop - ORIGIN[1], xs=xs - ORIGIN[0],
+                        dks=np.array([geo[K][2] for K in KS]), ks=np.array(KS), cav=cav,
+                        union=np.array([union[(k, p0)] for k in (1, 2) for p0 in P0S]),
+                        drifts=np.array([[d[1][0] - ORIGIN[0], d[1][1] - ORIGIN[1]] for d in drift_levels if d[2]]))
     print(text)
     return 0
 
