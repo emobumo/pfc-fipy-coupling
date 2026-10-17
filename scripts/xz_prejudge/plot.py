@@ -5,6 +5,9 @@
 
 Writes figures/xz_prejudge/fig_xz_{1..6}_*.png (300 dpi) and .svg. Coordinates X, Z relative to the footwall
 corner of the original stope's lower end.
+
+    ... plot.py --v3    figures for docs/xz_step2a.md from outputs/xz_prejudge/step2a.npz (step2a.py):
+                        fig_xz_{2,3,4,5,6,7}_*_v3 (proportional mapping; 7 = fan-hole union)
 """
 from __future__ import print_function
 
@@ -20,6 +23,8 @@ from matplotlib.patches import Rectangle
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC = os.path.join(REPO, "outputs", "xz_prejudge", "prejudge.npz")
+SRC_V3 = os.path.join(REPO, "outputs", "xz_prejudge", "step2a.npz")
+SUFFIX = [""]
 OUT = os.path.join(REPO, "figures", "xz_prejudge")
 matplotlib.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Noto Sans SC", "SimHei"],
                             "axes.unicode_minus": False, "font.size": 9, "axes.titlesize": 9,
@@ -32,6 +37,7 @@ VIEW = (-32.0, 72.0, -4.0, 60.0)
 def save(fig, name):
     if not os.path.isdir(OUT):
         os.makedirs(OUT)
+    name += SUFFIX[0]
     fig.savefig(os.path.join(OUT, name + ".png"), dpi=300)
     fig.savefig(os.path.join(OUT, name + ".svg"))
     plt.close(fig)
@@ -171,8 +177,8 @@ def fig5(D):
     save(fig, "fig_xz_5_preq")
 
 
-def fig6(D):
-    U = D["union"]
+def fig6(D, key="union", name="fig_xz_6_union", lines="holes"):
+    U = D[key]
     fig, axs = plt.subplots(2, 2, figsize=(10.0, 7.0))
     cmap = ListedColormap(["#e34948", "#2a78d6"])
     for k in range(2):
@@ -186,7 +192,9 @@ def fig6(D):
             ax.contour(D["X"][0], D["Z"][:, 0], D["hang"].astype(float), levels=[0.5], colors=["k"], linewidths=0.6,
                        linestyles="dashed")
             frame(ax, D, u"情景%s，$p_0$ = %d MPa：并集 %.0f%%" % (u"一" if k == 0 else u"二", p0,
-                                                             100.0 * u[D["cls"] == 0].mean()))
+                                                             100.0 * u[D["cls"] == 0].mean()), holes=False)
+            for h in D[lines]:
+                ax.plot([h[0], h[2]], [h[1], h[3]], "-", color="k", lw=1.0)
             if j == 1:
                 ax.set_xlabel(u"X/m")
             if k == 0:
@@ -196,10 +204,40 @@ def fig6(D):
                [u"各孔单独作用的可达域并集", u"并集之外的散体", u"上盘侧区域边界（局部厚度 2/3 处）"],
                loc="lower center", ncol=3, frameon=False, fontsize=7)
     fig.subplots_adjust(left=0.06, right=0.98, bottom=0.08, top=0.96, hspace=0.2, wspace=0.08)
-    save(fig, "fig_xz_6_union")
+    save(fig, name)
+
+
+def fig3_v3(D):
+    fig, ax = plt.subplots(figsize=(6.2, 4.4))
+    ax.plot(D["ns"], D["zs"], "o", color="#bbbbbb", ms=3.5, label=u"PFC 颗粒尺度，全部像素（原 s）")
+    ax.plot(D["ns_x"], D["zs_x"], "o", color="#52514e", ms=3.0, mfc="none",
+            label=u"PFC，排除距空区 3$d_{50}$ 以内（原 s）")
+    ax.plot(D["sm_x"], D["zs_x"], "-", color="#2a78d6", lw=1.2, label=u"排除后五点滑动平均（原 s）")
+    ax.plot(D["c_base"] * D["sm_x"], D["zst_x"], "s-", color="#e8743b", ms=3.5, lw=1.2,
+            label=u"比例映射 $n_1$（K = 1.25，c = %.4f；拉伸后的 s）" % float(D["c_base"]))
+    ax.plot(D["mapped_v2"], D["zst_v2"], "-", color="#e8743b", lw=0.8, alpha=0.45, label=u"第一步 v2 端点映射（对照）")
+    for zt, a in zip(D["zst_x"], D["ar_x"]):
+        if a < 40:
+            ax.text(0.405, zt, u"%.0f m²" % a, fontsize=6, va="center", color="#52514e")
+    ax.axhline(3.0, color="#888888", ls=":", lw=0.8)
+    ax.text(0.30, 3.3, u"s = 3 m（以下不拉伸）", fontsize=6.5, color="#52514e")
+    ax.axvspan(0.13, 0.29, color="#eeeeee", zorder=0)
+    ax.set_xlabel(u"孔隙率（PFC 为二维面积孔隙率；灰底为文献区间 0.13～0.29）")
+    ax.set_ylabel(u"距下盘接触面的法向距离 s/m")
+    ax.set_xlim(0.10, 0.44)
+    ax.legend(frameon=False, loc="center right", fontsize=6.5, numpoints=1)
+    fig.tight_layout()
+    save(fig, "fig_xz_3_mapping")
 
 
 def main():
+    if "--v3" in sys.argv[1:]:
+        SUFFIX[0] = "_v3"
+        D = np.load(SRC_V3)
+        for f in (fig2, fig3_v3, fig4, fig5, fig6):
+            f(D)
+        fig6(D, key="union_fan", name="fig_xz_7_fan_union", lines="fan")
+        return 0
     D = np.load(SRC)
     for f in (fig1, fig2, fig3, fig4, fig5, fig6):
         f(D)
