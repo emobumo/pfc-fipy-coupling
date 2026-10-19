@@ -8,6 +8,8 @@ corner of the original stope's lower end.
 
     ... plot.py --v3    figures for docs/xz_step2a.md from outputs/xz_prejudge/step2a.npz (step2a.py):
                         fig_xz_{2,3,4,5,6,7}_*_v3 (proportional mapping; 7 = fan-hole union)
+    ... plot.py --v4    sketch of fig. 4.8-2 from outputs/check_4_8/prewrite.npz (scripts/check_4_8/prewrite.py):
+                        fig_xz_{2,5}_*_v4 (v4 porosity, p_req of the four normal holes; K 1.25)
 """
 from __future__ import print_function
 
@@ -24,6 +26,7 @@ from matplotlib.patches import Rectangle
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC = os.path.join(REPO, "outputs", "xz_prejudge", "prejudge.npz")
 SRC_V3 = os.path.join(REPO, "outputs", "xz_prejudge", "step2a.npz")
+SRC_V4 = os.path.join(REPO, "outputs", "check_4_8", "prewrite.npz")
 SUFFIX = [""]
 OUT = os.path.join(REPO, "figures", "xz_prejudge")
 matplotlib.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Noto Sans SC", "SimHei"],
@@ -231,6 +234,12 @@ def fig3_v3(D):
 
 
 def main():
+    if "--v4" in sys.argv[1:]:
+        SUFFIX[0] = "_v4"
+        D = np.load(SRC_V4)
+        for f in (fig2, fig5):
+            f(D)
+        return 0
     if "--v3" in sys.argv[1:]:
         SUFFIX[0] = "_v3"
         D = np.load(SRC_V3)

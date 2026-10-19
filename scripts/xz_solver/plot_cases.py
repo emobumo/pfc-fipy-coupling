@@ -26,9 +26,10 @@ matplotlib.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["No
                             "axes.unicode_minus": False, "font.size": 9, "axes.titlesize": 9,
                             "legend.fontsize": 7, "savefig.dpi": 300, "svg.fonttype": "none"})
 CELL = 0.5
-LABEL = {"S1": u"S1：巷道 1，0°，2 MPa，孔口管 2 m", "S2": u"S2：巷道 1，0°，2 MPa，孔口管至 s = 3.5 m",
-         "S3": u"S3：巷道 1，0°，1 MPa，孔口管 2 m", "S4": u"S4：巷道 1，−30°，2 MPa，孔口管 2 m",
-         "S5": u"S5：巷道 2，−30°，2 MPa，孔口管 2 m"}
+# panel labels describe the hole (sketch of fig. 4.8-3: no case codes on the figure, main line 2026-10-19)
+LABEL = {"S1": u"最低巷道法向孔 2 MPa", "S2": u"最低巷道法向孔 2 MPa，孔口管加长至 s = 3.5 m",
+         "S3": u"最低巷道法向孔 1 MPa", "S4": u"最低巷道 −30° 孔 2 MPa",
+         "S5": u"第二巷道 −30° 孔 2 MPa"}
 
 
 def main():

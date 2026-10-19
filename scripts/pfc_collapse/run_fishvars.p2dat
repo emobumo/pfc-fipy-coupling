@@ -1,0 +1,4 @@
+; PFC2D 6.0 batch entry for fishvars.py (optional PFCX_SAVE, PFCX_OUT), run
+;   pfc2d600_console.exe call scripts/pfc_collapse/run_fishvars.p2dat
+program call 'D:/work/pfc-fipy-coupling/scripts/pfc_collapse/fishvars.py'
+program quit
