@@ -5,7 +5,7 @@
 (a) I 段（充填体 10%）无交界面 / 有交界面（φ_c 0.35、宽 1 m）的所需源压场 p_req/p₀（0.5 m，只算可达域，
     存窿矿石 0.35、充填体底面连通、仰角 35°、未封底），实线为可达域边界（p_req = p₀）；
 (b) 三段到跑浆中段的所需源压 p_req/p₀ 与交界面孔隙率的关系曲线（底面封闭、35°、未封底、存窿矿石 0.35）、
-    比值 = 1 线、与 1 的交点（二分值，锚点 R27）与一维沿交界面估算线。
+    比值 = 1 线、与 1 的交点（二分值，锚点 R27）与一维估算线（曲线及其与 1 的交点 0.309333，锚点 R28）。
 数据：(a) cases/zhaojin_section.py + 可达域（与 outputs/zhaojin_screen 同一计算）；(b) outputs/check_4_7/reach.txt
 B 节（scripts/check_4_7/reach.py，两遍逐字节一致）的 "0.5 / 1.0" 行与宽 1 m 二分行；一维估算为闭式
 42.7·(λ(φ_c) − ρg·sin70°)/p₀（与 c1c2 的一维列相同）。
@@ -87,7 +87,10 @@ def main():
     pf = np.linspace(0.15, 0.45, 100)
     lam = 6.0e4 * (1 - pf) / pf
     one_d = 42.7 * (lam - 1830 * 9.81 * math.sin(math.radians(70.0))) / Z.P0
-    ax.plot(pf, one_d, "--", color=K.INK2, lw=1.0, label=u"一维沿交界面估算")
+    ax.plot(pf, one_d, "--", color=K.INK2, lw=1.0, label=u"一维估算")
+    nc_1d = 0.309333                     # R28: closed-form crossing of the 1D estimate with 1
+    ax.plot([nc_1d] * 2, [0.2, 1.0], "--", color=K.INK2, lw=0.9)
+    ax.text(nc_1d + 0.005, 1.04, u"%.2f" % nc_1d, fontsize=7, color=K.INK2)
     ax.axhline(1.0, color="k", lw=0.8)
     ax.text(0.245, 0.24, u"与 1 的交点（二分）\nI 段 %.4f\nII 段 %.4f\nIII 段 %.4f"
             % (cross["z1_cuts1-6"], cross["z2_cuts6-10"], cross["z3_cuts10-15"]), fontsize=7, color=K.INK2)
