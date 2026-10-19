@@ -78,9 +78,10 @@ def hole_dir(ang):
     return (math.cos(a) * -P.SN + math.sin(a) * P.CS, math.cos(a) * P.CS + math.sin(a) * P.SN)
 
 
-def hole_fan(cls, yd, ang, ctrs):
+def hole_fan(cls, yd, ang, ctrs, pipe=None):
     """Hole at angle ang from +s, collar on the -x wall of the drift at level yd. Returns a dict with 'status'
-    'ok', 'misses', 'drift' (the rock section touches a drift) or 'domain'."""
+    'ok', 'misses', 'drift' (the rock section touches a drift) or 'domain'. pipe = standpipe length (default 2 m)."""
+    pipe = P.PIPE if pipe is None else pipe
     ny, nx = cls.shape
     xc = P.x_fw(yd) + P.DRIFT_DX
     x0, y0 = xc - P.DRIFT_HALF, yd
@@ -110,10 +111,10 @@ def hole_fan(cls, yd, ang, ctrs):
     after = np.where((np.arange(len(u)) > first) & (cl != RUB))[0]
     u_out = u[after[0]]
     u_end = u_out - P.STOP_GAP
-    sel = (u >= P.PIPE) & (u <= u_end)
+    sel = (u >= pipe) & (u <= u_end)
     cells = sorted(set(zip(iy[sel], ix[sel])))
     flat = np.array([j * nx + i for j, i in cells])
-    pe = (x0 + P.PIPE * ex, y0 + P.PIPE * ey)
+    pe = (x0 + pipe * ex, y0 + pipe * ey)
     pipe_cell = cls[int((pe[1] - P.DOM[2]) / CELL), int((pe[0] - P.DOM[0]) / CELL)]
     base.update(status="ok", end=(x0 + u_end * ex, y0 + u_end * ey), u_in=u[first], u_out=u_out, u_end=u_end,
                 stop=P.NAME[int(cl[after[0]])], cells=flat, s_pipe_end=P.s_of(*pe), t_pipe_end=P.t_of(*pe),
