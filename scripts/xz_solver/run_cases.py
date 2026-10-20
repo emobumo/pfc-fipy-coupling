@@ -65,6 +65,9 @@ CAP_S = 48 * 3600.0
 # Subnormal flush (scripts/xz_solver/ftz.py; main line 2026-10-18): first step it is active in, per case
 # (None = never). S1 ran without it; S2 from its step-8000 checkpoint; S3-S5 from the first step.
 FTZ_FROM = {"S1": None, "S2": 8000, "S3": 0, "S4": 0, "S5": 0}
+# S1 re-run (main line 2026-10-19, --rerun-s1): current settings, flush from step 1, own directory, 10 h wall cap
+RERUN_DIR = os.path.join(REPO, "outputs", "xz_solver", "s1_rerun")
+CASE_CAP = [None]
 SNAPS = (0.90, 0.95, 0.99)     # reach-domain fill fractions for the snapshots (main line, 2026-10-18)
 CREEP_MAX = 0.10                # stop when the filled area outside the reach domain reaches 10% of it
 RUB, VOID = P.RUB, P.VOID
@@ -313,6 +316,9 @@ def run_case(tag, label, p0, D, C, srcs, collar_t, box):
         if n_out >= CREEP_MAX * M["nreach"]:
             reason = "creep: filled outside the reach domain >= %.0f%% of it" % (100 * CREEP_MAX)
             break
+        if CASE_CAP[0] is not None and wall_prev + time.time() - w0 >= CASE_CAP[0]:
+            reason = "wall cap %.0f h" % (CASE_CAP[0] / 3600.0)
+            break
         if (step + 1) % CKPT_EVERY == 0:
             keeper.maybe_save(st, step=step + 1, t=t, v_in=v_in, t_hist=np.asarray(t_hist), v_hist=np.asarray(v_hist),
                               arr_json=json.dumps(arr), series_json=json.dumps(series), snaps_json=json.dumps(snaps),
@@ -488,3 +494,11 @@ if __name__ == "__main__":
         run()
     if "--summary" in a:
         summary()
+    if "--rerun-s1" in a:
+        OUT = RERUN_DIR
+        if not os.path.isdir(OUT):
+            os.makedirs(OUT)
+        FTZ_FROM["S1"] = 0
+        CASE_CAP[0] = 10 * 3600.0
+        D_, C_, srcs_, collar_t_ = load()
+        run_case("S1", CASES[0][1], CASES[0][3], D_, C_, srcs_, collar_t_, crop_box(C_))
