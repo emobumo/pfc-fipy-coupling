@@ -9,6 +9,7 @@ basal layer and the loss zone. Writes figures/xz_step2b/fig_b4_<case>.png (300 d
 """
 from __future__ import print_function
 
+import imp
 import json
 import os
 import sys
@@ -20,8 +21,13 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SRC = os.path.join(REPO, "outputs", "xz_solver")
-OUT = os.path.join(REPO, "figures", "xz_step2b")
+XC = imp.load_source("xz_config", os.path.join(REPO, "scripts", "xz_config", "xz_config.py"))
+CFG = XC.get()                  # geometry configuration ($XZ_CONFIG, default 40m)
+SRC = XC.out(CFG, "outputs", "xz_solver")
+OUT = XC.out(CFG, "figures", "xz_step2b")
+VIEW = tuple(CFG["view"]["cases"])
+LOW_LABEL = ((u"底层下端（t ≤ %.2f m）" % CFG["solver"]["low_t"]).replace(u"-", u"−") if CFG["solver"]["low_t"] is not None
+             else u"底层下端（底层沿倾向最低 %g m）" % CFG["low_end_dt"])
 matplotlib.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Noto Sans SC", "SimHei"],
                             "axes.unicode_minus": False, "font.size": 9, "axes.titlesize": 9,
                             "legend.fontsize": 7, "savefig.dpi": 300, "svg.fonttype": "none"})
@@ -70,14 +76,14 @@ def main():
         sm[src] = 1.0
         ax.contour(X[0], Z[:, 0], sm.reshape(rub.shape), levels=[0.5], colors=["k"], linewidths=0.8)
         ax.set_aspect("equal")
-        ax.set_xlim(-32, 72); ax.set_ylim(-4, 50)
+        ax.set_xlim(VIEW[0], VIEW[1]); ax.set_ylim(VIEW[2], VIEW[3])
         ax.set_title(LABEL.get(str(tag), str(tag)) + u"；" + when)
         ax.set_xlabel(u"X/m（原采场下端底板角点为原点）"); ax.set_ylabel(u"Z/m")
         cb = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.02); cb.set_label(u"饱和度 S", fontsize=8)
         hs = [plt.Line2D([], [], color="#1f4e9c"), plt.Rectangle((0, 0), 1, 1, fc="w", ec="k", hatch="////"),
               plt.Line2D([], [], color="k", lw=0.8), plt.Line2D([], [], color="#7a3b9e")]
         ax.legend(hs, [u"可达域轮廓（同孔同压，0.5 m）", u"可达域外已充填（数值蠕变，不计入指标）", u"出浆段（源单元）",
-                       u"底层下端（t ≤ −3.37 m）"], loc="upper left", frameon=False, fontsize=6.5)
+                       LOW_LABEL], loc="upper left", frameon=False, fontsize=6.5)
         fig.tight_layout()
         for ext_ in ("png", "svg"):
             fig.savefig(os.path.join(OUT, "fig_b4_%s.%s" % (tag, ext_)), dpi=300)

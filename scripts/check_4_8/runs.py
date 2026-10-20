@@ -32,7 +32,7 @@ if REPO not in sys.path:
 
 RC = imp.load_source("xz_run_cases", os.path.join(REPO, "scripts", "xz_solver", "run_cases.py"))
 SRC = RC.OUT
-OUT = os.path.join(REPO, "outputs", "check_4_8")
+OUT = RC.XC.out(RC.CFG, "outputs", "check_4_8")
 
 
 def main():
@@ -48,7 +48,7 @@ def main():
     X, Z, T = cr(C["X"]), cr(C["Z"]), cr(C["T"])
     zc1, tc1 = float(D["fan_line"][1][1]), float(D["fan_collar_t"][1])
     corners = [("below collar Z %.2f" % zc1, rub & (Z < zc1)), ("down-dip of collar t %.4f" % tc1, rub & (T < tc1)),
-               ("old box X < -5, Z < 20", rub & (X < -5.0) & (Z < 20.0))]
+               ("old box X < %g, Z < %g" % RC.CORNER_BOX, rub & (X < RC.CORNER_BOX[0]) & (Z < RC.CORNER_BOX[1]))]
     w("4.8 pre-draft check, solver part (runs.py): step-2B cases, scenario 1, K 1.25 v4, 0.5 m crop; metrics inside the"
       " reach domain only")
     w("  corners (0.5 m): %s" % "; ".join("%s %.2f m2 (hanging side %.2f)" % (n_, m.sum() * RC.CELL ** 2,

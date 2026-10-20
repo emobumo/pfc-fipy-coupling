@@ -38,7 +38,8 @@ P, A = S2A.P, S2A.A
 from src.fipy_adapter.mesh_init import build_mesh_for_domain
 from src.analysis.fill_diagnostics import reachable_domain
 
-OUT = os.path.join(REPO, "outputs", "check_4_8")
+OUT = RC.XC.out(RC.CFG, "outputs", "check_4_8")
+CFG, XC = RC.CFG, RC.XC
 DATA = P.DATA
 EXPORT = A.EXPORT
 CELL = P.CELL
@@ -47,7 +48,7 @@ C_XF = 0.871                     # x_f / L_max (4.6, anchor SG01)
 STRIKE_W = 15.0                  # stope width along strike (framework 4.8)
 PSI_FT = 6894.757 / 0.3048       # Pa/m: empirical "1 psi per foot of depth"
 GAMMA_FW = 26.0e3                # N/m3, the earlier framework estimate (2.6 MPa at 100 m)
-STOPE_Y = (40.0, 80.0)           # model y of the stope floor / roof (analyze.STOPE_Y)
+STOPE_Y = A.STOPE_Y              # model y of the stope floor / roof (configuration)
 
 
 def read_kv(path):
@@ -73,15 +74,16 @@ def main():
     w("")
 
     # ---- 1. depth, overburden, PFC structure -------------------------------------------------------------------
-    fv = read_kv(os.path.join(EXPORT, "fishvars_50.txt"))
-    meta = read_kv(os.path.join(EXPORT, "local_stope_result_50_meta.txt"))
-    walls = [l.strip().split(",") for l in open(os.path.join(EXPORT, "local_stope_result_50_walls.csv"))][1:]
+    fin = CFG["pfc"]["final"]
+    fv = read_kv(os.path.join(EXPORT, "fishvars_%d.txt" % fin))
+    meta = read_kv(os.path.join(EXPORT, XC.state(CFG, "final") + "_meta.txt"))
+    walls = [l.strip().split(",") for l in open(os.path.join(EXPORT, XC.state(CFG, "final") + "_walls.csv"))][1:]
     y_top_wall = [float(r[3]) for r in walls if r[0] == "4"][0]
     gam = float(fv["unit_weight"])
     s_top = -float(meta["exc_target_top"])
     s_ins = -float(meta["insitu_syy"])
     y_surf_map = float(fv["ground_elev"]) - float(fv["real_elev_offset"])
-    w("1.1 PFC model boundary (final save 50; FISH globals from fishvars_50.txt, wall end points from the export)")
+    w("1.1 PFC model boundary (final save %d; FISH globals from fishvars_%d.txt, wall end points from the export)" % (fin, fin))
     for k in ("ground_elev", "real_elev_offset", "y_top", "model_top_depth", "unit_weight", "insitu_density", "grav_acc",
               "insitu_syy", "exc_target_top", "stope_y_bot", "stope_y_top", "stope_center_y", "stope_center_depth",
               "wnst4", "ball_y"):
@@ -127,8 +129,8 @@ def main():
           GAMMA_FW * 100 / 1e6, GAMMA_FW * 140 / 1e6, PSI_FT * 100 / 1e6, PSI_FT * 140 / 1e6, arch_pix - STOPE_Y[0],
           GAMMA_FW * (100 - (arch_pix - STOPE_Y[0])) / 1e6, GAMMA_FW * (140 - (arch_pix - STOPE_Y[0])) / 1e6))
     w("")
-    w("1.2 PFC structure (0.25 m cells; pixel values from outputs/pfc_collapse/analysis.txt)")
-    for line in open(os.path.join(REPO, "outputs", "pfc_collapse", "analysis.txt")):
+    w("1.2 PFC structure (0.25 m cells; pixel values from outputs/pfc_collapse%s/analysis.txt)" % CFG["suffix"])
+    for line in open(os.path.join(A.OUT, "analysis.txt")):
         if "inside the original stope outline" in line or "2D bulking" in line:
             w("  [analysis.txt] " + line.strip())
     A0 = G["A0"]
@@ -272,7 +274,7 @@ def main():
       % (zc1, tc1))
     defs = [("literal: rubble below the drift-1 collar elevation (Z < %.2f)" % zc1, lambda X_, Z_, T_: Z_ < zc1),
             ("down-dip of the drift-1 collar (t < %.4f)" % tc1, lambda X_, Z_, T_: T_ < tc1),
-            ("old box X < -5, Z < 20 (not to be cited)", lambda X_, Z_, T_: (X_ < -5.0) & (Z_ < 20.0))]
+            ("old box X < %g, Z < %g (not to be cited)" % RC.CORNER_BOX, lambda X_, Z_, T_: (X_ < RC.CORNER_BOX[0]) & (Z_ < RC.CORNER_BOX[1]))]
     for name, f in defs:
         m25 = rb & f(XR, ZR, T)
         m5 = rub5 & f(X5, Z5, T5)
@@ -288,7 +290,7 @@ def main():
         Dk = npz(K)
         lw, bas = Dk["low_end"], Dk["basal"]
         w("   K %.2f (0.25 m): t <= %.4f m, %d cells = %.2f m2, X %.3f..%.3f, Z %.3f..%.3f; rubble Z min %.3f"
-          % (K, Dk["T"][bas].min() + 2.0, lw.sum(), lw.sum() * a2, Dk["X"][lw].min(), Dk["X"][lw].max(), Dk["Z"][lw].min(),
+          % (K, Dk["T"][bas].min() + P.LOW_DT, lw.sum(), lw.sum() * a2, Dk["X"][lw].min(), Dk["X"][lw].max(), Dk["Z"][lw].min(),
              Dk["Z"][lw].max(), Dk["Z"][Dk["cls"] == RUB].min() - CELL / 2))
     w("   0.5 m solver grid: t <= %.2f m, %d cells, X %.3f..%.3f, Z %.3f..%.3f (cell centres)"
       % (RC.LOW_T, low5.sum(), X5[low5].min(), X5[low5].max(), Z5[low5].min(), Z5[low5].max()))

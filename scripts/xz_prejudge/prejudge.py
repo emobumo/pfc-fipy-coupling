@@ -50,17 +50,18 @@ if REPO not in sys.path:
     sys.path.insert(0, REPO)
 
 A = imp.load_source("pc_analyze", os.path.join(REPO, "scripts", "pfc_collapse", "analyze.py"))
+XC, CFG = A.XC, A.CFG              # geometry configuration ($XZ_CONFIG, default 40m)
 Z = imp.load_source("case_section", os.path.join(REPO, "cases", "zhaojin_section.py"))
 from src.fipy_adapter.mesh_init import build_mesh_for_domain
 from src.models.slurry_transport.variables import initialize_slurry_variables
 from src.analysis.fill_diagnostics import reachable_domain
 
-OUT = os.path.join(REPO, "outputs", "xz_prejudge")
-DATA = os.path.join(REPO, "data", "xz_prejudge")
+OUT = XC.out(CFG, "outputs", "xz_prejudge")
+DATA = XC.out(CFG, "data", "xz_prejudge")
 CELL = 0.25
-DOM = (-53.0, 64.0, 29.0, 107.0)          # model x, y: >= 10 m of rock around the cavity (checked below)
-ORIGIN = (-14.0, 40.0)
-N_HW = 0.1416                             # PFC report: intact hanging-wall disc-assembly porosity
+DOM = tuple(CFG["domain"])               # model x, y: >= 10 m of rock around the cavity (checked below)
+ORIGIN = tuple(CFG["stope"]["origin"])    # footwall corner of the stope floor
+N_HW = CFG["n_hw"]                        # PFC report: intact hanging-wall disc-assembly porosity
 KS = (1.15, 1.25, 1.40)
 K_BASE = 1.25
 P0S = (1.0e6, 2.0e6)
@@ -69,15 +70,17 @@ N_LO, N_HI = 0.13, 0.29
 DELTA = 0.08
 CLIP = (0.10, 0.35)
 ROCK_N = 1.0e-3
-BASAL = 3.0
+BASAL = CFG["basal_s"]
+LOW_DT = CFG["low_end_dt"]                # lower end of the basal layer: t <= min t + LOW_DT
 PIPE = 2.0
 STOP_GAP = 1.0
-DRIFT_DX = 5.0                            # drift centre to footwall contact, horizontal
-DRIFT_HALF = 1.25
-DRIFT_DY = 10.0
+DRIFT_DX = CFG["drifts"]["dx"]            # drift centre to footwall contact, horizontal
+DRIFT_HALF = CFG["drifts"]["half"]
+DRIFT_DY = CFG["drifts"]["spacing"]
+DRIFT_N = CFG["drifts"]["count"]          # None: up to the first drift whose hole misses the rubble
 RHO, G = 1830.0, 9.81
 LAM0 = 6.00e4
-SN, CS = math.sin(math.radians(30.0)), math.cos(math.radians(30.0))
+SN, CS = math.sin(math.radians(CFG["stope"]["dip_deg"])), math.cos(math.radians(CFG["stope"]["dip_deg"]))
 COT = CS / SN
 RUB, FW, HW, PIL, VOID, DRIFT = 0, 1, 2, 3, 4, 5
 NAME = {RUB: "rubble", FW: "footwall", HW: "hanging wall", PIL: "ore pillar", VOID: "void", DRIFT: "drift"}
@@ -101,7 +104,7 @@ def x_fw(y):
 
 def pfc_cells():
     A.BOX = DOM
-    b, _ = A.load("local_stope_result_50")
+    b, _ = A.load(XC.state(CFG, "final"))
     d50 = float(np.median(2 * b["radius"]))
     rub = np.hypot(b["dx"], b["dy"]) > A.DISP_RUBBLE
     c = A.classify(A.raster(b, rub), d50)
@@ -116,7 +119,7 @@ def pfc_cells():
     pfc_rub = cav & (f_reg >= f_void)
     side = np.argmax(np.array(f_side), axis=0) + 1
     Sp = A.s_coord(*np.meshgrid(*A.grid()))
-    zs, ns, ar = A.profile(c, Sp, -2.0, 44.0, A.SLAB_D * d50)
+    zs, ns, ar = A.profile(c, Sp, A.PROF_S[0], A.PROF_S[1], A.SLAB_D * d50)
     solid = float(np.sum(np.pi * b["radius"][rub] ** 2))
     return cav, pfc_rub, side, zs, ns, ar, solid, d50, c
 
@@ -306,7 +309,7 @@ def main():
     holes = []
     yd = ORIGIN[1]
     drifts = []
-    while True:
+    while DRIFT_N is None or len(holes) < DRIFT_N:
         dm, ctr = drift_mask(X, Y, yd)
         cls_try = cls0.copy()
         for m in drifts + [dm]:
@@ -314,6 +317,8 @@ def main():
         h = hole(cls_try, yd)
         drift_levels.append((yd, ctr, h is not None))
         if h is None:
+            if DRIFT_N is not None:
+                raise ValueError("configured %d drifts, but the hole of the drift at y %.2f misses the rubble" % (DRIFT_N, yd))
             break
         drifts.append(dm)
         holes.append(h)
@@ -414,9 +419,9 @@ def main():
              h["pipe_cell"], h["u_in"], h["u_out"], h["stop"], h["u_end"], h["end"][0] - ORIGIN[0],
              h["end"][1] - ORIGIN[1], h["n_cells"], h["rubble_cells"]))
     tb = T[basal]
-    low_end = basal & (T <= tb.min() + 2.0)
+    low_end = basal & (T <= tb.min() + LOW_DT)
     w("  lower end of the basal layer: basal cells with t <= %.2f m: %d cells, X %.2f..%.2f, Z %.2f..%.2f"
-      % (tb.min() + 2.0, low_end.sum(), XR[low_end].min(), XR[low_end].max(), ZR[low_end].min(), ZR[low_end].max()))
+      % (tb.min() + LOW_DT, low_end.sum(), XR[low_end].min(), XR[low_end].max(), ZR[low_end].min(), ZR[low_end].max()))
     top_face = rub & (vb_faces > 0)
     mesh = build_mesh_for_domain(DOM[0], DOM[1], DOM[2], DOM[3], CELL)[0]
     costs = {}

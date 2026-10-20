@@ -18,8 +18,8 @@ PL = imp.load_source("xz_plot", os.path.join(REPO, "scripts", "xz_prejudge", "pl
 plt = PL.plt
 from matplotlib.colors import ListedColormap
 
-SRC = os.path.join(REPO, "outputs", "xz_prejudge", "step2b.npz")
-PL.OUT = os.path.join(REPO, "figures", "xz_step2b")
+SRC = os.path.join(PL.XC.out(PL.CFG, "outputs", "xz_prejudge"), "step2b.npz")
+PL.OUT = PL.XC.out(PL.CFG, "figures", "xz_step2b")
 ZCOL = ["#2a78d6", "#f2b84b", "#e34948"]
 ZNAME = [u"可靠区（1 MPa 可达）", u"条件区（仅 2 MPa 可达）", u"难灌区（2 MPa 不可达）"]
 

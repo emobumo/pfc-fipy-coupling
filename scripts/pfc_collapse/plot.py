@@ -7,6 +7,7 @@ Writes figures/pfc_collapse/fig_pc_{1..7}.png (300 dpi) and .svg. Porosity is th
 """
 from __future__ import print_function
 
+import imp
 import math
 import os
 import sys
@@ -20,18 +21,17 @@ from matplotlib.patches import Circle, Polygon
 from matplotlib.colors import ListedColormap
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SRC = os.path.join(REPO, "outputs", "pfc_collapse")
-OUT = os.path.join(REPO, "figures", "pfc_collapse")
+XC = imp.load_source("xz_config", os.path.join(REPO, "scripts", "xz_config", "xz_config.py"))
+CFG = XC.get()
+SRC = XC.out(CFG, "outputs", "pfc_collapse")
+OUT = XC.out(CFG, "figures", "pfc_collapse")
 matplotlib.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Noto Sans SC", "SimHei"],
                             "axes.unicode_minus": False, "font.size": 9, "axes.titlesize": 10,
                             "legend.fontsize": 8, "savefig.dpi": 300, "svg.fonttype": "none"})
 NLAB = u"二维面积孔隙率"
 C_P, C_B = "#2a78d6", "#e8743b"
-ORE_REF, DIP, THICK = (-28.0, 40.0), 30.0, 14.0
-COT = 1.0 / math.tan(math.radians(DIP))
-HX = 0.5 * THICK / math.sin(math.radians(DIP))
-STOPE = [(ORE_REF[0] - HX, 40.0), (ORE_REF[0] + HX, 40.0), (ORE_REF[0] + 40 * COT + HX, 80.0), (ORE_REF[0] + 40 * COT - HX, 80.0)]
-VIEW = (-48.0, 60.0, 32.0, 104.0)
+STOPE = XC.stope_polygon(CFG)
+VIEW = tuple(CFG["view"]["pfc"])
 
 
 def save(fig, name):
@@ -79,7 +79,7 @@ def fig1(F, B):
     h = [plt.Rectangle((0, 0), 1, 1, fc=c) for c in ("#8a8a8a", "#c9c9c9", "#d9c58f", "#a0522d", "#f2a65a", "#9ec5f4")]
     ax.legend(h, [u"下盘（未动）", u"上盘（未动）", u"矿柱（未动）", u"散体：粘结碎块（≥2 颗）", u"散体：单颗粒",
                   u"残余空区（开运算半径 $d_{50}$）"], loc="upper left", frameon=False, fontsize=7)
-    ax.text(VIEW[1] - 1, VIEW[2] + 1, u"虚线：原采场轮廓；终态 = 第 50 档（开挖后 18.3 s）", ha="right", fontsize=7)
+    ax.text(VIEW[1] - 1, VIEW[2] + 1, u"虚线：原采场轮廓；终态 = " + CFG["pfc"]["final_label"], ha="right", fontsize=7)
     style(ax)
     fig.tight_layout()
     save(fig, "fig_pc_1_final_state")

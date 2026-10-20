@@ -70,7 +70,7 @@ def main():
     Sp = A.s_coord(*np.meshgrid(*A.grid()))
     dv = ndimage.distance_transform_edt(~c["void"]) * A.H
     keep = (dv > S2A.EXCL_D * d50) | (Sp <= P.BASAL)
-    zs_x, ns_x, ar_x = A.profile(c, Sp, -2.0, 44.0, A.SLAB_D * d50, mask=keep)
+    zs_x, ns_x, ar_x = A.profile(c, Sp, A.PROF_S[0], A.PROF_S[1], A.SLAB_D * d50, mask=keep)
     s_pfc_max = S[G["pfc_rub"]].max()
     sm3 = P.smooth5(ns_x)
     big = ar_x >= MIN_SLAB
@@ -153,9 +153,9 @@ def main():
                 hs.append(h)
         holes_k[K] = hs
         bas = zone_k[K][0]
-        lowk[K] = bas & (T <= T[bas].min() + 2.0)
+        lowk[K] = bas & (T <= T[bas].min() + P.LOW_DT)
         w("  K %.2f: lower end of the basal layer = basal cells with t <= %.2f m (%d cells); hole ends (m from collar):"
-          " %s" % (K, T[bas].min() + 2.0, lowk[K].sum(), ", ".join("d%d %+.0f %.2f" % (h["drift"] + 1, h["angle"],
+          " %s" % (K, T[bas].min() + P.LOW_DT, lowk[K].sum(), ", ".join("d%d %+.0f %.2f" % (h["drift"] + 1, h["angle"],
                                                                                     h["u_end"]) for h in hs)))
     w("")
     w("  K     scen  reliable m2 (share)    conditional m2 (share)  hard m2 (share)     hanging side: reliable /"

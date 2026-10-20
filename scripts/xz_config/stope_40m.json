@@ -1,0 +1,56 @@
+{
+ "name": "40m",
+ "note": "PFC2D typical-stope caving end state used for step 1 .. check_4_8 (4kaiwa_local_stope.dat: stope y 40..80, 40 m high; BACKUP since 2026-10-20; S1 = its 2026-10-20 re-run, hence ftz_from 0). Reproduces the existing results byte for byte.",
+ "suffix": "",
+ "pfc": {
+  "export_dir": "E:/pfc_collapse_work/export",
+  "state_fmt": "local_stope_result_%d",
+  "initial": 0,
+  "final": 50,
+  "prev": 49,
+  "earlier": 45,
+  "states_time": [5, 10, 20, 35, 49, 50],
+  "final_label": "第 50 档（开挖后 18.3 s）"
+ },
+ "stope": {
+  "ore_ref": [-28.0, 40.0],
+  "dip_deg": 30.0,
+  "true_thick": 14.0,
+  "y_floor": 40.0,
+  "y_top": 80.0,
+  "origin": [-14.0, 40.0]
+ },
+ "analysis": {
+  "box": [-48.0, 60.0, 32.0, 104.0],
+  "profile_y": [38.0, 100.0],
+  "profile_s": [-2.0, 44.0]
+ },
+ "n_hw": 0.1416,
+ "domain": [-53.0, 64.0, 29.0, 107.0],
+ "drifts": {
+  "spacing": 10.0,
+  "count": null,
+  "dx": 5.0,
+  "half": 1.25
+ },
+ "basal_s": 3.0,
+ "low_end_dt": 2.0,
+ "solver": {
+  "low_t": -3.37,
+  "pad": 6,
+  "corner_box": [-5.0, 20.0],
+  "cases": [
+   ["S1", "drift 1, 0 deg, 2 MPa, 2 m standpipe", 1, 2000000.0],
+   ["S2", "drift 1, 0 deg, 2 MPa, standpipe to s = 3.5 m", "s2", 2000000.0],
+   ["S3", "drift 1, 0 deg, 1 MPa, 2 m standpipe", 1, 1000000.0],
+   ["S4", "drift 1, -30 deg, 2 MPa, 2 m standpipe", 0, 2000000.0],
+   ["S5", "drift 2, -30 deg, 2 MPa, 2 m standpipe", 2, 2000000.0]
+  ],
+  "ftz_from": {"S1": 0, "S2": 8000, "S3": 0, "S4": 0, "S5": 0}
+ },
+ "view": {
+  "pfc": [-48.0, 60.0, 32.0, 104.0],
+  "xz": [-32.0, 72.0, -4.0, 60.0],
+  "cases": [-32.0, 72.0, -4.0, 50.0]
+ }
+}

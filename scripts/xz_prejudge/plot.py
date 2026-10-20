@@ -13,6 +13,7 @@ corner of the original stope's lower end.
 """
 from __future__ import print_function
 
+import imp
 import os
 import sys
 
@@ -24,17 +25,19 @@ from matplotlib.colors import ListedColormap, BoundaryNorm
 from matplotlib.patches import Rectangle
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SRC = os.path.join(REPO, "outputs", "xz_prejudge", "prejudge.npz")
-SRC_V3 = os.path.join(REPO, "outputs", "xz_prejudge", "step2a.npz")
-SRC_V4 = os.path.join(REPO, "outputs", "check_4_8", "prewrite.npz")
+XC = imp.load_source("xz_config", os.path.join(REPO, "scripts", "xz_config", "xz_config.py"))
+CFG = XC.get()                  # geometry configuration ($XZ_CONFIG, default 40m)
+SRC = os.path.join(XC.out(CFG, "outputs", "xz_prejudge"), "prejudge.npz")
+SRC_V3 = os.path.join(XC.out(CFG, "outputs", "xz_prejudge"), "step2a.npz")
+SRC_V4 = os.path.join(XC.out(CFG, "outputs", "check_4_8"), "prewrite.npz")
 SUFFIX = [""]
-OUT = os.path.join(REPO, "figures", "xz_prejudge")
+OUT = XC.out(CFG, "figures", "xz_prejudge")
 matplotlib.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Noto Sans SC", "SimHei"],
                             "axes.unicode_minus": False, "font.size": 9, "axes.titlesize": 9,
                             "legend.fontsize": 7, "savefig.dpi": 300, "svg.fonttype": "none"})
 CELL = 0.25
 COLORS = ["#f2a65a", "#8a8a8a", "#c9c9c9", "#d9c58f", "#cfe3fa", "#3d3d3d"]
-VIEW = (-32.0, 72.0, -4.0, 60.0)
+VIEW = tuple(CFG["view"]["xz"])
 
 
 def save(fig, name):

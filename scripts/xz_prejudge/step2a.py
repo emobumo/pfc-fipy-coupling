@@ -143,12 +143,14 @@ def setup():
             ytop[i] = np.interp(i, [j for j in range(nx) if colr[j]], [ytop[j] for j in range(nx) if colr[j]])
     cls0 = P.geometry(cav, pfc_rub, side, ytop, X, Y, A0, P.K_BASE, [])[0]
     yd, drifts, ctrs = P.ORIGIN[1], [], []
-    while True:
+    while P.DRIFT_N is None or len(drifts) < P.DRIFT_N:
         dm, ctr = P.drift_mask(X, Y, yd)
         cls_try = cls0.copy()
         for m in drifts + [dm]:
             cls_try[m] = DRIFT
         if P.hole(cls_try, yd) is None:
+            if P.DRIFT_N is not None:
+                raise ValueError("configured %d drifts, but the hole of the drift at y %.2f misses the rubble" % (P.DRIFT_N, yd))
             break
         drifts.append(dm)
         ctrs.append(ctr)
@@ -209,7 +211,7 @@ def main():
     dv = ndimage.distance_transform_edt(~c["void"]) * A.H
     near = dv <= EXCL_D * d50
     keep = ~near | (Sp <= P.BASAL)
-    zs_x, ns_x, ar_x = A.profile(c, Sp, -2.0, 44.0, A.SLAB_D * d50, mask=keep)
+    zs_x, ns_x, ar_x = A.profile(c, Sp, A.PROF_S[0], A.PROF_S[1], A.SLAB_D * d50, mask=keep)
     reg = c["region"]
     w("  rubble region %.2f m2; left out %.2f m2 (porosity %.4f); near-void pixels kept in the footwall band %.2f m2"
       % (reg.sum() * A.H ** 2, (reg & ~keep).sum() * A.H ** 2, A.porosity(c, ~keep)[0],
@@ -317,9 +319,9 @@ def main():
     top_face = rub & (vb_faces > 0)
     top_band = rub & (ndimage.distance_transform_edt(~(cls == VOID)) * CELL <= 3.0)
     tb = T[basal]
-    low_end = basal & (T <= tb.min() + 2.0)
+    low_end = basal & (T <= tb.min() + P.LOW_DT)
     w("1.3 Base geometry: drifts, normal holes, required source pressure and reach")
-    w("  lower end of the basal layer: basal cells with t <= %.2f m: %d cells" % (tb.min() + 2.0, low_end.sum()))
+    w("  lower end of the basal layer: basal cells with t <= %.2f m: %d cells" % (tb.min() + P.LOW_DT, low_end.sum()))
     fan = []
     for di, (xc, yc) in enumerate(ctrs):
         for ang in FAN:
@@ -400,7 +402,7 @@ def main():
         cls_k, rub_k, _ = geo[K]
         n1k = FK[K]["n1"]
         bas_k, _, hang_k = P.zones(rub_k, S, T)
-        lo_k = bas_k & (T <= T[bas_k].min() + 2.0)
+        lo_k = bas_k & (T <= T[bas_k].min() + P.LOW_DT)
         st = P.make_state(mesh, n1k.ravel())
         hk = [hole_fan(cls_k, yc, 0.0, ctrs) for _, yc in ctrs]
         ck = [costs[(1, nidx[i])] if K == P.K_BASE else cost_of(st, h["cells"], ny, nx) for i, h in enumerate(hk)]

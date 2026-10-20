@@ -29,24 +29,28 @@ import math
 import os
 import sys
 
+import imp
+
 import numpy as np
 from scipy import ndimage, stats
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-EXPORT = os.environ.get("PFC_COLLAPSE_EXPORT", "E:/pfc_collapse_work/export")
-OUT = os.path.join(REPO, "outputs", "pfc_collapse")
+XC = imp.load_source("xz_config", os.path.join(REPO, "scripts", "xz_config", "xz_config.py"))
+CFG = XC.get()                  # geometry configuration ($XZ_CONFIG, default 40m)
+EXPORT = os.environ.get("PFC_COLLAPSE_EXPORT", CFG["pfc"]["export_dir"])
+OUT = XC.out(CFG, "outputs", "pfc_collapse")
 
-# model geometry (from the model scripts: 1chushichengyang.dat, 4kaiwa_local_stope.dat)
-ORE_REF = (-28.0, 40.0)
-DIP = 30.0
-THICK = 14.0
-STOPE_Y = (40.0, 80.0)
+# model geometry (from the model scripts: 1chushichengyang.dat, 4kaiwa_local_stope.dat; now in the configuration)
+ORE_REF = tuple(CFG["stope"]["ore_ref"])
+DIP = CFG["stope"]["dip_deg"]
+THICK = CFG["stope"]["true_thick"]
+STOPE_Y = (CFG["stope"]["y_floor"], CFG["stope"]["y_top"])
 COT = 1.0 / math.tan(math.radians(DIP))
 HX = 0.5 * THICK / math.sin(math.radians(DIP))
 
 # analysis settings
 H = 0.05
-BOX = (-48.0, 60.0, 32.0, 104.0)
+BOX = tuple(CFG["analysis"]["box"])
 DISP_RUBBLE = 0.5
 D50 = None                      # set from the data (median ball diameter)
 R_CLOSE_D = 0.65                # x d50 (= 0.49 m, about the largest radius)
@@ -56,7 +60,9 @@ RVE_L_D = (1, 2, 3, 4, 6, 8, 10, 13, 16)
 RVE_COVER = 0.95
 SLAB_D = 2                      # profile slab thickness, x d50
 BAND_D = (1, 2, 3)
-STATES_TIME = (5, 10, 20, 35, 49, 50)
+STATES_TIME = tuple(CFG["pfc"]["states_time"])
+PROF_Y = tuple(CFG["analysis"]["profile_y"])    # height-profile range (model y)
+PROF_S = tuple(CFG["analysis"]["profile_s"])    # normal-profile range (s)
 SIDE = {"footwall": 1, "hanging_wall_weak": 2, "hw_interface": 2, "ore": 3}
 SIDE_NAME = {1: "footwall", 2: "hanging wall", 3: "ore pillar"}
 
@@ -258,16 +264,16 @@ def main():
     X, Y = np.meshgrid(xs, ys)
     S = s_coord(X, Y)
 
-    b0, m0 = load("local_stope_result_0")
-    b, m = load("local_stope_result_50")
+    b0, m0 = load(XC.state(CFG, "initial"))
+    b, m = load(XC.state(CFG, "final"))
     assert np.array_equal(b0["id"], b["id"])
     d50 = float(np.median(2 * b["radius"]))
     disp = np.hypot(b["dx"], b["dy"])
     rub = disp > DISP_RUBBLE
     w("PFC2D stope caving, rubble structure (2D AREA porosity of discs throughout)")
     w("export directory: %s" % EXPORT)
-    w("final state local_stope_result_50 (model time %.4f s after excavation, step %s)"
-      % (float(m["pfcx_time"]) - float(m0["pfcx_time"]), m["pfcx_step"]))
+    w("final state %s (model time %.4f s after excavation, step %s)"
+      % (XC.state(CFG, "final"), float(m["pfcx_time"]) - float(m0["pfcx_time"]), m["pfcx_step"]))
     w("balls %d; diameter min / d50 / max %.4f / %.4f / %.4f m (all balls)"
       % (len(b), 2 * b["radius"].min(), d50, 2 * b["radius"].max()))
     w("pixel %.3f m; box x %.1f..%.1f, y %.1f..%.1f; rock closing radius %.3f m; pore reach %.3f m; residual-void"
@@ -288,28 +294,29 @@ def main():
     sf = s_coord(b["x"], b["y"])
     w("  rubble now:    x %.2f..%.2f, y %.2f..%.2f m, s %.2f..%.2f m"
       % (b["x"][rub].min(), b["x"][rub].max(), b["y"][rub].min(), b["y"][rub].max(), sf[rub].min(), sf[rub].max()))
-    b49, m49 = load("local_stope_result_49")
+    b49, m49 = load(XC.state(CFG, "prev"))
+    ip, iF, ie = CFG["pfc"]["prev"], CFG["pfc"]["final"], CFG["pfc"]["earlier"]
     assert np.array_equal(b49["id"], b["id"])
     step = np.hypot(b["x"] - b49["x"], b["y"] - b49["y"])
     dt = float(m["pfcx_time"]) - float(m49["pfcx_time"])
     v = np.hypot(b["vx"], b["vy"])
-    w("  state 49 -> 50 (%.4f s): movement max %.4f m; > 0.01 m: %d balls (%d rubble); > 0.1 d50: %d; > 1 d50: %d"
-      % (dt, step.max(), (step > 0.01).sum(), (rub & (step > 0.01)).sum(), (step > 0.1 * d50).sum(), (step > d50).sum()))
-    w("  rubble movement 49 -> 50: mean %.5f m, median %.5f m, 99th pct %.4f m"
-      % (step[rub].mean(), np.median(step[rub]), np.percentile(step[rub], 99)))
+    w("  state %d -> %d (%.4f s): movement max %.4f m; > 0.01 m: %d balls (%d rubble); > 0.1 d50: %d; > 1 d50: %d"
+      % (ip, iF, dt, step.max(), (step > 0.01).sum(), (rub & (step > 0.01)).sum(), (step > 0.1 * d50).sum(), (step > d50).sum()))
+    w("  rubble movement %d -> %d: mean %.5f m, median %.5f m, 99th pct %.4f m"
+      % (ip, iF, step[rub].mean(), np.median(step[rub]), np.percentile(step[rub], 99)))
     mv = step > 0.1 * d50
-    w("  balls moving > 0.1 d50 in 49 -> 50: x %.1f..%.1f, y %.1f..%.1f, s %.1f..%.1f; %d of them rubble"
-      % (b["x"][mv].min(), b["x"][mv].max(), b["y"][mv].min(), b["y"][mv].max(), sf[mv].min(), sf[mv].max(), (mv & rub).sum()))
-    w("  speed at state 50: max %.3f m/s; > 0.1 m/s %d balls; ratio-average %s; bonds intact %s; cracks %s"
-      % (v.max(), (v > 0.1).sum(), m["pfcx_ratio"], m["bonds_intact"], m["crack_num"]))
-    b45, _ = load("local_stope_result_45")
+    w("  balls moving > 0.1 d50 in %d -> %d: x %.1f..%.1f, y %.1f..%.1f, s %.1f..%.1f; %d of them rubble"
+      % (ip, iF, b["x"][mv].min(), b["x"][mv].max(), b["y"][mv].min(), b["y"][mv].max(), sf[mv].min(), sf[mv].max(), (mv & rub).sum()))
+    w("  speed at state %d: max %.3f m/s; > 0.1 m/s %d balls; ratio-average %s; bonds intact %s; cracks %s"
+      % (iF, v.max(), (v > 0.1).sum(), m["pfcx_ratio"], m["bonds_intact"], m["crack_num"]))
+    b45, _ = load(XC.state(CFG, "earlier"))
     st45 = np.hypot(b["x"] - b45["x"], b["y"] - b45["y"])
-    w("  state 45 -> 50: movement > 0.1 d50: %d balls (%d rubble); max %.3f m"
-      % ((st45 > 0.1 * d50).sum(), (rub & (st45 > 0.1 * d50)).sum(), st45.max()))
+    w("  state %d -> %d: movement > 0.1 d50: %d balls (%d rubble); max %.3f m"
+      % (ie, iF, (st45 > 0.1 * d50).sum(), (rub & (st45 > 0.1 * d50)).sum(), st45.max()))
 
     img = raster(b, rub)
     c = classify(img, d50)
-    frag, nbond, nrr = fragments(b, rub, "local_stope_result_50")
+    frag, nbond, nrr = fragments(b, rub, XC.state(CFG, "final"))
     blk = block_solid(b, frag, d50)
     cb = scale_block(c, blk)
     sets = {"particle": c, "block": cb}
@@ -367,7 +374,7 @@ def main():
     prof = {}
     for sc, desc in SCALES:
         w("  %s" % desc)
-        for lab, key, coord, lo, hi in (("height y", "y", Y, 38.0, 100.0), ("normal s", "s", S, -2.0, 44.0)):
+        for lab, key, coord, lo, hi in (("height y", "y", Y) + PROF_Y, ("normal s", "s", S) + PROF_S):
             for tag, msk in (("all", None), ("interior", inner)):
                 z, nv, ar = profile(sets[sc], coord, lo, hi, slab, msk)
                 a, bb, r2, p = linfit(z, nv, ar)
@@ -547,15 +554,15 @@ def main():
     w("  state  t (s)  rubble  region m2  n_part  n_block  n_int_p  dn/dy(part) R2   dn/dy(block) R2   void m2  speed>0.1")
     evo = []
     for sidx in STATES_TIME:
-        nm = "local_stope_result_%d" % sidx
+        nm = XC.state(CFG, int(sidx))
         bs, ms = load(nm)
         rs = np.hypot(bs["dx"], bs["dy"]) > DISP_RUBBLE
         cs = classify(raster(bs, rs), d50)
         fs_, _, _ = fragments(bs, rs, nm)
         cbs = scale_block(cs, block_solid(bs, fs_, d50))
         inn = interior_mask(cs, d50)
-        fy = linfit(*profile(cs, Y, 38.0, 100.0, slab))
-        fyb = linfit(*profile(cbs, Y, 38.0, 100.0, slab))
+        fy = linfit(*profile(cs, Y, PROF_Y[0], PROF_Y[1], slab))
+        fyb = linfit(*profile(cbs, Y, PROF_Y[0], PROF_Y[1], slab))
         row = (sidx, float(ms["pfcx_time"]) - float(m0["pfcx_time"]), rs.sum(), porosity(cs)[1], porosity(cs)[0],
                porosity(cbs)[0], porosity(cs, inn)[0], fy[1], fy[2], fyb[1], fyb[2], cs["void"].sum() * H * H,
                (np.hypot(bs["vx"], bs["vy"]) > 0.1).sum())

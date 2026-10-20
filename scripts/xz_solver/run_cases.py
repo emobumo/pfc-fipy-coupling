@@ -4,7 +4,11 @@
     powershell -File scripts\\run_local.ps1 scripts\\xz_solver\\run_cases.py --check     (crop vs full reach)
     powershell -File scripts\\run_local.ps1 scripts\\xz_solver\\run_cases.py --run       (S1..S5, serial, resumable)
     powershell -File scripts\\run_local.ps1 scripts\\xz_solver\\run_cases.py --summary   (metrics -> cases.txt)
+    ... run_cases.py --cases S1,S4 [--cap-hours H]   (one batch, own ledger wall_S1-S4.json; batches run in
+        parallel through scripts/xz_solver/launch_batches.ps1, one thread each, flush from the first step)
 
+Geometry configuration from scripts/xz_config ($XZ_CONFIG, default 40m: the paths, case list and lower-end
+threshold below; another configuration reads and writes the directories with its suffix, e.g. outputs/xz_solver_30m).
 Input: data/xz_prejudge/base_geometry_K1.25_v4.npz (scripts/xz_prejudge/step2b.py), scenario 1.
 
 0.5 m grid (aggregation as the step-2A timing probe): a 0.5 m cell is rubble when >= 2 of its 2 x 2 fine cells are
@@ -49,34 +53,34 @@ from src.analysis import stop_rule
 from src.models.slurry_transport.equations import solve_transport_step
 from src.models.slurry_transport.variables import initialize_slurry_variables
 
-SRC = os.path.join(REPO, "data", "xz_prejudge", "base_geometry_K1.25_v4.npz")
-OUT = os.path.join(REPO, "outputs", "xz_solver")
+XC, CFG = P.XC, P.CFG           # geometry configuration ($XZ_CONFIG, default 40m)
+SRC = os.path.join(P.DATA, "base_geometry_K1.25_v4.npz")
+OUT = XC.out(CFG, "outputs", "xz_solver")
 CELL = 0.5
 FAC = 2
-PAD = 6
+PAD = CFG["solver"]["pad"]
 DT_CAP = 5.0
 MAX_STEPS = 60000
 CKPT_EVERY = 200
 RECORD_EVERY = 20
 N_REF = 0.20
-LOW_T = -3.37
+LOW_T = CFG["solver"]["low_t"]  # None: min t of the 0.25 m basal layer + low_end_dt (set in load())
 LOSS_DT = 5.0
 CAP_S = 48 * 3600.0
 # Subnormal flush (scripts/xz_solver/ftz.py; main line 2026-10-18): first step it is active in, per case
-# (None = never). S1 ran without it; S2 from its step-8000 checkpoint; S3-S5 from the first step.
-FTZ_FROM = {"S1": None, "S2": 8000, "S3": 0, "S4": 0, "S5": 0}
+# (None = never). 40 m: S2 from its step-8000 checkpoint, S1 (re-run) and S3-S5 from the first step; any new end
+# state: every case from the first step (main line 2026-10-20).
+FTZ_FROM = dict(CFG["solver"]["ftz_from"])
 # S1 re-run (main line 2026-10-19, --rerun-s1): current settings, flush from step 1, own directory, 10 h wall cap
-RERUN_DIR = os.path.join(REPO, "outputs", "xz_solver", "s1_rerun")
+RERUN_DIR = os.path.join(OUT, "s1_rerun")
 CASE_CAP = [None]
+LEDGER = ["wall.json"]         # --cases runs keep their own ledger (parallel processes must not share one)
 SNAPS = (0.90, 0.95, 0.99)     # reach-domain fill fractions for the snapshots (main line, 2026-10-18)
 CREEP_MAX = 0.10                # stop when the filled area outside the reach domain reaches 10% of it
 RUB, VOID = P.RUB, P.VOID
 # tag, label, source key (fan index or "s2"), p0
-CASES = [("S1", "drift 1, 0 deg, 2 MPa, 2 m standpipe", 1, 2.0e6),
-         ("S2", "drift 1, 0 deg, 2 MPa, standpipe to s = 3.5 m", "s2", 2.0e6),
-         ("S3", "drift 1, 0 deg, 1 MPa, 2 m standpipe", 1, 1.0e6),
-         ("S4", "drift 1, -30 deg, 2 MPa, 2 m standpipe", 0, 2.0e6),
-         ("S5", "drift 2, -30 deg, 2 MPa, 2 m standpipe", 2, 2.0e6)]
+CASES = [tuple(c_) for c_ in CFG["solver"]["cases"]]
+CORNER_BOX = tuple(CFG["solver"]["corner_box"])   # old box definition of the lower-end corner (not cited)
 
 
 def coarse(D):
@@ -135,7 +139,10 @@ def build(n_field, src_ji, box, p0):
 
 
 def load():
+    global LOW_T
     D = np.load(SRC)
+    if LOW_T is None:
+        LOW_T = float(D["T"][D["basal"]].min()) + P.LOW_DT
     C = coarse(D)
     nx_f = D["cls"].shape[1]
     fc, fp = D["fan_cells"], D["fan_ptr"]
@@ -185,7 +192,7 @@ def check():
 
 
 def ledger_path():
-    return os.path.join(OUT, "wall.json")
+    return os.path.join(OUT, LEDGER[0])
 
 
 def read_ledger():
@@ -417,6 +424,25 @@ def run():
         run_case(tag, label, p0, D, C, srcs, collar_t, box)
 
 
+def run_batch(tags):
+    """Run the listed cases serially in this process (one process per batch; batches run in parallel, each with its
+    own ledger LEDGER[0] and the per-case wall cap CASE_CAP)."""
+    if not os.path.isdir(OUT):
+        os.makedirs(OUT)
+    D, C, srcs, collar_t = load()
+    box = crop_box(C)
+    known = dict((c_[0], c_) for c_ in CASES)
+    for tag in tags:
+        if tag not in known:
+            raise SystemExit("unknown case %s (configuration %s)" % (tag, CFG["name"]))
+    for tag in tags:
+        if read_ledger().get(tag, {}).get("done"):
+            print("  [%s] already done" % tag)
+            continue
+        _, label, _, p0 = known[tag]
+        run_case(tag, label, p0, D, C, srcs, collar_t, box)
+
+
 def fmt_m(m, nreach):
     a = m.get("arrival") or {}
     return ("t %.2f s, V_in %.3f m3/m, step %d; lower end %s; loss %.3f m3/m (%.4f of the stored in the reach domain);"
@@ -465,14 +491,14 @@ def summary():
                                                     fmt_m(r["snaps"][key], r["nreach"])))
             else:
                 L.append("     snapshot %s: not reached" % key)
-        # lower-end corner of the rubble (X < -5 m, Z < 20 m; the largest uncovered block since step 1)
-        corner = rub & (cr(C["X"]) < -5.0) & (cr(C["Z"]) < 20.0)
+        # lower-end corner of the rubble (old box X < -5 m, Z < 20 m; the largest uncovered block since step 1)
+        corner = rub & (cr(C["X"]) < CORNER_BOX[0]) & (cr(C["Z"]) < CORNER_BOX[1])
         sp_ = os.path.join(OUT, "snap_%s_0.95.npz" % tag)
         s95 = np.load(sp_)["s"] if os.path.isfile(sp_) else np.load(os.path.join(OUT, "final_%s.npz" % tag))["s"]
         f95 = (s95 >= 0.5) & rub & reach[tag]
-        L.append("     lower-end corner (X < -5, Z < 20 m; %.2f m2, hanging-side part %.2f m2) filled at %s: %.4f (hanging-side"
+        L.append("     lower-end corner (X < %g, Z < %g m; %.2f m2, hanging-side part %.2f m2) filled at %s: %.4f (hanging-side"
                  " part %.4f); in the reach domain %.4f" % (
-                     corner.sum() * a2, (corner & hang).sum() * a2, "0.95" if os.path.isfile(sp_) else "the end state",
+                     CORNER_BOX[0], CORNER_BOX[1], corner.sum() * a2, (corner & hang).sum() * a2, "0.95" if os.path.isfile(sp_) else "the end state",
                      (f95 & corner).sum() / float(corner.sum()), (f95 & corner & hang).sum() / float((corner & hang).sum()),
                      (reach[tag] & corner).sum() / float(corner.sum())))
         fm = dict(r["final"], t=r["t"], v_in=r["v_in"], step=r["steps"], arrival=r["arrival"])
@@ -494,6 +520,17 @@ if __name__ == "__main__":
         run()
     if "--summary" in a:
         summary()
+    if "--cases" in a:
+        # parallel batches (main line 2026-10-20): one thread, flush from step 1, never changed mid-run
+        if CFG["name"] != "40m" and (os.environ.get("MKL_NUM_THREADS") != "1" or os.environ.get("OMP_NUM_THREADS") != "1"):
+            raise SystemExit("set MKL_NUM_THREADS=1 and OMP_NUM_THREADS=1 (scripts/xz_solver/launch_batches.ps1 does)")
+        if CFG["name"] != "40m" and any(v != 0 for v in FTZ_FROM.values()):
+            raise SystemExit("every case must flush subnormals from the first step (solver.ftz_from = 0)")
+        tags_ = a[a.index("--cases") + 1].split(",")
+        if "--cap-hours" in a:
+            CASE_CAP[0] = float(a[a.index("--cap-hours") + 1]) * 3600.0
+        LEDGER[0] = "wall_%s.json" % "-".join(tags_)
+        run_batch(tags_)
     if "--rerun-s1" in a:
         OUT = RERUN_DIR
         if not os.path.isdir(OUT):
