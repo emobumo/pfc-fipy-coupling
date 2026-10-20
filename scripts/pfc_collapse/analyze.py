@@ -305,8 +305,11 @@ def main():
     w("  rubble movement %d -> %d: mean %.5f m, median %.5f m, 99th pct %.4f m"
       % (ip, iF, step[rub].mean(), np.median(step[rub]), np.percentile(step[rub], 99)))
     mv = step > 0.1 * d50
-    w("  balls moving > 0.1 d50 in %d -> %d: x %.1f..%.1f, y %.1f..%.1f, s %.1f..%.1f; %d of them rubble"
-      % (ip, iF, b["x"][mv].min(), b["x"][mv].max(), b["y"][mv].min(), b["y"][mv].max(), sf[mv].min(), sf[mv].max(), (mv & rub).sum()))
+    if mv.any():
+        w("  balls moving > 0.1 d50 in %d -> %d: x %.1f..%.1f, y %.1f..%.1f, s %.1f..%.1f; %d of them rubble"
+          % (ip, iF, b["x"][mv].min(), b["x"][mv].max(), b["y"][mv].min(), b["y"][mv].max(), sf[mv].min(), sf[mv].max(), (mv & rub).sum()))
+    else:
+        w("  balls moving > 0.1 d50 in %d -> %d: none" % (ip, iF))
     w("  speed at state %d: max %.3f m/s; > 0.1 m/s %d balls; ratio-average %s; bonds intact %s; cracks %s"
       % (iF, v.max(), (v > 0.1).sum(), m["pfcx_ratio"], m["bonds_intact"], m["crack_num"]))
     b45, _ = load(XC.state(CFG, "earlier"))

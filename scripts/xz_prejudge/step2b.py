@@ -137,8 +137,8 @@ def main():
 
     # ---- 2. zoning --------------------------------------------------------------------------------------------------
     mesh = build_mesh_for_domain(P.DOM[0], P.DOM[1], P.DOM[2], P.DOM[3], CELL)[0]
-    w("2. Groutability zoning: union of the 8 single-hole reach domains (-30 / 0 deg per drift); reliable = in at 1 MPa,"
-      " conditional = in at 2 MPa only, hard = out at 2 MPa")
+    w("2. Groutability zoning: union of the %d single-hole reach domains (-30 / 0 deg per drift); reliable = in at 1 MPa,"
+      " conditional = in at 2 MPa only, hard = out at 2 MPa" % (len(ANGLES) * len(ctrs)))
     zones_out = {}
     holes_k = {}
     lowk = {}
@@ -186,8 +186,8 @@ def main():
             w("  %.2f   %d    %8.2f (%.4f)     %8.2f (%.4f)      %8.2f (%.4f)    %.4f / %.4f / %.4f"
               % (K, k, ar[0], ar[0] / tot, ar[1], ar[1] / tot, ar[2], ar[2] / tot, hs_[0], hs_[1], hs_[2]))
     w("")
-    w("  p_req to the lower end of the basal layer (MPa): K scen: drift 1 -30 / 0, drift 2 -30 / 0, drift 3 -30 / 0,"
-      " drift 4 -30 / 0")
+    w("  p_req to the lower end of the basal layer (MPa): K scen: " + ", ".join(
+        "drift %d -30 / 0" % (d + 1) for d in range(len(ctrs))))
     for K in P.KS:
         for k in (1, 2):
             w("   %.2f %d: %s" % (K, k, ", ".join("%.3f" % (preq[(K, k, hi)] / 1e6) for hi in range(len(holes_k[K])))))

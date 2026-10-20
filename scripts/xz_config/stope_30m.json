@@ -1,6 +1,7 @@
 {
  "name": "30m",
- "note": "TEMPLATE for the new 30 m PFC end state (main line 2026-10-20; .sav expected 2026-10-21). Values marked in 'pending' are assumptions to be checked against the new export before step 1 is run.",
+ "note": "New 30 m PFC end state (main line 2026-10-20; saves local_stope_result_0..50, stope_h 30, post-excavation damping 0.03). Filled from the new export on 2026-10-20; see docs/xz_30m_stage1.md.",
+ "pending": ["solver.cases: stage-2 case list (up to 13) from the main line", "drifts: the 4th drift asked for (y 70) has no hole reaching the rubble; 3 drifts by rule until the main line decides", "basal_s: measured loose layer about 2.5 m; the model keeps 3 m until the main line decides (also the S2 standpipe end, step2b.S2_PIPE_S 3.5 m)"],
  "suffix": "_30m",
  "pending": ["pfc.state_fmt / initial / final / prev / earlier / states_time / final_label: from the new save series", "stope.ore_ref / y_floor / y_top / origin: from the new excavation script (main line: 30 m high, floor at the same level assumed)", "analysis.box, domain, view: must enclose the new cavity with >= 10 m of rock (prejudge.py prints the margins)", "n_hw: intact hanging-wall disc porosity from the new analysis.txt", "solver.cases: stage-2 case list (up to 13) from the main line"],
  "pfc": {
@@ -11,7 +12,7 @@
   "prev": 49,
   "earlier": 45,
   "states_time": [5, 10, 20, 35, 49, 50],
-  "final_label": "终态（待定）"
+  "final_label": "第 50 档（开挖后 18.3 s）"
  },
  "stope": {
   "ore_ref": [-28.0, 40.0],
@@ -26,11 +27,14 @@
   "profile_y": [38.0, 100.0],
   "profile_s": [-2.0, 44.0]
  },
- "n_hw": 0.1416,
+ "n_hw": 0.1396,
+ "depth_roof": 100.0,
  "domain": [-53.0, 64.0, 29.0, 107.0],
  "drifts": {
   "spacing": 10.0,
-  "count": 4,
+  "count": null,
+  "requested": 4,
+  "count_note": "main line asked for 4 drifts (0/10/20/30 m above the floor); the -30 / 0 / +30 deg holes of the drift at 30 m (y 70, the stope-roof level) leave the domain without meeting the rubble on all three K geometries (2026-10-20 probe), so the rule up to the first drift whose hole misses the rubble applies: 3 drifts, 6 holes. Pending main-line decision.",
   "dx": 5.0,
   "half": 1.25
  },

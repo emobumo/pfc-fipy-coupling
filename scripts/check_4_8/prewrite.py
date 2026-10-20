@@ -128,6 +128,15 @@ def main():
       " above arch (arch %.2f m above the floor) %.2f / %.2f" % (
           GAMMA_FW * 100 / 1e6, GAMMA_FW * 140 / 1e6, PSI_FT * 100 / 1e6, PSI_FT * 140 / 1e6, arch_pix - STOPE_Y[0],
           GAMMA_FW * (100 - (arch_pix - STOPE_Y[0])) / 1e6, GAMMA_FW * (140 - (arch_pix - STOPE_Y[0])) / 1e6))
+    if "depth_roof" in CFG:
+        hd = CFG["depth_roof"] - (arch_pix - STOPE_Y[1])
+        w("  main line (configuration depth_roof): stope roof %.1f m deep -> floor %.2f m, cave-arch top %.2f m deep (arch"
+          " %.2f m above the roof); intact rock above the arch gamma H_arch: %.3f MPa (gamma %.0f N/m3) / %.3f MPa"
+          " (gamma %.0f N/m3); total gamma H at the roof / floor %.3f / %.3f (%.0f) and %.3f / %.3f (%.0f)" % (
+              CFG["depth_roof"], CFG["depth_roof"] + STOPE_Y[1] - STOPE_Y[0], hd, arch_pix - STOPE_Y[1], GAMMA_FW * hd / 1e6,
+              GAMMA_FW, gam * hd / 1e6, gam, GAMMA_FW * CFG["depth_roof"] / 1e6,
+              GAMMA_FW * (CFG["depth_roof"] + STOPE_Y[1] - STOPE_Y[0]) / 1e6, GAMMA_FW, gam * CFG["depth_roof"] / 1e6,
+              gam * (CFG["depth_roof"] + STOPE_Y[1] - STOPE_Y[0]) / 1e6, gam))
     w("")
     w("1.2 PFC structure (0.25 m cells; pixel values from outputs/pfc_collapse%s/analysis.txt)" % CFG["suffix"])
     for line in open(os.path.join(A.OUT, "analysis.txt")):
@@ -172,8 +181,10 @@ def main():
             w("   %.2f %d: %+.4f / %+.4f" % (K, k, gz * P.P0S[0] / (2 * P.RHO * P.G), gz * P.P0S[1] / (2 * P.RHO * P.G)))
     w("")
     mesh = build_mesh_for_domain(P.DOM[0], P.DOM[1], P.DOM[2], P.DOM[3], CELL)[0]
-    w("2.2 the four 0 deg (normal) holes, drifts 1..4: grouting cells in the basal layer; basal-entry p_req = min p_req"
-      " over basal cells holding a grouting cell; p_req to the lower end of the basal layer (MPa)")
+    nh_ = len(npz(P.K_BASE)["hole_ptr"]) - 1
+    w("2.2 the %s 0 deg (normal) holes, drifts 1..%d: grouting cells in the basal layer; basal-entry p_req = min p_req"
+      " over basal cells holding a grouting cell; p_req to the lower end of the basal layer (MPa)"
+      % ({3: "three", 4: "four"}.get(nh_, str(nh_)), nh_))
     costs = {}
     for K in P.KS:
         Dk = npz(K)
@@ -195,7 +206,7 @@ def main():
                 parts.append("%d cells, entry %s, lower end %.3f" % (nb, ("%.3f" % (cost[bas & hc].min() / 1e6)) if nb else
                                                                       "n/a", cost[low].min() / 1e6))
             w("   %.2f %d: %s" % (K, k, "; ".join(parts)))
-    w("  [step2b.txt] table 2-2 (all 8 holes, -30 / 0 deg per drift):")
+    w("  [step2b.txt] table 2-2 (all %d holes, -30 / 0 deg per drift):" % len(npz(P.K_BASE)["fan_drift"]))
     on = False
     for line in open(os.path.join(P.OUT, "step2b.txt")):
         if line.startswith("  p_req to the lower end"):

@@ -15,7 +15,7 @@ domain, its ratio to the single-hole reach domain, cemented grouting cells and w
 the basal layer; the area lost against the union (blocks with area, centroid and extent). K 1.15 / 1.25 / 1.40 x
 scenarios 1 / 2.
 
-Output: outputs/xz_prejudge<suffix>/seq_reach.txt
+Output: outputs/xz_prejudge<suffix>/seq_reach.txt; seq_reach.npz (coverage masks per K, scenario and order, for the figures)
 """
 from __future__ import print_function
 
@@ -34,7 +34,7 @@ P = S2A.P
 from src.fipy_adapter.mesh_init import build_mesh_for_domain
 
 P0 = 2.0e6
-ORDERS = (("bottom-up", "drift 1 -> 4, -30 deg first"), ("top-down", "drift 4 -> 1, -30 deg first"))
+ORDERS = (("bottom-up", "drift 1 -> %d, -30 deg first"), ("top-down", "drift %d -> 1, -30 deg first"))
 
 
 def order_of(name, drift, angle):
@@ -50,6 +50,7 @@ def main():
     L = ["Sequential reach domains (0.25 m, p0 = %.0f MPa, v4, configuration %s); cemented = n %.0e"
          % (P0 / 1e6, P.CFG["name"], P.ROCK_N), ""]
     w = L.append
+    masks = {}
     for K in P.KS:
         D = np.load(os.path.join(P.DATA, "base_geometry_K%.2f_v4.npz" % K))
         cls = D["cls"]
@@ -69,12 +70,14 @@ def main():
             union = np.zeros_like(rub)
             for r_ in single:
                 union |= r_
+            masks["K%.2f_s%d_none" % (K, k)] = union
             zmap = D["zone%d" % k]
             w("K %.2f scenario %d: rubble %.2f m2, hanging side %.2f m2; union of single-hole reach domains %.2f m2"
               " (%.4f; hanging side %.4f); equals the stored zoning (zone <= 1): %s"
               % (K, k, rub.sum() * a2, hang.sum() * a2, union.sum() * a2, union.sum() / float(rub.sum()),
                  (union & hang).sum() / float(hang.sum()), bool(np.array_equal(union, rub & (zmap >= 0) & (zmap <= 1)))))
             for oname, odesc in ORDERS:
+                odesc = odesc % max(drift)
                 ncur = n0.copy()
                 sealed = np.zeros_like(rub)
                 cover = np.zeros_like(rub)
@@ -94,6 +97,7 @@ def main():
                     sealed |= reach
                     ncur[reach] = P.ROCK_N
                 lost = union & ~cover
+                masks["K%.2f_s%d_%s" % (K, k, oname)] = cover
                 w("  %s (%s): coverage %.2f m2 = %.4f of the rubble (hanging side %.4f, interior %.4f); lost against the"
                   " union %.2f m2 (%.4f of the union); outside the union %.2f m2"
                   % (oname, odesc, cover.sum() * a2, cover.sum() / float(rub.sum()), (cover & hang).sum() / float(hang.sum()),
@@ -112,6 +116,7 @@ def main():
     if not os.path.isdir(P.OUT):
         os.makedirs(P.OUT)
     open(os.path.join(P.OUT, "seq_reach.txt"), "w").write(text)
+    np.savez_compressed(os.path.join(P.OUT, "seq_reach.npz"), **masks)
     print(text)
     return 0
 

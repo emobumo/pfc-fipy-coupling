@@ -99,6 +99,17 @@
 | 4.8-3 | `figures\xz_step2b_30m\fig_b4_*` |
 | 4.8-4 | `figures\xz_step2b_30m\fig_b3_zones_compare` |
 
+**2026-10-20 补记（第一阶段实际执行）**：
+
+新增步骤与脚本：
+- 第 2 步后跑 `scripts\pfc_collapse\basal_thickness.py`，量下盘松散底层厚度；
+- 第 7 步后跑 `scripts\xz_solver\grids.py`，生成第二阶段用的四套 0.5 m 网格；
+- 图 4.8-1 与 4.8-4 的分步对照图由 `scripts\xz_prejudge\plot_48.py` 生成，即 `fig_48_1_geometry`、`fig_48_4_sequence`。
+
+耗时：确定性部分单遍实测约 22 min，其中分步可达域 10.6 min。
+
+结果与待定事项见 `docs/xz_30m_stage1.md`。
+
 ---
 
 ## 二、求解器并行（第二阶段最多 13 个单线程算例）
