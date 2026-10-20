@@ -74,7 +74,7 @@
 | 3 | 第一步 | `scripts\xz_prejudge\prejudge.py`，然后 `plot.py` | 导出、配置 | `outputs\xz_prejudge_30m\prejudge.txt`、`data\xz_prejudge_30m\base_geometry_K1.25.npz`、`fig_xz_1～6` | 约 5 min × 2 |
 | 4 | 第二步 A | `step2a.py`，然后 `plot.py --v3` | 同上 | `step2a.txt`、`base_geometry_K1.25_v3.npz`、`*_v3` 图 | 约 6 min × 2 |
 | 5 | 第二步 B | `step2b.py`，然后 `plot_step2b.py` | 同上 | `step2b.txt`、`base_geometry_K{1.15,1.25,1.40}_v4.npz`、`fig_b1～b3` | 约 8 min × 2 |
-| 6 | 分步可达域 | `seq_reach.py` | v4 npz | `outputs\xz_prejudge_30m\seq_reach.txt` | 见第四节 |
+| 6 | 分步可达域 | `seq_reach.py` | v4 npz | `outputs\xz_prejudge_30m\seq_reach.txt` | 约 18 min × 2（第三节） |
 | 7 | 裁剪核对 | `run_cases.py --check` | v4 npz | `outputs\xz_solver_30m\crop_check.txt` | 1 min |
 | 8 | 求解器算例 | `launch_batches.ps1 -Config 30m -Batches "..." -CapHours H`（第二节） | v4 npz、算例表 | `result_*.json`、`final_*.npz`、`snap_*.npz`、`diag_*.csv`、`wall_*.json` | 第二节 |
 | 9 | 汇总与图 | `run_cases.py --summary`（两遍），然后 `plot_cases.py` | 第 8 步 | `cases.txt`、`summary.npz`、`fig_b4_*` | 2 min |
