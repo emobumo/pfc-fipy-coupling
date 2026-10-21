@@ -21,7 +21,7 @@ foreach ($b in ($Batches -split ";")) {
     $name = ($tags -join "-")
     $cap = if ($CapHours -gt 0) { " --cap-hours $CapHours" } else { "" }
     $cmd = "`$env:MKL_NUM_THREADS='1'; `$env:OMP_NUM_THREADS='1'; `$env:XZ_CONFIG='$Config'; " +
-           "& '$repo\scripts\run_local.ps1' scripts\xz_solver\run_cases.py --cases $($tags -join ',')$cap"
+           "& '$repo\scripts\run_local.ps1' scripts\xz_solver\run_cases.py --cases '$($tags -join ',')'$cap"
     $p = Start-Process -FilePath powershell.exe -ArgumentList '-ExecutionPolicy', 'Bypass', '-Command', $cmd `
         -WorkingDirectory $repo -WindowStyle Hidden -PassThru `
         -RedirectStandardOutput (Join-Path $out "batch_$name.log") -RedirectStandardError (Join-Path $out "batch_$name.err")

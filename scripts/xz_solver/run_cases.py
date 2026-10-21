@@ -80,6 +80,12 @@ CREEP_MAX = 0.10                # stop when the filled area outside the reach do
 RUB, VOID = P.RUB, P.VOID
 # tag, label, source key (fan index or "s2"), p0
 CASES = [tuple(c_) for c_ in CFG["solver"]["cases"]]
+# stage-2 cases of a new end state (main line 2026-10-21; --cases only): dicts with tag, label, key (fan index or
+# "s2"), p0, grid (a stored 0.5 m grid, outputs/xz_solver<suffix>/grid_<grid>.npz, used unchanged) and optionally
+# outlet = {"ref": closed case, "factor": f}: the lower end of the basal layer is a pressure-0 outflow boundary
+# (kept at S = 0 after every step, see outlet_trial.py) and the run ends when V_in reaches f x V_in of the closed
+# case at its 0.95 snapshot (rate and creep rules only recorded)
+CASES2 = dict((c_["tag"], c_) for c_ in CFG["solver"].get("cases2", []))
 CORNER_BOX = tuple(CFG["solver"]["corner_box"])   # old box definition of the lower-end corner (not cited)
 
 
@@ -239,7 +245,9 @@ def metrics(s, M):
             "low_in": bool(np.any(fin & M["low"])), "low_any": bool(np.any(f & M["low"]))}
 
 
-def run_case(tag, label, p0, D, C, srcs, collar_t, box):
+def run_case(tag, label, p0, D, C, srcs, collar_t, box, opts=None):
+    opts = opts or {}
+    outlet = opts.get("outlet")
     st, src, _ = build(C["n"], srcs[tag], box, p0)
     j0, j1, i0, i1 = box
     shp = (j1 - j0, i1 - i0)
@@ -251,6 +259,14 @@ def run_case(tag, label, p0, D, C, srcs, collar_t, box):
     sp = st["slurry_parameters"]
     qref = stop_rule.q_ref(N_REF, sp["calibrated_permeability_coefficient"], p0, sp["plastic_viscosity"])
     fp = "xz2b|%s|p0=%g|src=%s|K1.25v4|s1" % (tag, p0, ",".join(str(q) for q in src)) + stop_rule.rate_tag(N_REF)
+    if opts:
+        fp += "|grid=%s|outlet=%s" % (opts.get("grid"), json.dumps(outlet, sort_keys=True))
+    om = low.copy() if outlet else None
+    v_target = None
+    if outlet:
+        ref = json.load(open(os.path.join(OUT, "result_%s.json" % outlet["ref"])))
+        v_target = outlet["factor"] * float(ref["snaps"]["0.95"]["v_in"])
+        v_eq = float(ref["snaps"]["0.95"]["v_in"])
     keeper = Checkpointer(os.path.join(OUT, "ckpt_" + tag), every=CKPT_EVERY, fingerprint=state_fingerprint(st, fp))
     res = keeper.restore(st)
     led = read_ledger()
@@ -263,11 +279,14 @@ def run_case(tag, label, p0, D, C, srcs, collar_t, box):
         snaps = json.loads(str(res["snaps_json"]))
         if "ftz_json" in res:
             FZ.STATE.update(json.loads(str(res["ftz_json"])))
+        ox = json.loads(str(res["out_json"])) if "out_json" in res else {}
         print("  [%s] resuming at step %d (t = %.2f s)" % (tag, step0, t))
     else:
         step0, t, v_in, t_hist, v_hist, arr, series, snaps = 0, 0.0, 0.0, [0.0], [0.0], {}, [], {}
+        ox = {}
         print("  [%s] %s: %d cells, %d sources, reach %d cells, Q_ref %.4e" % (tag, label, vols.size, len(src),
                                                                              M["nreach"], qref))
+    ox.setdefault("v_out", 0.0)
     print("  [%s] threads: MKL_NUM_THREADS=%s OMP_NUM_THREADS=%s" % (tag, os.environ.get("MKL_NUM_THREADS", "default"),
                                                                  os.environ.get("OMP_NUM_THREADS", "default")))
     sys.stdout.flush()
@@ -280,7 +299,7 @@ def run_case(tag, label, p0, D, C, srcs, collar_t, box):
                % (step0, time.strftime("%Y-%m-%d %H:%M:%S")))
     for step in range(step0, MAX_STEPS):
         FZ.STATE["step"] = step + 1
-        FZ.set_active(FTZ_FROM[tag] is not None and step >= FTZ_FROM[tag])
+        FZ.set_active(FTZ_FROM.get(tag, 0) is not None and step >= FTZ_FROM.get(tag, 0))
         ws = time.time()
         dt = solve_transport_step(st, dt_cap=DT_CAP)
         dgc = DG.take()
@@ -294,6 +313,12 @@ def run_case(tag, label, p0, D, C, srcs, collar_t, box):
         v_in += float(np.sum(dq[hm] * vols[hm])) * float(dt)
         s = np.array(st["saturation"].value, copy=True)
         s[hm] = 1.0
+        if outlet:
+            o_step = float(np.sum(-dq[om] * vols[om])) * float(dt)
+            ox["v_out"] += o_step
+            if "first_out" not in ox and o_step > 0.0:
+                ox["first_out"] = {"step": step + 1, "t": t, "v_in": v_in}
+            s[om] = 0.0
         st["saturation"].setValue(s)
         t_hist.append(t)
         v_hist.append(v_in)
@@ -311,16 +336,33 @@ def run_case(tag, label, p0, D, C, srcs, collar_t, box):
                 snaps[key] = m
                 np.savez_compressed(os.path.join(OUT, "snap_%s_%s.npz" % (tag, key)), s=s.reshape(shp))
                 print("    [%s] snapshot %s at step %d, t %.2f s, V_in %.3f" % (tag, key, step + 1, t, v_in))
+        if outlet and "eq" not in ox and v_in >= v_eq:
+            m = metrics(s, M)
+            m.update({"t": t, "v_in": v_in, "step": step + 1, "v_out": ox["v_out"], "frac": frac,
+                      "rate_ratio": stop_rule.window_rate(t_hist, v_hist) / (stop_rule.EPS * qref)})
+            ox["eq"] = m
+            np.savez_compressed(os.path.join(OUT, "snap_%s_eq.npz" % tag), s=s.reshape(shp))
+            print("    [%s] V_in reached the closed case's 0.95 value at step %d, t %.2f s; outflow %.3f"
+                  % (tag, step + 1, t, ox["v_out"]))
         if (step + 1) % RECORD_EVERY == 0:
-            series.append([step + 1, t, float(dt), v_in, int(f.sum()), int((f & reach).sum()), n_out])
+            series.append([step + 1, t, float(dt), v_in, int(f.sum()), int((f & reach).sum()), n_out]
+                          + ([ox["v_out"]] if outlet else []))
         if (step + 1) % 500 == 0:
             print("    [%s] step %6d  t %9.2f s  dt %.2e  V_in %8.3f  reach filled %.4f  outside %d  wall %.0f s"
                   % (tag, step + 1, t, dt, v_in, frac, n_out, wall_prev + time.time() - w0))
             sys.stdout.flush()
-        if stop_rule.stop_rule_physical(t_hist, v_hist, qref):
+        if outlet:
+            if "rate_at" not in ox and stop_rule.stop_rule_physical(t_hist, v_hist, qref):
+                ox["rate_at"] = {"step": step + 1, "t": t, "v_in": v_in}
+            if "creep_at" not in ox and n_out >= CREEP_MAX * M["nreach"]:
+                ox["creep_at"] = {"step": step + 1, "t": t, "v_in": v_in}
+            if v_in >= v_target:
+                reason = "V_in target %.4f (%.1f x the 0.95 snapshot of %s)" % (v_target, outlet["factor"], outlet["ref"])
+                break
+        elif stop_rule.stop_rule_physical(t_hist, v_hist, qref):
             reason = "rate (4-29)"
             break
-        if n_out >= CREEP_MAX * M["nreach"]:
+        elif n_out >= CREEP_MAX * M["nreach"]:
             reason = "creep: filled outside the reach domain >= %.0f%% of it" % (100 * CREEP_MAX)
             break
         if CASE_CAP[0] is not None and wall_prev + time.time() - w0 >= CASE_CAP[0]:
@@ -330,7 +372,8 @@ def run_case(tag, label, p0, D, C, srcs, collar_t, box):
             keeper.maybe_save(st, step=step + 1, t=t, v_in=v_in, t_hist=np.asarray(t_hist), v_hist=np.asarray(v_hist),
                               arr_json=json.dumps(arr), series_json=json.dumps(series), snaps_json=json.dumps(snaps),
                               ftz_json=json.dumps(dict((k, FZ.STATE[k]) for k in ("calls", "diag_subnormal",
-                                                                                   "diag_steps", "flushed"))))
+                                                                                   "diag_steps", "flushed"))),
+                              out_json=json.dumps(ox))
             led = read_ledger()
             led[tag] = {"wall": wall_prev + time.time() - w0, "done": False, "step": step + 1}
             write_ledger(led)
@@ -344,7 +387,7 @@ def run_case(tag, label, p0, D, C, srcs, collar_t, box):
     fm.update({"rate_ratio": stop_rule.window_rate(t_hist, v_hist) / (stop_rule.EPS * qref)})
     out = {"tag": tag, "label": label, "p0": p0, "reason": reason, "steps": step + 1, "t": t, "v_in": v_in,
            "wall": wall, "arrival": arr, "qref": qref, "snaps": snaps, "final": fm, "nreach": M["nreach"],
-           "approx": False, "ftz_from": FTZ_FROM[tag],
+           "approx": False, "ftz_from": FTZ_FROM.get(tag, 0), "opts": opts, "outlet": ox if outlet else None,
            "ftz": dict((k, FZ.STATE[k]) for k in ("calls", "diag_subnormal", "diag_steps", "flushed"))}
     FZ.set_active(False)
     FZ.STATE.update({"calls": 0, "diag_subnormal": 0, "diag_steps": [], "flushed": 0})
@@ -424,23 +467,59 @@ def run():
         run_case(tag, label, p0, D, C, srcs, collar_t, box)
 
 
+def grid_setup(c2):
+    """Stored 0.5 m grid of a stage-2 case (grids.py output, used unchanged): C, sources, collar t, crop box. The
+    sources are re-cut from the K's v4 hole cells exactly as grids.py did and must equal the stored ones."""
+    G = np.load(os.path.join(OUT, "grid_%s.npz" % c2["grid"]))
+    K = float(G["K"])
+    Dk = np.load(os.path.join(P.DATA, "base_geometry_K%.2f_v4.npz" % K))
+    C = dict((q, G[q]) for q in ("n", "rub", "cls", "S", "T", "X", "Z", "basal", "hang", "low"))
+    C["cy"], C["cx"] = C["rub"].shape
+    if abs(float(G["low_t"]) - LOW_T) > 1e-12:
+        raise SystemExit("grid %s: lower-end threshold %.6f differs from %.6f" % (c2["grid"], float(G["low_t"]), LOW_T))
+    key = c2["key"]
+    if key == "s2":
+        cells, ct = Dk["s2_cells"], float(Dk["fan_collar_t"][1])
+    else:
+        cells, ct = Dk["fan_cells"][Dk["fan_ptr"][key]:Dk["fan_ptr"][key + 1]], float(Dk["fan_collar_t"][key])
+    src = sources(cells, Dk["cls"].shape[1], C)
+    stored = [k_ for k_ in G.files if k_.startswith("src_")]
+    same = [k_ for k_ in stored if np.array_equal(G[k_], np.array(src, int).reshape(-1, 2))]
+    if not same:
+        raise SystemExit("case %s: sources do not match any stored hole set of grid %s" % (c2["tag"], c2["grid"]))
+    return C, {c2["tag"]: src}, {c2["tag"]: ct}, tuple(int(v) for v in G["box"])
+
+
 def run_batch(tags):
     """Run the listed cases serially in this process (one process per batch; batches run in parallel, each with its
-    own ledger LEDGER[0] and the per-case wall cap CASE_CAP)."""
+    own ledger LEDGER[0] and the per-case wall cap CASE_CAP). Stage-2 cases (CASES2) run on their stored grids; an
+    outlet case reads the result of its closed reference case, so it goes after that case in the same batch."""
     if not os.path.isdir(OUT):
         os.makedirs(OUT)
     D, C, srcs, collar_t = load()
     box = crop_box(C)
     known = dict((c_[0], c_) for c_ in CASES)
     for tag in tags:
-        if tag not in known:
+        if tag not in known and tag not in CASES2:
             raise SystemExit("unknown case %s (configuration %s)" % (tag, CFG["name"]))
+    if CASES2:
+        # the base cases must run on the stored base grid unchanged (main line 2026-10-21)
+        G = np.load(os.path.join(OUT, "grid_K%.2f_s1.npz" % P.K_BASE))
+        if tuple(int(v) for v in G["box"]) != tuple(box) or not all(np.array_equal(G[q], C[q]) for q in
+                                                                    ("n", "rub", "cls", "basal", "hang", "low")):
+            raise SystemExit("base grid differs from the stored grid_K%.2f_s1.npz" % P.K_BASE)
     for tag in tags:
         if read_ledger().get(tag, {}).get("done"):
             print("  [%s] already done" % tag)
             continue
-        _, label, _, p0 = known[tag]
-        run_case(tag, label, p0, D, C, srcs, collar_t, box)
+        if tag in known:
+            _, label, _, p0 = known[tag]
+            run_case(tag, label, p0, D, C, srcs, collar_t, box)
+        else:
+            c2 = CASES2[tag]
+            C2, srcs2, ct2, box2 = grid_setup(c2)
+            run_case(tag, c2["label"], c2["p0"], D, C2, srcs2, ct2, box2,
+                     opts=dict((k_, c2[k_]) for k_ in ("grid", "outlet") if k_ in c2))
 
 
 def fmt_m(m, nreach):

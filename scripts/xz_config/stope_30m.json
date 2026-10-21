@@ -51,7 +51,16 @@
    ["S4", "drift 1, -30 deg, 2 MPa, 2 m standpipe", 0, 2000000.0],
    ["S5", "drift 2, -30 deg, 2 MPa, 2 m standpipe", 2, 2000000.0]
   ],
-  "ftz_from": {"S1": 0, "S2": 0, "S3": 0, "S4": 0, "S5": 0}
+  "ftz_from": {"S1": 0, "S2": 0, "S3": 0, "S4": 0, "S5": 0},
+  "cases2": [
+   {"tag": "K1", "label": "K 1.15 scenario 1: drift 1, -30 deg, 2 MPa", "key": 0, "p0": 2000000.0, "grid": "K1.15_s1"},
+   {"tag": "K2", "label": "K 1.40 scenario 1: drift 1, 0 deg, 2 MPa", "key": 1, "p0": 2000000.0, "grid": "K1.40_s1"},
+   {"tag": "K3", "label": "K 1.40 scenario 1: drift 1, -30 deg, 2 MPa", "key": 0, "p0": 2000000.0, "grid": "K1.40_s1"},
+   {"tag": "K4", "label": "K 1.25 scenario 2: drift 1, 0 deg, 2 MPa", "key": 1, "p0": 2000000.0, "grid": "K1.25_s2"},
+   {"tag": "K5", "label": "K 1.25 scenario 2: drift 1, -30 deg, 2 MPa", "key": 0, "p0": 2000000.0, "grid": "K1.25_s2"},
+   {"tag": "O1", "label": "drift 1, 0 deg, 2 MPa, outlet at the lower end", "key": 1, "p0": 2000000.0, "grid": "K1.25_s1", "outlet": {"ref": "S1", "factor": 2.0}},
+   {"tag": "O2", "label": "drift 1, -30 deg, 2 MPa, outlet at the lower end", "key": 0, "p0": 2000000.0, "grid": "K1.25_s1", "outlet": {"ref": "S4", "factor": 2.0}}
+  ]
  },
  "view": {
   "pfc": [-48.0, 60.0, 32.0, 104.0],
