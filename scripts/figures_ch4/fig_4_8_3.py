@@ -30,7 +30,7 @@ from matplotlib.colors import ListedColormap
 SOL = X.SOL
 CELL = 0.5
 VIEW = (-30.0, 53.0, -4.5, 33.0)
-ROCK, VOIDC, DRIFT, OUTSIDE = "#cdcdcd", "#f6ecd2", "#3d3d3d", "#8c8c8c"
+ROCK, VOIDC, DRIFT, OUTSIDE = "#cdcdcd", X.VOIDC, "#3d3d3d", "#8c8c8c"
 # closed cases of K 1.25 scenario 1, panel order (a)-(e): case, panel title, fan hole index of the base geometry
 PANELS = [("S1", u"最低巷道法向孔", 1), ("S2", u"孔口管加长", 1), ("S3", u"降压至 1 MPa", 1),
           ("S4", u"最低巷道 −30° 孔", 0), ("S5", u"第二巷道 −30° 孔", 2)]

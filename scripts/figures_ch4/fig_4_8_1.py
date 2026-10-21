@@ -32,7 +32,7 @@ def main():
     ki = list(D["ks"]).index(1.25)
     V = {"cls": D["cls"][ki], "X": D["X"], "Z": D["Z"], "drifts": D["drifts"], "holes": D["fan"][ki]}
     fig, ax = plt.subplots(figsize=(8.6, 5.2))
-    ax.imshow(V["cls"].astype(float), origin="lower", extent=PL.ext(V), cmap=ListedColormap(PL.COLORS),
+    ax.imshow(V["cls"].astype(float), origin="lower", extent=PL.ext(V), cmap=ListedColormap(X.COLORS48),
               norm=BoundaryNorm([-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5], 6), interpolation="nearest")
     ax.contour(D["X"][0], D["Z"][:, 0], B["basal"].astype(float), levels=[0.5], colors=["#7a3b9e"], linewidths=0.8)
     ax.contour(D["X"][0], D["Z"][:, 0], Q["cav"].astype(float), levels=[0.5], colors=["#a0522d"], linewidths=1.0)
@@ -60,7 +60,7 @@ def main():
             ex, ey = np.cos(a_) * -sn + np.sin(a_) * cs, np.cos(a_) * cs + np.sin(a_) * sn
             ax.plot([xd - dc["half"], xd - dc["half"] + 15 * ex], [zd, zd + 15 * ey], "--", color="#777777", lw=0.9)
         ax.text(xd + dc["half"] + 0.5, zd, u"巷道 %d（孔不入散体）" % (d + 1), fontsize=7, color="#555555", va="center")
-    hs = [plt.Rectangle((0, 0), 1, 1, fc=c) for c in PL.COLORS]
+    hs = [plt.Rectangle((0, 0), 1, 1, fc=c) for c in X.COLORS48]
     hs += [plt.Line2D([], [], color="#7a3b9e"), plt.Line2D([], [], color="k", ls="-.", lw=0.9),
            plt.Line2D([], [], color="#a0522d"), plt.Line2D([], [], color="#1f4e9c", ls=":"),
            plt.Line2D([], [], color="#1f4e9c", ls="--"), plt.Line2D([], [], color="k", lw=1.0),

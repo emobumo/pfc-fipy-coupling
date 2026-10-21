@@ -37,6 +37,20 @@ plt.rcParams.update({"font.size": 9, "axes.titlesize": 9, "legend.fontsize": 7})
 LOWC = "#c2185b"                         # lower end of the rubble
 LOW_NAME = u"散体下端"
 ANNOT = u"K = 1.25，情景一"
+# residual void: pale cream on all four figures (the 4.8 chain's light blue clashes with the saturation scale)
+VOIDC = "#f6ecd2"
+ROCKC = "#bdbdbd"
+COLORS48 = list(PL.COLORS)
+COLORS48[4] = VOIDC
+
+
+def background(ax, D):
+    """Rock (footwall, hanging wall, pillar) and residual void of a 0.25 m class map, as PL.background."""
+    from matplotlib.colors import ListedColormap
+    cls = D["cls"]
+    for mask, col in (((cls >= 1) & (cls <= 3), ROCKC), (cls == 4, VOIDC)):
+        ax.imshow(np.ma.masked_where(~mask, np.ones(cls.shape)), origin="lower", extent=PL.ext(D),
+                  cmap=ListedColormap([col]), interpolation="nearest")
 
 
 def low_grid():

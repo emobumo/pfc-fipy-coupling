@@ -25,7 +25,7 @@ HOLE_NAMES = [u"最低巷道法向孔", u"第二巷道法向孔", u"第三巷道
 
 
 def panel(ax, D, title, hole=None):
-    PL.background(ax, D)
+    X.background(ax, D)
     for d in D["drifts"]:
         ax.add_patch(plt.Rectangle((d[0] - 1.25, d[1] - 1.25), 2.5, 2.5, fc=PL.COLORS[5], ec="none"))
     if hole is not None:
@@ -51,6 +51,7 @@ def main():
         im_n = ax.imshow(np.ma.masked_where(~rub, D[key]), origin="lower", extent=PL.ext(D), cmap="YlGnBu", vmin=0.10,
                          vmax=0.35, interpolation="nearest")
         panel(ax, D, tt)
+        X.corner_note(ax, u"K = 1.25")
     cmap = LinearSegmentedColormap.from_list("preq", plt.get_cmap("Purples_r")(np.linspace(0.0, 0.92, 256)))
     cmap.set_over("white")
     for hi in range(nh):
@@ -74,7 +75,7 @@ def main():
     cb.set_label(u"所需源压 $p_\\mathrm{req}$ / MPa（大于 4 MPa 显示为白色）", fontsize=8)
     fig.legend([plt.Line2D([], [], color="#1b9e77"), plt.Line2D([], [], color="#e8743b"),
                 plt.Line2D([], [], color="k", lw=1.2), plt.Rectangle((0, 0), 1, 1, fc=PL.COLORS[5]),
-                plt.Rectangle((0, 0), 1, 1, fc="#bdbdbd"), plt.Rectangle((0, 0), 1, 1, fc="#cfe3fa"),
+                plt.Rectangle((0, 0), 1, 1, fc=X.ROCKC), plt.Rectangle((0, 0), 1, 1, fc=X.VOIDC),
                 plt.Line2D([], [], color=X.LOWC, lw=1.2)],
                [u"$p_0$ = 1 MPa 可达域边界", u"$p_0$ = 2 MPa 可达域边界", u"钻孔", u"巷道", u"围岩与矿柱", u"残余空区",
                 X.LOW_NAME], loc="center", bbox_to_anchor=(0.71, 0.19), ncol=1, frameon=False, fontsize=7.5)
