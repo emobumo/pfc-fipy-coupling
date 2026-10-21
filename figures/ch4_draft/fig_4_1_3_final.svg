@@ -1,0 +1,792 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Created with matplotlib (http://matplotlib.org/) -->
+<svg height="563pt" version="1.1" viewBox="0 0 453 563" width="453pt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <style type="text/css">
+*{stroke-linecap:butt;stroke-linejoin:round;}
+  </style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="
+M0 563.009
+L453.543 563.009
+L453.543 0
+L0 0
+z
+" style="fill:#ffffff;"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 520.489
+L228.189 520.489
+L228.189 191.38
+L31.1811 191.38
+z
+" style="fill:#c6daf0;"/>
+   </g>
+   <g id="patch_3">
+    <path clip-path="url(#pc775c3bb88)" d="
+M228.189 520.489
+L425.197 520.489
+L425.197 191.38
+L228.189 191.38
+z
+" style="fill:#fdeedd;"/>
+   </g>
+   <g id="patch_4">
+    <path clip-path="url(#pc775c3bb88)" d="
+M2.83465 233.749
+L22.6772 233.749
+L22.6772 42.5197
+L2.83465 42.5197
+z
+" style="fill:#e6e6e6;"/>
+   </g>
+   <g id="patch_5">
+    <path clip-path="url(#pc775c3bb88)" d="
+M2.83465 382.609
+L22.6772 382.609
+L22.6772 249.34
+L2.83465 249.34
+z
+" style="fill:#e6e6e6;"/>
+   </g>
+   <g id="patch_6">
+    <path clip-path="url(#pc775c3bb88)" d="
+M2.83465 520.489
+L22.6772 520.489
+L22.6772 398.2
+L2.83465 398.2
+z
+" style="fill:#e6e6e6;"/>
+   </g>
+   <g id="patch_7">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 266.348
+L425.197 266.348
+L425.197 249.34
+L31.1811 249.34
+z
+" style="fill:#ffffff;"/>
+   </g>
+   <g id="patch_8">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 335.288
+L425.197 335.288
+L425.197 318.28
+L31.1811 318.28
+z
+" style="fill:#ffffff;"/>
+   </g>
+   <g id="patch_9">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 415.208
+L425.197 415.208
+L425.197 398.2
+L31.1811 398.2
+z
+" style="fill:#ffffff;"/>
+   </g>
+   <g id="patch_10">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 484.148
+L425.197 484.148
+L425.197 467.14
+L31.1811 467.14
+z
+" style="fill:#ffffff;"/>
+   </g>
+   <g id="patch_11">
+    <path clip-path="url(#pc775c3bb88)" d="
+M118.801 26.9291
+L337.577 26.9291
+Q342.112 26.9291 342.112 22.3937
+L342.112 11.622
+Q342.112 7.08661 337.577 7.08661
+L118.801 7.08661
+Q114.266 7.08661 114.266 11.622
+L114.266 22.3937
+Q114.266 26.9291 118.801 26.9291
+z
+" style="fill:#e6e6e6;stroke:#7f7f7f;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_12">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 95.8691
+L425.197 95.8691
+L425.197 42.5197
+L31.1811 42.5197
+z
+" style="fill:#ffffff;stroke:#000000;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_13">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 175.789
+L253.984 175.789
+L253.984 111.46
+L31.1811 111.46
+z
+" style="fill:#ffffff;stroke:#000000;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_14">
+    <path clip-path="url(#pc775c3bb88)" d="
+M276.661 175.789
+L425.197 175.789
+L425.197 111.46
+L276.661 111.46
+z
+" style="fill:#ffffff;stroke:#000000;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_15">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 302.689
+L425.197 302.689
+L425.197 249.34
+L31.1811 249.34
+z
+" style="fill:none;stroke:#000000;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_16">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 382.609
+L425.197 382.609
+L425.197 318.28
+L31.1811 318.28
+z
+" style="fill:none;stroke:#000000;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_17">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 451.549
+L425.197 451.549
+L425.197 398.2
+L31.1811 398.2
+z
+" style="fill:none;stroke:#000000;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_18">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 520.489
+L425.197 520.489
+L425.197 467.14
+L31.1811 467.14
+z
+" style="fill:none;stroke:#000000;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_19">
+    <path clip-path="url(#pc775c3bb88)" d="
+M31.1811 233.749
+L223.937 233.749
+L223.937 191.38
+L31.1811 191.38
+z
+" style="fill:none;stroke:#000000;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_20">
+    <path clip-path="url(#pc775c3bb88)" d="
+M232.441 233.749
+L425.197 233.749
+L425.197 191.38
+L232.441 191.38
+z
+" style="fill:none;stroke:#000000;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_21">
+    <path clip-path="url(#pc775c3bb88)" d="
+M27.2761 555.922
+L210.078 555.922
+L210.078 536.08
+L27.2761 536.08
+z
+" style="fill:#ffffff;stroke:#000000;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_22">
+    <path clip-path="url(#pc775c3bb88)" d="
+M242.96 555.922
+L424.566 555.922
+Q429.102 555.922 429.102 551.387
+L429.102 540.615
+Q429.102 536.08 424.566 536.08
+L242.96 536.08
+Q238.425 536.08 238.425 540.615
+L238.425 551.387
+Q238.425 555.922 242.96 555.922
+z
+" style="fill:#e6e6e6;stroke:#7f7f7f;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_23">
+    <path clip-path="url(#pc775c3bb88)" d="
+M358.441 264.93
+L418.11 264.93
+L418.11 252.458
+L358.441 252.458
+z
+" style="fill:#ffffff;stroke:#7f7f7f;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="patch_24">
+    <path clip-path="url(#pc775c3bb88)" d="
+M367.441 333.87
+L418.11 333.87
+L418.11 321.398
+L367.441 321.398
+z
+" style="fill:#ffffff;stroke:#7f7f7f;stroke-linejoin:miter;stroke-width:0.6;"/>
+   </g>
+   <g id="line2d_1">
+    <path clip-path="url(#pc775c3bb88)" d="
+M228.189 26.9291
+L228.189 42.5197" style="fill:none;stroke:#000000;stroke-width:0.8;"/>
+   </g>
+   <g id="line2d_2">
+    <path clip-path="url(#pc775c3bb88)" d="
+M142.583 95.8691
+L142.583 111.46" style="fill:none;stroke:#000000;stroke-width:0.8;"/>
+   </g>
+   <g id="line2d_3">
+    <path clip-path="url(#pc775c3bb88)" d="
+M253.984 143.624
+L276.661 143.624" style="fill:none;stroke:#000000;stroke-width:0.8;"/>
+   </g>
+   <g id="line2d_4">
+    <path clip-path="url(#pc775c3bb88)" d="
+M350.929 175.789
+L350.929 183.584
+L228.189 183.584
+L228.189 249.34" style="fill:none;stroke:#000000;stroke-width:0.8;"/>
+   </g>
+   <g id="line2d_5">
+    <path clip-path="url(#pc775c3bb88)" d="
+M228.189 302.689
+L228.189 318.28" style="fill:none;stroke:#000000;stroke-width:0.8;"/>
+   </g>
+   <g id="line2d_6">
+    <path clip-path="url(#pc775c3bb88)" d="
+M228.189 382.609
+L228.189 398.2" style="fill:none;stroke:#000000;stroke-width:0.8;"/>
+   </g>
+   <g id="line2d_7">
+    <path clip-path="url(#pc775c3bb88)" d="
+M228.189 451.549
+L228.189 467.14" style="fill:none;stroke:#000000;stroke-width:0.8;"/>
+   </g>
+   <g id="line2d_8">
+    <path clip-path="url(#pc775c3bb88)" d="
+M118.677 520.489
+L118.677 536.08" style="fill:none;stroke:#000000;stroke-width:0.8;"/>
+   </g>
+   <g id="line2d_9">
+    <path clip-path="url(#pc775c3bb88)" d="
+M210.078 546.001
+L238.425 546.001" style="fill:none;stroke:#000000;stroke-width:0.8;"/>
+   </g>
+   <g id="line2d_10">
+    <path clip-path="url(#pc775c3bb88)" d="
+M425.197 424.874
+L435.118 424.874
+L435.118 276.014
+L425.197 276.014" style="fill:none;stroke:#000000;stroke-dasharray:3.000000,2.000000;stroke-dashoffset:0.0;stroke-width:0.8;"/>
+   </g>
+   <g id="line2d_11">
+    <path clip-path="url(#pc775c3bb88)" d="
+M435.118 350.444
+L425.197 350.444" style="fill:none;stroke:#000000;stroke-dasharray:3.000000,2.000000;stroke-dashoffset:0.0;stroke-width:0.8;"/>
+   </g>
+   <g id="text_1">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 128.438976, 20.787874)" x="128.438976378" y="20.7878740157">第</text>
+   </g>
+   <g id="text_2">
+    <text style="font-family:Times New Roman;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 138.938976, 20.787874)" x="138.938976378" y="20.7878740157"> 3 </text>
+   </g>
+   <g id="text_3">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 149.438976, 20.787874)" x="149.438976378" y="20.7878740157">章　废石散体塌落形成过程与堆积结构</text>
+   </g>
+   <g id="text_4">
+    <text style="font-family:Times New Roman;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 55.161260)" x="38.2677165354" y="55.1612598425">4.1</text>
+   </g>
+   <g id="text_5">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 51.392717, 55.161260)" x="51.3927165354" y="55.1612598425">　工程问题与结构概化</text>
+   </g>
+   <g id="text_6">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 68.437559)" x="38.2677165354" y="68.4375590551">三个问题：①</text>
+   </g>
+   <g id="text_7">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 94.517717, 68.437559)" x="94.5177165354" y="68.4375590551">结构如何改变浆液扩散　②</text>
+   </g>
+   <g id="text_8">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 204.767717, 68.437559)" x="204.767716535" y="68.4375590551">结构与重力如何共同影响充填</text>
+   </g>
+   <g id="text_9">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 83.267717, 79.417559)" x="83.2677165354" y="79.4175590551">③</text>
+   </g>
+   <g id="text_10">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 94.517717, 79.417559)" x="94.5177165354" y="79.4175590551">给定施工条件与停注规则如何影响残余未充填区</text>
+   </g>
+   <g id="text_11">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 90.397559)" x="38.2677165354" y="90.3975590551">等效孔隙率场：孔隙率梯度、贯通通道、随机非均质、架空骨架</text>
+   </g>
+   <g id="text_12">
+    <text style="font-family:Times New Roman;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 124.101260)" x="38.2677165354" y="124.101259843">4.2</text>
+   </g>
+   <g id="text_13">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 51.392717, 124.101260)" x="51.3927165354" y="124.101259843">　渗流模型与可达判据</text>
+   </g>
+   <g id="text_14">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 137.377559)" x="38.2677165354" y="137.377559055">宾汉流体变饱和渗流模型</text>
+   </g>
+   <g id="text_15">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 148.357559)" x="38.2677165354" y="148.357559055">路径积分可达判据</text>
+   </g>
+   <g id="text_16">
+    <text style="font-family:Times New Roman;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 110.267717, 148.357559)" x="110.267716535" y="148.357559055"> → </text>
+   </g>
+   <g id="text_17">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 123.767717, 148.357559)" x="123.767716535" y="148.357559055">可达域</text>
+   </g>
+   <g id="text_18">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 159.337559)" x="38.2677165354" y="159.337559055">可达域为充填域的上包络</text>
+   </g>
+   <g id="text_19">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 170.317559)" x="38.2677165354" y="170.317559055">三层评价域：设计域、可达域、充填域</text>
+   </g>
+   <g id="text_20">
+    <text style="font-family:Times New Roman;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 283.748031, 124.101260)" x="283.748031496" y="124.101259843">4.3</text>
+   </g>
+   <g id="text_21">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 296.873031, 124.101260)" x="296.873031496" y="124.101259843">　数值方法与验证</text>
+   </g>
+   <g id="text_22">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 283.748031, 137.377559)" x="283.748031496" y="137.377559055">有限体积求解器</text>
+   </g>
+   <g id="text_23">
+    <text style="font-family:Times New Roman;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 346.748031, 137.377559)" x="346.748031496" y="137.377559055"> → </text>
+   </g>
+   <g id="text_24">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 360.248031, 137.377559)" x="360.248031496" y="137.377559055">充填域</text>
+   </g>
+   <g id="text_25">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 283.748031, 148.357559)" x="283.748031496" y="148.357559055">解析基准验证</text>
+   </g>
+   <g id="text_26">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 283.748031, 159.337559)" x="283.748031496" y="159.337559055">可达域与求解器相互印证</text>
+   </g>
+   <g id="text_27">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 283.748031, 170.317559)" x="283.748031496" y="170.317559055">停注判据</text>
+   </g>
+   <g id="text_28">
+    <text style="font-family:Times New Roman;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 261.981260)" x="38.2677165354" y="261.981259843">4.4</text>
+   </g>
+   <g id="text_29">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 51.392717, 261.981260)" x="51.3927165354" y="261.981259843">　结构对扩散与充填的控制规律</text>
+   </g>
+   <g id="text_30">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 361.275591, 261.981260)" x="361.275590551" y="261.981259843">回答问题①②</text>
+   </g>
+   <g id="text_31">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 275.257559)" x="38.2677165354" y="275.257559055">重力向下偏置与梯度翻转（判据</text>
+   </g>
+   <g id="text_32">
+    <!-- $F$ -->
+    <g transform="translate(166.517716535 275.257559055)">
+     <text>
+      <tspan style="font-family:Times New Roman;font-size:9.0px;font-style:italic;" x="0.0" y="-0.046875">F</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_33">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 173.233967, 275.257559)" x="173.233966535" y="275.257559055">）</text>
+   </g>
+   <g id="text_34">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 286.237559)" x="38.2677165354" y="286.237559055">通道入口所需源压</text>
+   </g>
+   <g id="text_35">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 297.217559)" x="38.2677165354" y="297.217559055">致密包裹体</text>
+   </g>
+   <g id="text_36">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 235.275591, 275.257559)" x="235.275590551" y="275.257559055">优势通道优先分流</text>
+   </g>
+   <g id="text_37">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 235.275591, 286.237559)" x="235.275590551" y="286.237559055">锋面截断区、绕流空区</text>
+   </g>
+   <g id="text_38">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 235.275591, 297.217559)" x="235.275590551" y="297.217559055">随机非均质：混合成因</text>
+   </g>
+   <g id="text_39">
+    <text style="font-family:Times New Roman;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 330.921260)" x="38.2677165354" y="330.921259843">4.5</text>
+   </g>
+   <g id="text_40">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 51.392717, 330.921260)" x="51.3927165354" y="330.921259843">　分段与阻隔调控</text>
+   </g>
+   <g id="text_41">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 370.275591, 330.921260)" x="370.275590551" y="330.921259843">回答问题③</text>
+   </g>
+   <g id="text_42">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 344.197559)" x="38.2677165354" y="344.197559055">后续段有效：</text>
+   </g>
+   <g id="text_43">
+    <!-- $\Delta$ -->
+    <g transform="translate(92.2677165354 344.197559055)">
+     <text>
+      <tspan style="font-family:Times New Roman;font-size:9.0px;font-style:regular;" x="0.0" y="-0.90625">Δ</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_44">
+    <text style="font-family:Times New Roman;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 98.312717, 344.197559)" x="98.3127165354" y="344.197559055"> &gt; </text>
+   </g>
+   <g id="text_45">
+    <!-- $x_f$ -->
+    <g transform="translate(107.888400129 344.197559055)">
+     <text>
+      <tspan style="font-family:Times New Roman;font-size:9.0px;font-style:italic;" x="0.0" y="-0.015625">x</tspan>
+      <tspan style="font-family:Times New Roman;font-size:6.3px;font-style:italic;" x="3.99462890625" y="2.21440625">f</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_46">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 355.177559)" x="38.2677165354" y="355.177559055">前序胶结体的双重作用：段间阴影区／封堵</text>
+   </g>
+   <g id="text_47">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 366.157559)" x="38.2677165354" y="366.157559055">调控：改写可达域</text>
+   </g>
+   <g id="text_48">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 65.267717, 377.137559)" x="65.2677165354" y="377.137559055">（孔位与压力、封底与封堵、段长）</text>
+   </g>
+   <g id="text_49">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 235.275591, 344.197559)" x="235.275590551" y="344.197559055">停注锋面距离</text>
+   </g>
+   <g id="text_50">
+    <!-- $x_f$ -->
+    <g transform="translate(291.525590551 344.197559055)">
+     <text>
+      <tspan style="font-family:Times New Roman;font-size:9.0px;font-style:italic;" x="0.0" y="-0.015625">x</tspan>
+      <tspan style="font-family:Times New Roman;font-size:6.3px;font-style:italic;" x="3.99462890625" y="2.21440625">f</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_51">
+    <text style="font-family:Times New Roman;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 299.285219, 344.197559)" x="299.285219457" y="344.197559055"> = </text>
+   </g>
+   <g id="text_52">
+    <!-- $c(\varepsilon)$ -->
+    <g transform="translate(308.860903051 344.197559055)">
+     <text>
+      <tspan style="font-family:Times New Roman;font-size:9.0px;font-style:regular;" x="3.99462890625 10.5380859375" y="-0.75">()</tspan>
+      <tspan style="font-family:Times New Roman;font-size:9.0px;font-style:italic;" x="0.0 6.99169921875" y="-0.75">cε</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_53">
+    <text style="font-family:Times New Roman;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 322.488989, 344.197559)" x="322.488988989" y="344.197559055">·</text>
+   </g>
+   <g id="text_54">
+    <!-- $L_{\mathrm{max}}$ -->
+    <g transform="translate(325.486059301 344.197559055)">
+     <text>
+      <tspan style="font-family:Times New Roman;font-size:6.3px;font-style:regular;" x="5.00537109375 9.90571289063 12.701953125" y="2.18315625">max</tspan>
+      <tspan style="font-family:Times New Roman;font-size:9.0px;font-style:italic;" x="0.0" y="-0.046875">L</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_55">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 235.275591, 355.177559)" x="235.275590551" y="355.177559055">分段覆盖损失两态</text>
+   </g>
+   <g id="text_56">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 235.275591, 366.157559)" x="235.275590551" y="366.157559055">调控：改变截断方式（停注判据、量压双控）</text>
+   </g>
+   <g id="text_57">
+    <text style="font-family:Times New Roman;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 410.841260)" x="38.2677165354" y="410.841259843">4.6</text>
+   </g>
+   <g id="text_58">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 51.392717, 410.841260)" x="51.3927165354" y="410.841259843">　同类灌浆工程的机理检验</text>
+   </g>
+   <g id="text_59">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 424.117559)" x="38.2677165354" y="424.117559055">钻孔穿过交界面时跑浆位置可达</text>
+   </g>
+   <g id="text_60">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 435.097559)" x="38.2677165354" y="435.097559055">交界面临界孔隙率反推</text>
+   </g>
+   <g id="text_61">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 446.077559)" x="38.2677165354" y="446.077559055">封底切断向下路径</text>
+   </g>
+   <g id="text_62">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 235.275591, 424.117559)" x="235.275590551" y="424.117559055">按估算浆量停止与持续注浆的对比</text>
+   </g>
+   <g id="text_63">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 235.275591, 435.097559)" x="235.275590551" y="435.097559055">现场症状与调控措施对照</text>
+   </g>
+   <g id="text_64">
+    <text style="font-family:Times New Roman;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 479.781260)" x="38.2677165354" y="479.781259843">4.7</text>
+   </g>
+   <g id="text_65">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 51.392717, 479.781260)" x="51.3927165354" y="479.781259843">　研究区可灌性预测与灌浆方案</text>
+   </g>
+   <g id="text_66">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 493.057559)" x="38.2677165354" y="493.057559055">注浆压力窗口与结构预判</text>
+   </g>
+   <g id="text_67">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 504.037559)" x="38.2677165354" y="504.037559055">可灌性分区（可靠区、条件区、难灌区）</text>
+   </g>
+   <g id="text_68">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.267717, 515.017559)" x="38.2677165354" y="515.017559055">分步可达域与施工顺序</text>
+   </g>
+   <g id="text_69">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 235.275591, 493.057559)" x="235.275590551" y="493.057559055">可达域充填与出矿口开放时的流失</text>
+   </g>
+   <g id="text_70">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 235.275591, 504.037559)" x="235.275590551" y="504.037559055">先封后注、浆量上限与施工监测</text>
+   </g>
+   <g id="text_71">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 106.559055, 204.021260)" x="106.559055118" y="204.021259843">可达层面</text>
+   </g>
+   <g id="text_72">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 55.559055, 217.297559)" x="55.5590551181" y="217.297559055">启动压力梯度的路径积分决定可达域</text>
+   </g>
+   <g id="text_73">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 87.059055, 228.277559)" x="87.0590551181" y="228.277559055">（结构与注浆压力）</text>
+   </g>
+   <g id="text_74">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 307.818898, 204.021260)" x="307.818897638" y="204.021259843">过程层面</text>
+   </g>
+   <g id="text_75">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 261.318898, 217.297559)" x="261.318897638" y="217.297559055">渗透率分布与停注规则决定充填域</text>
+   </g>
+   <g id="text_76">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 301.818898, 228.277559)" x="301.818897638" y="228.277559055">（充填过程）</text>
+   </g>
+   <g id="text_77">
+    <text style="font-family:Times New Roman;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 38.614665, 549.780945)" x="38.6146653543" y="549.780944882">4.8</text>
+   </g>
+   <g id="text_78">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 51.739665, 549.780945)" x="51.7396653543" y="549.780944882">　本章小结：依次回答三个问题</text>
+   </g>
+   <g id="text_79">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 249.763287, 549.780945)" x="249.763287402" y="549.780944882">后续章节：在可靠区内布置承载结构</text>
+   </g>
+   <g id="text_80">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 93.824409)" x="7.50590551181" y="93.8244094488">提</text>
+   </g>
+   <g id="text_81">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 105.899409)" x="7.50590551181" y="105.899409449">出</text>
+   </g>
+   <g id="text_82">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 117.974409)" x="7.50590551181" y="117.974409449">问</text>
+   </g>
+   <g id="text_83">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 130.049409)" x="7.50590551181" y="130.049409449">题</text>
+   </g>
+   <g id="text_84">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 142.124409)" x="7.50590551181" y="142.124409449">与</text>
+   </g>
+   <g id="text_85">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 154.199409)" x="7.50590551181" y="154.199409449">建</text>
+   </g>
+   <g id="text_86">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 166.274409)" x="7.50590551181" y="166.274409449">立</text>
+   </g>
+   <g id="text_87">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 178.349409)" x="7.50590551181" y="178.349409449">方</text>
+   </g>
+   <g id="text_88">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 190.424409)" x="7.50590551181" y="190.424409449">法</text>
+   </g>
+   <g id="text_89">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 283.739409)" x="7.50590551181" y="283.739409449">结</text>
+   </g>
+   <g id="text_90">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 295.814409)" x="7.50590551181" y="295.814409449">构</text>
+   </g>
+   <g id="text_91">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 307.889409)" x="7.50590551181" y="307.889409449">规</text>
+   </g>
+   <g id="text_92">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 319.964409)" x="7.50590551181" y="319.964409449">律</text>
+   </g>
+   <g id="text_93">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 332.039409)" x="7.50590551181" y="332.039409449">与</text>
+   </g>
+   <g id="text_94">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 344.114409)" x="7.50590551181" y="344.114409449">调</text>
+   </g>
+   <g id="text_95">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 356.189409)" x="7.50590551181" y="356.189409449">控</text>
+   </g>
+   <g id="text_96">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 427.109409)" x="7.50590551181" y="427.109409449">工</text>
+   </g>
+   <g id="text_97">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 439.184409)" x="7.50590551181" y="439.184409449">程</text>
+   </g>
+   <g id="text_98">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 451.259409)" x="7.50590551181" y="451.259409449">检</text>
+   </g>
+   <g id="text_99">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 463.334409)" x="7.50590551181" y="463.334409449">验</text>
+   </g>
+   <g id="text_100">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 475.409409)" x="7.50590551181" y="475.409409449">与</text>
+   </g>
+   <g id="text_101">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 487.484409)" x="7.50590551181" y="487.484409449">应</text>
+   </g>
+   <g id="text_102">
+    <text style="font-family:SimSun;font-size:10.5px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 7.505906, 499.559409)" x="7.50590551181" y="499.559409449">用</text>
+   </g>
+   <g id="text_103">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 233.291339, 462.584409)" x="233.291338583" y="462.584409449">设计含义</text>
+   </g>
+   <g id="text_104">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 439.972441, 375.554409)" x="439.972440945" y="375.554409449">机</text>
+   </g>
+   <g id="text_105">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 439.972441, 385.904409)" x="439.972440945" y="385.904409449">理</text>
+   </g>
+   <g id="text_106">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 439.972441, 396.254409)" x="439.972440945" y="396.254409449">检</text>
+   </g>
+   <g id="text_107">
+    <text style="font-family:SimSun;font-size:9.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 439.972441, 406.604409)" x="439.972440945" y="406.604409449">验</text>
+   </g>
+   <g id="patch_25">
+    <path d="
+M228.189 37.9843
+Q228.189 40.252 228.189 41.5265" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M229.949 37.5265
+L228.189 41.5265
+L226.429 37.5265
+L229.949 37.5265
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+   <g id="patch_26">
+    <path d="
+M142.583 106.924
+Q142.583 109.192 142.583 110.466" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M144.343 106.466
+L142.583 110.466
+L140.823 106.466
+L144.343 106.466
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+   <g id="patch_27">
+    <path d="
+M272.126 143.624
+Q274.394 143.624 275.668 143.624" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M271.668 141.864
+L275.668 143.624
+L271.668 145.384
+L271.668 141.864
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+   <g id="patch_28">
+    <path d="
+M228.189 244.804
+Q228.189 247.072 228.189 248.346" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M229.949 244.346
+L228.189 248.346
+L226.429 244.346
+L229.949 244.346
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+   <g id="patch_29">
+    <path d="
+M228.189 313.744
+Q228.189 316.012 228.189 317.286" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M229.949 313.286
+L228.189 317.286
+L226.429 313.286
+L229.949 313.286
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+   <g id="patch_30">
+    <path d="
+M228.189 393.664
+Q228.189 395.932 228.189 397.206" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M229.949 393.206
+L228.189 397.206
+L226.429 393.206
+L229.949 393.206
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+   <g id="patch_31">
+    <path d="
+M228.189 462.604
+Q228.189 464.872 228.189 466.146" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M229.949 462.146
+L228.189 466.146
+L226.429 462.146
+L229.949 462.146
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+   <g id="patch_32">
+    <path d="
+M118.677 531.544
+Q118.677 533.812 118.677 535.086" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M120.437 531.086
+L118.677 535.086
+L116.917 531.086
+L120.437 531.086
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+   <g id="patch_33">
+    <path d="
+M233.889 546.001
+Q236.157 546.001 237.432 546.001" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M233.432 544.241
+L237.432 546.001
+L233.432 547.761
+L233.432 544.241
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+   <g id="patch_34">
+    <path d="
+M429.732 276.014
+Q427.465 276.014 426.19 276.014" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M430.19 277.774
+L426.19 276.014
+L430.19 274.254
+L430.19 277.774
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+   <g id="patch_35">
+    <path d="
+M429.732 350.444
+Q427.465 350.444 426.19 350.444" style="fill:none;stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+    <path d="
+M430.19 352.204
+L426.19 350.444
+L430.19 348.684
+L430.19 352.204
+z
+" style="stroke:#000000;stroke-linecap:round;stroke-width:0.8;"/>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pc775c3bb88">
+   <rect height="563.008818898" width="453.543307087" x="0.0" y="0.0"/>
+  </clipPath>
+ </defs>
+</svg>
