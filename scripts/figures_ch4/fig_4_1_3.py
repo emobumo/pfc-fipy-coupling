@@ -2,7 +2,7 @@
 """
 Fig. 4.1-3 (draft): research route and argument framework of chapter 4. A block diagram, no computed results.
 
-    powershell -File scripts\\run_local.ps1 scripts\\figures_ch4\\fig_4_1_3.py [work|final]
+    powershell -File scripts\\run_local.ps1 scripts\\figures_ch4\\fig_4_1_3.py [work|final|final_v2]
 
 Writes fig_4_1_3_<NUMBERING>.png/.svg (the command-line argument overrides NUMBERING). All wording is fixed by the
 main-line spec (2026-10-22); terms per docs/术语对照表_v11_2026-10-21.md. Chinese in SimSun (Noto Serif CJK SC if
@@ -24,10 +24,13 @@ from matplotlib.font_manager import FontProperties, findfont
 from matplotlib.ft2font import FT2Font, LOAD_NO_HINTING
 from matplotlib.patches import FancyBboxPatch, Rectangle
 
-NUMBERING = "work"                       # "work" / "final"
+NUMBERING = "final_v2"                   # "work" / "final" / "final_v2"
 KEYS = ("s1", "s3", "s4", "s5", "s6", "s7", "s8", "s9")
-NUMBERS = {"work": ("4.1", "4.3", "4.4", "4.5", "4.6", "4.7", "4.8", "4.9"),
-           "final": ("4.1", "4.2", "4.3", "4.4", "4.5", "4.6", "4.7", "4.8")}
+# variant -> (section numbers in KEYS order, chapter labels); None = box not drawn. final_v2 (main line 2026-10-23):
+# stage one is chapter 4, stages two and three chapter 5, no summary box (5.4 points straight at the next chapters)
+NUMBERS = {"work": (("4.1", "4.3", "4.4", "4.5", "4.6", "4.7", "4.8", "4.9"), False),
+           "final": (("4.1", "4.2", "4.3", "4.4", "4.5", "4.6", "4.7", "4.8"), False),
+           "final_v2": (("4.1", "4.2", "4.3", "5.1", "5.2", "5.3", "5.4", None), True)}
 
 FONTS = os.path.join(os.environ.get("WINDIR", "C:\\Windows"), "Fonts")
 matplotlib.rcParams.update({"mathtext.fontset": "custom", "mathtext.rm": "Times New Roman",
@@ -48,11 +51,13 @@ XR = X1 + 3.5                            # dashed return path
 INSET = 2.5                              # text inset in a box
 LANE_L, LANE_R = "#c6daf0", "#fdeedd"    # light blue / light orange, grey levels 0.84 / 0.94
 GREY_FILL, GREY_EDGE = "#e6e6e6", "#7f7f7f"
+GREY_CH = "#d2d2d2"                      # chapter labels, outside the stage labels
 LW_BOX, LW_ARROW = 0.6, 0.8
 
 TEXT = {
     "input": u"第 3 章　废石散体塌落形成过程与堆积结构",
     "stages": (u"提出问题与建立方法", u"结构规律与调控", u"工程检验与应用"),
+    "chapters": (u"第 4 章", u"第 5 章"),
     "s1": u"工程问题与结构概化",
     "s3": u"渗流模型与可达判据",
     "s4": u"数值方法与验证",
@@ -176,6 +181,7 @@ class Page(object):
 
     def vtext(self, x, ymid, s, size):
         """Characters stacked vertically, centred on (x, ymid)."""
+        s = s.replace(" ", "")                # "第 4 章" stacks as three characters
         step = 1.15 * size * PT
         y = ymid + 0.5 * step * (len(s) - 1)
         for ch in s:
@@ -249,7 +255,14 @@ def section(P, x0, top, x1, title, items, lanes=False, tag=None):
 
 
 def draw(numbering):
-    num = dict(zip(KEYS, NUMBERS[numbering]))
+    global XL0, XL1, X0, X1, XM, XR
+    numbers, chapters = NUMBERS[numbering]
+    if chapters:                             # chapter labels take the far-left column
+        XL0, XL1, X0, X1 = 6.5, 12.5, 15.0, 151.0
+    else:
+        XL0, XL1, X0, X1 = 1.0, 8.0, 11.0, 150.0
+    XM, XR = 0.5 * (X0 + X1), X1 + 3.5
+    num = dict(zip(KEYS, numbers))
     head = lambda k: u"%s　%s" % (num[k], TEXT[k])
     P = Page()
     ax = P.ax
@@ -290,13 +303,16 @@ def draw(numbering):
             P.text(xc, baseline(th - PAD - TROW, k), s, ITEM, ha="center", limit=xb - INSET)
     # (h) end row
     te, be = b8 - GAP, b8 - GAP - 7.0
-    w9, wn = P.width(head("s9"), TITLE) + 8.0, P.width(TEXT["next"], TITLE) + 8.0
+    summary = num["s9"] is not None
+    w9 = P.width(head("s9"), TITLE) + 8.0 if summary else -10.0
+    wn = P.width(TEXT["next"], TITLE) + 8.0
     x9 = XM - 0.5 * (w9 + 10.0 + wn)
     xn = x9 + w9 + 10.0
-    P.box(x9, te, x9 + w9, be)
-    P.box(xn, te, xn + wn, be, fill=GREY_FILL, rounded=True, edge=GREY_EDGE)
     yb = 0.5 * (te + be) - 0.36 * TITLE * PT
-    P.text(x9 + w9 / 2, yb, head("s9"), TITLE, ha="center")
+    if summary:
+        P.box(x9, te, x9 + w9, be)
+        P.text(x9 + w9 / 2, yb, head("s9"), TITLE, ha="center")
+    P.box(xn, te, xn + wn, be, fill=GREY_FILL, rounded=True, edge=GREY_EDGE)
     P.text(xn + wn / 2, yb, TEXT["next"], TITLE, ha="center")
     H = -(be - 2.5)
     if H > HMAX:
@@ -305,6 +321,10 @@ def draw(numbering):
     for (st, sb), s in zip(((t1, bh), (t5, b6), (t7, b8)), TEXT["stages"]):
         ax.add_patch(Rectangle((XL0, sb), XL1 - XL0, st - sb, fc=GREY_FILL, ec="none", zorder=1))
         P.vtext(0.5 * (XL0 + XL1), 0.5 * (st + sb), s, TITLE)
+    if chapters:
+        for (st, sb), s in zip(((t1, bh), (t5, b8)), TEXT["chapters"]):
+            ax.add_patch(Rectangle((0.5, sb), 5.0, st - sb, fc=GREY_CH, ec="none", zorder=1))
+            P.vtext(3.0, 0.5 * (st + sb), s, TITLE)
     # main chain
     x3c, x4c = 0.5 * (X0 + x3b), 0.5 * (x4a + X1)
     P.arrow([(XM, bin_bot), (XM, t1)])
@@ -316,9 +336,12 @@ def draw(numbering):
     P.arrow([(XM, b6), (XM, t7)])
     P.arrow([(XM, b7), (XM, t8)])
     P.text(XM + 1.8, 0.5 * (b7 + t8) - 0.36 * ITEM * PT, TEXT["design"], ITEM)
-    x9c = x9 + w9 / 2
-    P.arrow([(x9c, b8), (x9c, te)])
-    P.arrow([(x9 + w9, 0.5 * (te + be)), (xn, 0.5 * (te + be))])
+    if summary:
+        x9c = x9 + w9 / 2
+        P.arrow([(x9c, b8), (x9c, te)])
+        P.arrow([(x9 + w9, 0.5 * (te + be)), (xn, 0.5 * (te + be))])
+    else:
+        P.arrow([(xn + wn / 2, b8), (xn + wn / 2, te)])
     # dashed return: 4.7 -> right sides of 4.5 and 4.6
     y5, y6, y7 = 0.5 * (t5 + b5), 0.5 * (t6 + b6), 0.5 * (t7 + b7)
     P.arrow([(X1, y7), (XR, y7), (XR, y5), (X1, y5)], dashed=True)
