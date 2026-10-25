@@ -29,7 +29,7 @@ def main():
     ax = axs[0]
     ax.plot(a[:, 0], a[:, 2] / lmax, "-", color=K.C2, lw=1.4, label=u"本模型流动律一维解析解")
     ax.plot(a[::12, 0], a[::12, 1] / lmax, "o", color=K.C1, ms=3.5, label=u"数值（充填饱和度 0.5 位置）")
-    ax.set_xlabel(u"时间 $t$/s"); ax.set_ylabel(u"锋面位置 " + K.XF + u"/" + K.LMAX)
+    ax.set_xlabel(u"时间 $t$/s"); ax.set_ylabel(u"锋面位置 $\\ell_f$/" + K.LMAX)
     ax.legend(loc="lower right", frameon=False, fontsize=7, numpoints=1)
     ax.set_title(u"(a) 一维变饱和充填：锋面位置—时间（基准 3）", fontsize=8)
     b = np.loadtxt(os.path.join(VL, "step3_axis_profile.csv"), delimiter=",", skiprows=1)

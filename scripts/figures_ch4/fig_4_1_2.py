@@ -2,7 +2,7 @@
 """
 图 4.1-2 代表性结构场（同一孔隙率色标）：(a) 孔隙率梯度 0.12→0.30（上疏下密）；(b) 贯通通道（φ 0.45，三个位置
 叠画于均质 0.18 背景，实算时每次只放一条）；(c) 随机非均质（均值 0.18、标准差 0.06、相关长度 7.5 m × 2.5 m，种子 1）；
-(d) 架空骨架局部模型（块石深灰，周边疏松环 0.45、块石下压密细粒 0.03，变体 C）。
+(d) 架空块石局部模型（块石深灰，周边疏松环 0.45、块石下压密细粒 0.03，变体 C）。
 数据：由算例模块生成（cases/inclined_hole_gradient.py、inclined_hole_channel.py、boulder_bypass 结果文件），与重算所用场相同。
 """
 from __future__ import print_function
@@ -63,7 +63,7 @@ def main():
     show(axs[3], f["x"], f["y"], np.where(f["solid"], 0, f["phi"]), 0.5, 0.0, 6.0, solid=f["solid"])
     src = np.asarray(f["src"], dtype=int)
     axs[3].plot(f["x"][src], f["y"][src] - 6.0, "s", color="k", ms=3)
-    axs[3].set_title(u"(d) 架空骨架局部模型（16 × 16 m）", fontsize=8)
+    axs[3].set_title(u"(d) 架空块石局部模型（16 × 16 m）", fontsize=8)
     axs[3].set_xlabel(u"水平距离 (m)"); axs[3].set_ylabel(u"相对高程 (m)（口袋底为 0）")
     for a in axs:
         K.style(a)
