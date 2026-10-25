@@ -239,7 +239,13 @@ L0 -4" id="m93b0483c22" style="stroke:#000000;stroke-width:0.5;"/>
      </g>
     </g>
     <g id="text_11">
-     <text style="font-family:Noto Sans SC;font-size:9.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 120.826772, 187.659437)" x="120.826771654" y="187.6594375">孔隙率 n</text>
+     <!-- 孔隙率 $n$ -->
+     <g transform="translate(103.591771654 187.6594375)">
+      <text>
+       <tspan style="font-family:Noto Sans SC;font-size:9.0px;font-style:regular;" x="0.0 9.0 18.0 27.0" y="-0.375">孔隙率 </tspan>
+       <tspan style="font-family:cmmi10;font-size:9.0px;font-style:regular;" x="29.0159912109" y="-0.375">n</tspan>
+      </text>
+     </g>
     </g>
    </g>
    <g id="matplotlib.axis_2">
@@ -614,14 +620,32 @@ L2 0" id="mf0c55a9a47" style="stroke:#000000;stroke-width:0.5;"/>
      </g>
     </g>
     <g id="text_17">
-     <text style="font-family:Noto Sans SC;font-size:9.0px;font-style:normal;text-anchor:middle;" transform="rotate(-90.000000, 11.484894, 95.256000)" x="11.4848941929" y="95.256">相对 n = 0.10 时的值</text>
+     <!-- 相对 $n$ = 0.10 时的值 -->
+     <g transform="translate(11.4848941929 135.756)rotate(-90.0)">
+      <text>
+       <tspan style="font-family:Noto Sans SC;font-size:9.0px;font-style:regular;" x="0.0 9.0 18.0 25.4168701172 27.4328613281 32.4278564453 34.4438476562 39.4388427734 41.9408416748 46.935836792 51.9308319092 53.9468231201 62.9468231201 71.9468231201" y="-0.40625">相对  = 0.10 时的值</tspan>
+       <tspan style="font-family:cmmi10;font-size:9.0px;font-style:regular;" x="20.0159912109" y="-0.40625">n</tspan>
+      </text>
+     </g>
     </g>
    </g>
    <g id="text_18">
-    <text style="fill:#2a78d6;font-family:Noto Sans SC;font-size:7.5px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 179.755906, 38.956695)" x="179.755905512" y="38.9566945571">k 增大至 244 倍</text>
+    <!-- $k$ 增大至 244 倍 -->
+    <g style="fill:#2a78d6;" transform="translate(128.305905512 38.9566945571)">
+     <text>
+      <tspan style="font-family:Noto Sans SC;font-size:7.5px;font-style:regular;" x="3.90014648438 5.58013916016 13.0801239014 20.5801086426 28.0800933838 29.7600860596 33.9225769043 38.085067749 42.2475585938 43.9275512695" y="-0.640625"> 增大至 244 倍</tspan>
+      <tspan style="font-family:cmmi10;font-size:7.5px;font-style:regular;" x="0.0" y="-0.640625">k</tspan>
+     </text>
+    </g>
    </g>
    <g id="text_19">
-    <text style="fill:#eb6834;font-family:Noto Sans SC;font-size:7.5px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 179.755906, 151.205207)" x="179.755905512" y="151.205207058">λ 减小至 1/7.4</text>
+    <!-- $\lambda$ 减小至 1/7.4 -->
+    <g style="fill:#eb6834;" transform="translate(131.980905512 151.205207058)">
+     <text>
+      <tspan style="font-family:Noto Sans SC;font-size:7.5px;font-style:regular;" x="4.37255859375 6.05255126953 13.5525360107 21.052520752 28.5525054932 30.2324981689 34.3949890137 37.3349761963 41.497467041 43.5824584961" y="-0.734375"> 减小至 1/7.4</tspan>
+      <tspan style="font-family:cmmi10;font-size:7.5px;font-style:regular;" x="0.0" y="-0.734375">¸</tspan>
+     </text>
+    </g>
    </g>
    <g id="line2d_61">
     <defs>
@@ -863,7 +887,13 @@ L263.622 27.216" style="fill:none;stroke:#000000;stroke-linecap:square;stroke-li
      </g>
     </g>
     <g id="text_32">
-     <text style="font-family:Noto Sans SC;font-size:9.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 347.102362, 187.659437)" x="347.102362205" y="187.6594375">孔隙率 n</text>
+     <!-- 孔隙率 $n$ -->
+     <g transform="translate(329.867362205 187.6594375)">
+      <text>
+       <tspan style="font-family:Noto Sans SC;font-size:9.0px;font-style:regular;" x="0.0 9.0 18.0 27.0" y="-0.375">孔隙率 </tspan>
+       <tspan style="font-family:cmmi10;font-size:9.0px;font-style:regular;" x="29.0159912109" y="-0.375">n</tspan>
+      </text>
+     </g>
     </g>
    </g>
    <g id="matplotlib.axis_4">

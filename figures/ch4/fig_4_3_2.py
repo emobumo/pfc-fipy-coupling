@@ -55,7 +55,7 @@ def panel_a(ax):
 def panel_a_note(fig, ax):
     h, l = ax.get_legend_handles_labels()
     fig.legend(h, l, loc="upper left", bbox_to_anchor=(0.50, 0.955), frameon=False, fontsize=8)
-    fig.text(0.515, 0.86, u"$r(\\theta)=L_{\\mathrm{max}}/(1+\\Pi_g\\sin\\theta)$，θ 自水平向上为正", fontsize=8)
+    fig.text(0.515, 0.86, u"$r(\\theta)=L_{\\mathrm{max}}/(1+\\Pi_g\\sin\\theta)$，$\\theta$ 自水平向上为正", fontsize=8)
     fig.text(0.515, 0.83, u"向上距离缩短，向下距离伸长；离心率为 $\\Pi_g$", fontsize=8)
 
 
@@ -99,7 +99,7 @@ def panel_b_right(ax):
         ax.plot([rr, rr], [0, 1], color=col, lw=0.6)
         ax.plot([rr], [1], "o", color=col, ms=4, zorder=5)
         ax.text(rr + dx, dy, name, color=col, fontsize=8, ha=ha, va="bottom" if dy > 1 else "top")
-    ax.text(0.07, 1.19, u"$F$ > 1：向上偏置（翻转）", fontsize=7.5, ha="left")
+    ax.text(r_up + 0.04, 0.06, u"$F$ > 1：\n向上偏置\n（翻转）", fontsize=7, ha="left", va="bottom")
     ax.set_xlim(0, 1.6)
     ax.set_ylim(0, 1.6)
     ax.set_xlabel(u"沿射线距离 $r/L_{\\mathrm{max}}$")
@@ -119,13 +119,14 @@ def panel_c(ax):
     ax.text(0.99, AVAIL + 0.06, u"可用驱动压力", fontsize=7.5, ha="right", va="bottom")
     xc = x0 + (AVAIL - x0) / LW_RATIO
     ax.plot([xc], [AVAIL], "o", color=K.INK, ms=4, zorder=5)
-    ax.text(0.20, 0.30, u"斜率 λ", fontsize=7.5, ha="center", va="bottom")
+    ax.text(0.20, 0.30, u"斜率 $\\lambda$", fontsize=7.5, ha="center", va="bottom")
     ax.text(x1 + 0.012, 1.55, u"斜率 $\\lambda_w$", fontsize=7.5, va="center")
-    ax.text(0.78, 2.75, u"斜率 λ", fontsize=7.5, ha="center")
-    ax.annotate(u"胶结体（阻隔墙），厚度 $w$", (0.5 * (x0 + x1), 0.15), xytext=(0.56, 0.35), fontsize=7.5,
+    ax.text(0.78, 2.75, u"斜率 $\\lambda$", fontsize=7.5, ha="center")
+    ax.annotate(u"胶结体（阻隔墙），厚度 $w$", (0.5 * (x0 + x1), 0.62), xytext=(0.56, 0.48), fontsize=7.5,
                 arrowprops=dict(arrowstyle="-", lw=0.5, color=K.INK, shrinkA=1, shrinkB=1))
-    ax.text(0.18, AVAIL + 0.35, u"可达", fontsize=8, ha="center")
-    ax.text(0.78, AVAIL + 0.35, u"不可达", fontsize=8, ha="center")
+    ax.plot([xc, xc], [0, 3.2], color=F.GREY, lw=0.6, zorder=3)
+    ax.text(xc - 0.012, 0.06, u"← 可达", fontsize=8, ha="right", va="bottom")
+    ax.text(x1 + 0.012, 0.06, u"不可达 →", fontsize=8, ha="left", va="bottom")
     ax.text(0.04, 2.85, u"只取决于 $\\lambda_w$，与墙体渗透率无关", fontsize=8, va="top")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 3.2)

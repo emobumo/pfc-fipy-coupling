@@ -42,15 +42,15 @@ def main():
     ax.plot([0.10], [1.0], "o", color=K.INK, ms=3.5, zorder=4)
     ax.plot([0.45], [rk], "o", color=K.C1, ms=4)
     ax.plot([0.45], [1 / rl], "o", color=K.C2, ms=4)
-    ax.annotate(u"k 增大至 %.0f 倍" % rk, (0.45, rk), xytext=(-6, 6), textcoords="offset points", ha="right",
+    ax.annotate(u"$k$ 增大至 %.0f 倍" % rk, (0.45, rk), xytext=(-6, 6), textcoords="offset points", ha="right",
                 fontsize=7.5, color=K.C1)
-    ax.annotate(u"λ 减小至 1/%.1f" % rl, (0.45, 1 / rl), xytext=(-6, -12), textcoords="offset points", ha="right",
+    ax.annotate(u"$\\lambda$ 减小至 1/%.1f" % rl, (0.45, 1 / rl), xytext=(-6, -12), textcoords="offset points", ha="right",
                 fontsize=7.5, color=K.C2)
     ax.yaxis.set_ticks_position("left")
     ax.set_xlim(0.05, 0.50)
     ax.set_ylim(0.02, 1000)
-    ax.set_xlabel(u"孔隙率 n")
-    ax.set_ylabel(u"相对 n = 0.10 时的值")
+    ax.set_xlabel(u"孔隙率 $n$")
+    ax.set_ylabel(u"相对 $n$ = 0.10 时的值")
     ax.legend(loc="upper left", frameon=False, fontsize=7.5)
     K.style(ax)
     F.tag(ax, "a")
@@ -62,7 +62,7 @@ def main():
                     fontsize=7.5)
     ax.set_xlim(0.05, 0.50)
     ax.set_ylim(0, 90)
-    ax.set_xlabel(u"孔隙率 n")
+    ax.set_xlabel(u"孔隙率 $n$")
     ax.set_ylabel(u"停滞距离 $L_{\\mathrm{max}}$ / m")
     K.style(ax)
     F.tag(ax, "b")

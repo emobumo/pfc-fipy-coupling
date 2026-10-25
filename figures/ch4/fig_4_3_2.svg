@@ -1989,13 +1989,15 @@ L255.6 228.24" style="fill:none;stroke:#000000;stroke-linecap:square;stroke-line
     </g>
    </g>
    <g id="text_71">
-    <!-- $F$ &gt; 1：向上偏置（翻转） -->
-    <g transform="translate(262.845 260.5275)">
+    <!-- $F$ &gt; 1： -->
+    <g transform="translate(396.616647644 331.3329375)">
      <text>
-      <tspan style="font-family:Noto Sans SC;font-size:7.5px;font-style:regular;" x="4.82299804688 6.50299072266 10.6654815674 12.3454742432 16.5079650879 24.0079498291 31.5079345703 39.0079193115 46.5079040527 54.0078887939 61.5078735352 69.0078582764 76.5078430176" y="-0.578125"> &gt; 1：向上偏置（翻转）</tspan>
-      <tspan style="font-family:cmmi10;font-size:7.5px;font-style:regular;" x="0.0" y="-0.578125">F</tspan>
+      <tspan style="font-family:cmmi10;font-size:7.0px;font-style:regular;" x="0.0" y="-0.875">F</tspan>
+      <tspan style="font-family:Noto Sans SC;font-size:7.0px;font-style:regular;" x="4.50146484375 6.06945800781 9.95445251465 11.5224456787 15.4074401855" y="-0.875"> &gt; 1：</tspan>
      </text>
     </g>
+    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;" transform="translate(396.616647644 339.62225)">向上偏置</text>
+    <text style="font-family:Noto Sans SC;font-size:7.0px;font-style:normal;" transform="translate(396.616647644 347.9115625)">（翻转）</text>
    </g>
    <g id="line2d_67">
     <defs>
@@ -2108,11 +2110,22 @@ L36 390.96" style="fill:none;stroke:#000000;stroke-linecap:square;stroke-linejoi
      <text style="font-family:Noto Sans SC;font-size:9.0px;font-style:normal;text-anchor:middle;" transform="rotate(-90.000000, 28.938437, 443.160000)" x="28.9384375" y="443.16">累积启动压力</text>
     </g>
    </g>
+   <g id="line2d_75">
+    <path clip-path="url(#pb7ac00a6e8)" d="
+M205.103 495.36
+L205.103 390.96" style="fill:none;stroke:#9a9a9a;stroke-linecap:square;stroke-width:0.6;"/>
+   </g>
    <g id="text_76">
     <text style="font-family:Noto Sans SC;font-size:7.5px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 417.348000, 465.584531)" x="417.348" y="465.58453125">可用驱动压力</text>
    </g>
    <g id="text_77">
-    <text style="font-family:Noto Sans SC;font-size:7.5px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 113.040000, 483.854531)" x="113.04" y="483.85453125">斜率 λ</text>
+    <!-- 斜率 $\lambda$ -->
+    <g transform="translate(102.5025 483.85453125)">
+     <text>
+      <tspan style="font-family:Noto Sans SC;font-size:7.5px;font-style:regular;" x="0.0 7.49998474121 14.9999694824" y="-0.640625">斜率 </tspan>
+      <tspan style="font-family:cmmi10;font-size:7.5px;font-style:regular;" x="16.6799621582" y="-0.640625">¸</tspan>
+     </text>
+    </g>
    </g>
    <g id="text_78">
     <!-- 斜率 $\lambda_w$ -->
@@ -2125,16 +2138,22 @@ L36 390.96" style="fill:none;stroke:#000000;stroke-linecap:square;stroke-linejoi
     </g>
    </g>
    <g id="text_79">
-    <text style="font-family:Noto Sans SC;font-size:7.5px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 336.456000, 405.641250)" x="336.456" y="405.64125">斜率 λ</text>
+    <!-- 斜率 $\lambda$ -->
+    <g transform="translate(325.9185 405.64125)">
+     <text>
+      <tspan style="font-family:Noto Sans SC;font-size:7.5px;font-style:regular;" x="0.0 7.49998474121 14.9999694824" y="-0.640625">斜率 </tspan>
+      <tspan style="font-family:cmmi10;font-size:7.5px;font-style:regular;" x="16.6799621582" y="-0.640625">¸</tspan>
+     </text>
+    </g>
    </g>
    <g id="patch_19">
     <path d="
-M248.718 487.017
-Q233.378 488.688 218.038 490.358" style="fill:none;stroke:#1a1a1a;stroke-linecap:round;stroke-width:0.5;"/>
+M248.71 476.106
+Q233.377 475.635 218.045 475.163" style="fill:none;stroke:#1a1a1a;stroke-linecap:round;stroke-width:0.5;"/>
    </g>
    <g id="text_80">
     <!-- 胶结体（阻隔墙），厚度 $w$ -->
-    <g transform="translate(251.712 483.94125)">
+    <g transform="translate(251.712 479.7)">
      <text>
       <tspan style="font-family:Noto Sans SC;font-size:7.5px;font-style:regular;" x="0.0 7.49998474121 14.9999694824 22.4999542236 29.9999389648 37.4999237061 44.9999084473 52.4998931885 59.9998779297 67.4998626709 74.9998474121 82.4998321533" y="-0.578125">胶结体（阻隔墙），厚度 </tspan>
       <tspan style="font-family:cmmi10;font-size:7.5px;font-style:regular;" x="84.1798248291" y="-0.578125">w</tspan>
@@ -2142,10 +2161,10 @@ Q233.378 488.688 218.038 490.358" style="fill:none;stroke:#1a1a1a;stroke-linecap
     </g>
    </g>
    <g id="text_81">
-    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 105.336000, 457.841250)" x="105.336" y="457.84125">可达</text>
+    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:end;" transform="rotate(-0.000000, 200.480400, 491.570000)" x="200.4804" y="491.57">← 可达</text>
    </g>
    <g id="text_82">
-    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 336.456000, 457.841250)" x="336.456" y="457.84125">不可达</text>
+    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 240.926400, 491.570000)" x="240.9264" y="491.57">不可达 →</text>
    </g>
    <g id="text_83">
     <!-- 只取决于 $\lambda_w$，与墙体渗透率无关 -->
@@ -2157,7 +2176,7 @@ Q233.378 488.688 218.038 490.358" style="fill:none;stroke:#1a1a1a;stroke-linecap
      </text>
     </g>
    </g>
-   <g id="line2d_75">
+   <g id="line2d_76">
     <g clip-path="url(#pb7ac00a6e8)">
      <use style="fill:#1a1a1a;stroke:#000000;stroke-width:0.5;" x="205.1028" xlink:href="#mde802c7d56" y="469.26"/>
     </g>
@@ -2167,13 +2186,13 @@ Q233.378 488.688 218.038 490.358" style="fill:none;stroke:#1a1a1a;stroke-linecap
    <text style="font-family:Noto Sans SC;font-size:10.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 1.757480, 10.669375)" x="1.75748031496" y="10.669375">(a)</text>
   </g>
   <g id="text_85">
-   <!-- $r(\theta)=L_{\mathrm{max}}/(1+\Pi_g\sin\theta)$，θ 自水平向上为正 -->
+   <!-- $r(\theta)=L_{\mathrm{max}}/(1+\Pi_g\sin\theta)$，$\theta$ 自水平向上为正 -->
    <g transform="translate(226.275590551 73.584)">
     <text>
-     <tspan style="font-family:cmmi10;font-size:8.0px;font-style:regular;" x="0.0 6.71484375 21.69609375 37.552734375 76.405078125" y="-0.265625">rµL=µ</tspan>
+     <tspan style="font-family:cmmi10;font-size:8.0px;font-style:regular;" x="0.0 6.71484375 21.69609375 37.552734375 76.405078125 91.2644378662" y="-0.265625">rµL=µµ</tspan>
      <tspan style="font-family:cmr10;font-size:5.6px;font-style:regular;" x="27.1375 31.80234375 34.60234375" y="1.775125">max</tspan>
      <tspan style="font-family:cmr10;font-size:8.0px;font-style:regular;" x="3.609375 10.46875 14.97890625 41.552734375 44.658203125 50.062890625 56.780078125 66.596484375 69.748828125 71.963671875 80.158984375" y="-0.265625">()=(1+¦sin)</tspan>
-     <tspan style="font-family:Noto Sans SC;font-size:8.0px;font-style:regular;" x="83.264453125 91.2644378662 95.9284240723 97.7204162598 105.720401001 113.720385742 121.720370483 129.720355225 137.720339966 145.720324707" y="-0.265625">，θ 自水平向上为正</tspan>
+     <tspan style="font-family:Noto Sans SC;font-size:8.0px;font-style:regular;" x="83.264453125 95.0183441162 96.8103363037 104.810321045 112.810305786 120.810290527 128.810275269 136.81026001 144.810244751" y="-0.265625">， 自水平向上为正</tspan>
      <tspan style="font-family:cmmi10;font-size:5.6px;font-style:regular;" x="62.780078125" y="1.775125">g</tspan>
     </text>
    </g>
@@ -2195,12 +2214,12 @@ Q233.378 488.688 218.038 490.358" style="fill:none;stroke:#1a1a1a;stroke-linecap
    <text style="font-family:Noto Sans SC;font-size:10.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 3.600000, 382.909375)" x="3.6" y="382.909375">(c)</text>
   </g>
   <g id="legend_3">
-   <g id="line2d_76">
+   <g id="line2d_77">
     <path d="
 M229.285 34.932
 L240.485 34.932" style="fill:none;stroke:#9a9a9a;stroke-linecap:square;stroke-width:0.8;"/>
    </g>
-   <g id="line2d_77"/>
+   <g id="line2d_78"/>
    <g id="text_89">
     <!-- 无重力（$\Pi_g$ = 0）：圆 -->
     <g transform="translate(249.28503937 37.732)">
@@ -2211,12 +2230,12 @@ L240.485 34.932" style="fill:none;stroke:#9a9a9a;stroke-linecap:square;stroke-wi
      </text>
     </g>
    </g>
-   <g id="line2d_78">
+   <g id="line2d_79">
     <path d="
 M229.285 48.4995
 L240.485 48.4995" style="fill:none;stroke:#1a1a1a;stroke-linecap:square;stroke-width:1.5;"/>
    </g>
-   <g id="line2d_79"/>
+   <g id="line2d_80"/>
    <g id="text_90">
     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 249.285039, 51.299500)" x="249.28503937" y="51.2995">可达域边界：以源点为焦点的椭圆</text>
    </g>
