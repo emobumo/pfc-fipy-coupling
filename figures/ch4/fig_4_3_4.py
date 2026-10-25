@@ -203,12 +203,14 @@ def main():
             ax.contour(x, z, g, levels=[a * P0], colors=[col], linewidths=lw)
     points(ax, labels=False)
     ax.text(SRC[0] - 0.06, SRC[1] - 0.04, u"$x_s$", ha="right", va="top", fontsize=8.5)
+    ax.text(TGT[0], TGT[1] + 0.08, u"$x$", ha="center", va="bottom", fontsize=8.5)
     ax.text(XLIM[0] + 0.05, ZLIM[1] - 0.05, u"历程不同，充填先后不同；\n任一时刻 $\\Omega_{\\mathrm{fill}}(t)\\subseteq\\Omega_{\\mathrm{reach}}$",
             fontsize=7, va="top")
     hs = [plt.Line2D([], [], color=K.INK, lw=1.5), plt.Line2D([], [], color=F.GREY, lw=0.7),
           plt.Line2D([], [], color=F.GREY, lw=1.3)]
     ax.legend(hs, [u"可达域（按 $p_0$）", u"充填域 $t_1$（细线）", u"充填域 $t_2$（粗线）"], loc="lower right",
-              frameon=False, fontsize=6.8)
+              frameon=False, fontsize=6.8, bbox_to_anchor=(1.0, 0.06))
+    ax.text(0.97, 0.03, u"颜色对应左图历程", transform=ax.transAxes, ha="right", va="bottom", fontsize=6)
     F.save(fig, "fig_4_3_4")
     print("path 1 cumulative %.3f, path 2 %.3f, available %.3f; lengths %.3f / %.3f" %
           (c1[-1], c2[-1], avail, s1[-1], s2[-1]))
