@@ -1062,7 +1062,7 @@ L751.354 138.497
 L751.252 134.581
 L750.968 130.699
 L750.679 128.133
-L750.679 128.133" style="fill:none;stroke:#eb6834;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;stroke-width:1.2;"/>
+L750.679 128.133" style="fill:none;stroke:#eb6834;stroke-dasharray:3.000000,5.000000,1.000000,5.000000;stroke-dashoffset:0.0;stroke-width:1.2;"/>
    </g>
    <g id="line2d_42">
     <path clip-path="url(#pa1febd72e0)" d="
@@ -1365,7 +1365,7 @@ L630.464 286.088" style="fill:none;stroke:#1a1a1a;stroke-linecap:square;stroke-w
     <g id="line2d_59">
      <path d="
 M622.064 295.562
-L630.464 295.562" style="fill:none;stroke:#eb6834;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;stroke-width:1.2;"/>
+L630.464 295.562" style="fill:none;stroke:#eb6834;stroke-dasharray:3.000000,5.000000,1.000000,5.000000;stroke-dashoffset:0.0;stroke-width:1.2;"/>
     </g>
     <g id="line2d_60"/>
     <g id="text_53">

@@ -149,6 +149,15 @@ def draw_hole(ax, start, end, x0=MOUTH[0], y0=MOUTH[1]):
     ax.plot([start[0] - x0], [start[1] - y0], marker="s", ms=4, color="k", zorder=6)
 
 
+TEXT_W = 15.5 / 2.54                              # text block width (in): figures laid out at print size
+
+
+def axes_in(fig, l, b, w, h):
+    """add_axes with the box in inches from the lower-left corner of the figure."""
+    fw, fh = fig.get_size_inches()
+    return fig.add_axes([l / fw, b / fh, w / fw, h / fh])
+
+
 def style(ax):
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)

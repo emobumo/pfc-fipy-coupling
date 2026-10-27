@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-图 4.6-1(c) S3 的段间阴影区（n 0.14，第 1 段孔深 7 m、终孔孔深 17 m，1.25 m，现行停注判据）。
-(a)(b) 为示意图，不在此画。
+图 4.6-1(c)（定稿图 5-7(b)）S3 的段间阴影区（n 0.14，第 1 段孔深 7 m、终孔孔深 17 m，1.25 m，现行停注判据）。
+(a) 分段工序示意在 figures/ch5/fig_4_6_1.py，那里与本图合为图 5-7；本脚本单独输出的图标为 (b)。
 按式（4-27），均质算例不设设计域：Ω_shadow = Ω_reach^w \\ (Ω_reach^(1) ∪ Ω_reach^(2))。
 掩码用 scripts/shadow_eq427.py 的函数重算（后处理，不跑求解器）：
   Ω_reach^w   原始场、整孔出浆段（孔口至 17 m）的可达域，须与 cells.csv 的 reach_w 列逐单元相同；
@@ -48,11 +48,10 @@ def masks():
         G.CELL, G.HOLE_LEN = 2.5, 17.0
 
 
-def main():
-    m = masks()
+def panel(ax, m, letter="b", fs=7.5):
+    """Draw the S3 map on ax; returns the legend handles (also used by figures/ch5/fig_4_6_1.py, fig. 5-7(b))."""
     mx, my = m["mx"], m["my"]
     n_sh = int(m["shadow"].sum())
-    fig, ax = plt.subplots(figsize=(7.6, 5.4))
     g, ext = K.grid(mx, my, np.where(m["shadow"], 1.0, np.where(m["cement"], 2.0, 0.0)), CELL)
     from matplotlib.colors import ListedColormap
     cmap = ListedColormap(["#ffffff", K.C2, K.SOLID])
@@ -63,25 +62,34 @@ def main():
     K.draw_hole(ax, G.MOUTH, m["end"])
     dx, dy = m["d1"][0] - K.MOUTH[0], m["d1"][1] - K.MOUTH[1]
     ax.plot([dx], [dy], marker="o", ms=5, mfc="white", mec="k", mew=1.2, zorder=7)
-    ax.annotate(u"第 1 段孔底", (dx, dy), xytext=(8, -12), textcoords="offset points", fontsize=7.5)
+    ax.annotate(u"第 1 段孔底", (dx, dy), xytext=(8, -12), textcoords="offset points", fontsize=fs)
     ax.annotate(u"终孔", (m["end"][0] - K.MOUTH[0], m["end"][1] - K.MOUTH[1]), xytext=(6, 4),
-                textcoords="offset points", fontsize=7.5)
+                textcoords="offset points", fontsize=fs)
     sel = m["rw"]
     xr, yr = mx[sel] - K.MOUTH[0], my[sel] - K.MOUTH[1]
     ax.set_xlim(0, xr.max() + 3.0)
     ax.set_ylim(yr.min() - 2.0, yr.max() + 2.0)
     ax.set_xlabel(u"水平距离 $x$/m"); ax.set_ylabel(u"相对高程 $z$/m")
-    ax.set_title(u"(c) S3 的%s" % TERMS["shadow"], fontsize=9)
-    handles = [Line2D([], [], color=K.INK, lw=1.3, label=u"理想整孔%s $\\Omega_{\\mathrm{reach}}^{w}$" % TERMS["reach"]),
-               Line2D([], [], color=K.C1, lw=1.3, label=u"第 1 段%s $\\Omega_{\\mathrm{reach}}^{(1)}$" % TERMS["reach"]),
-               Patch(facecolor=K.C2, edgecolor="none", label=u"%s\n（%d 个单元，%.1f m²）" % (TERMS["shadow"], n_sh,
-                                                                       np.floor(n_sh * CELL * CELL * 10 + 0.5) / 10)),
-               Patch(facecolor=K.SOLID, edgecolor="none", label=TERMS["cement"])]
-    ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.02, 1.0), frameon=False, fontsize=7.5)
+    ax.set_title(u"(%s) S3 的%s" % (letter, TERMS["shadow"]), fontsize=9)
     K.style(ax)
+    return [Line2D([], [], color=K.INK, lw=1.3, label=u"理想整孔%s $\\Omega_{\\mathrm{reach}}^{w}$" % TERMS["reach"]),
+            Line2D([], [], color=K.C1, lw=1.3, label=u"第 1 段%s $\\Omega_{\\mathrm{reach}}^{(1)}$" % TERMS["reach"]),
+            Patch(facecolor=K.C2, edgecolor="none", label=u"%s\n（%d 个单元，%.1f m²）" % (TERMS["shadow"], n_sh,
+                                                                    np.floor(n_sh * CELL * CELL * 10 + 0.5) / 10)),
+            Patch(facecolor=K.SOLID, edgecolor="none", label=TERMS["cement"])]
+
+
+NOTE = u"第 2 段失效，其%s即第 2 段出浆单元，图中不另画；深灰为孔隙率降至下限的单元" % TERMS["reach"]
+
+
+def main():
+    m = masks()
+    n_sh = int(m["shadow"].sum())
+    fig, ax = plt.subplots(figsize=(7.6, 5.4))
+    handles = panel(ax, m)
+    ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.02, 1.0), frameon=False, fontsize=7.5)
     fig.tight_layout(rect=(0, 0.06, 1, 1))
-    fig.text(0.02, 0.015, u"第 2 段失效，其%s即第 2 段出浆单元，图中不另画；深灰为孔隙率降至下限的单元" % TERMS["reach"],
-             fontsize=7.5, color=K.INK2)
+    fig.text(0.02, 0.015, NOTE, fontsize=7.5, color=K.INK2)
     K.save(fig, "fig_4_6_1c")
     print("reach^w %d, reach^(1) %d, reach^(2) %d (= stage-2 source cells: %s), shadow %d cells = %.2f m2, cement %d" % (
         int(m["rw"].sum()), int(m["r1"].sum()), int(m["r2"].sum()),

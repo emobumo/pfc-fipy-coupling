@@ -39,7 +39,7 @@ L229.201 145.985
 L244.081 134.761
 L273.841 110.866
 L311.636 83.3494
-L333.361 79.0047" style="fill:none;stroke:#2a78d6;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;"/>
+L333.361 79.0047" style="fill:none;stroke:#2a78d6;stroke-dasharray:3.000000,5.000000,1.000000,5.000000;stroke-dashoffset:0.0;"/>
    </g>
    <g id="line2d_2">
     <defs>
@@ -98,7 +98,7 @@ L229.201 151.054
 L244.081 145.623
 L273.841 134.037
 L311.636 118.469
-L333.361 109.417" style="fill:none;stroke:#eb6834;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;"/>
+L333.361 109.417" style="fill:none;stroke:#eb6834;stroke-dasharray:3.000000,5.000000,1.000000,5.000000;stroke-dashoffset:0.0;"/>
    </g>
    <g id="line2d_5">
     <defs>
@@ -134,7 +134,7 @@ L229.201 150.692
 L244.081 144.537
 L273.841 131.865
 L311.636 114.848
-L333.361 104.711" style="fill:none;stroke:#1baf7a;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;"/>
+L333.361 104.711" style="fill:none;stroke:#1baf7a;stroke-dasharray:3.000000,5.000000,1.000000,5.000000;stroke-dashoffset:0.0;"/>
    </g>
    <g id="line2d_7">
     <defs>
@@ -169,7 +169,7 @@ L248.724 136.21
 L267.473 124.624
 L305.03 99.6419
 L352.765 79.0047
-L380.144 74.66" style="fill:none;stroke:#4a3aa7;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;"/>
+L380.144 74.66" style="fill:none;stroke:#4a3aa7;stroke-dasharray:3.000000,5.000000,1.000000,5.000000;stroke-dashoffset:0.0;"/>
    </g>
    <g id="line2d_9">
     <defs>
@@ -242,7 +242,7 @@ L214.321 11.3" style="fill:none;stroke:#52514e;stroke-dasharray:1.000000,3.00000
    <g id="line2d_14">
     <path clip-path="url(#pd53c5db0ef)" d="
 M311.636 264.74
-L311.636 11.3" style="fill:none;stroke:#52514e;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;stroke-width:0.8;"/>
+L311.636 11.3" style="fill:none;stroke:#52514e;stroke-dasharray:3.000000,5.000000,1.000000,5.000000;stroke-dashoffset:0.0;stroke-width:0.8;"/>
    </g>
    <g id="line2d_15"/>
    <g id="line2d_16"/>
@@ -496,7 +496,7 @@ L4 0" id="m728421d6d4" style="stroke:#000000;stroke-width:0.5;"/>
     <g id="line2d_42">
      <path d="
 M42.0613 75.7131
-L56.0613 75.7131" style="fill:none;stroke:#52514e;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;"/>
+L56.0613 75.7131" style="fill:none;stroke:#52514e;stroke-dasharray:3.000000,5.000000,1.000000,5.000000;stroke-dashoffset:0.0;"/>
     </g>
     <g id="line2d_43"/>
     <g id="text_25">

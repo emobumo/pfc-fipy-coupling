@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 图 4.5-2 翻转判据验证图：横轴翻转判据 F（各组按自身 ρ 计），纵轴相对因子（R_ud 与同一网格、同一参数组的
-无重力均质场 R_ud 之比）。直射线估计（虚线）、二维可达域（标记，单元中心读数）、四组参数；求解器梯度强度扫描
+无重力均质场 R_ud 之比）。直射线估计（点划线）、二维可达域（标记，单元中心读数）、四组参数；求解器梯度强度扫描
 （n_top 0.25/0.30/0.35）；梯度场算例位置（F ≈ 2.6）。
 数据：outputs/flip_criterion/flip_criterion.txt（组 1、4：1.25 m）与 flip_criterion_refine_0.625.txt（组 2、3：
 0.625 m，L_max ≈ 10 m 须用细网格，1.25 m 上的台阶读数不画；R17、R17c）；求解器扫描取 outputs/rerun_rate/A/results.json
@@ -49,7 +49,7 @@ def main():
     for g in (1, 2, 3, 4):
         src = fine[g] if g in (2, 3) else base[g]
         F = np.array([r[0] for r in src]); two = np.array([r[1] for r in src]); ray = np.array([r[2] for r in src])
-        ax.plot(F, ray, "--", color=cols[g], lw=1.0)
+        ax.plot(F, ray, "-.", color=cols[g], lw=1.0)
         clip = np.array([r[3] for r in src])
         ax.plot(F[~clip], two[~clip], mk[g], color=cols[g], ms=5, mec="white", mew=0.8, label=names[g])
         if clip.any():
@@ -60,10 +60,10 @@ def main():
     ax.plot(sx, sy, "*", color="k", ms=9, label=u"求解器（梯度强度扫描，1.25 m）")
     ax.axhline(1.0, color=K.INK2, lw=0.8)
     ax.axvline(1.0, color=K.INK2, lw=0.8, ls=":")
-    ax.axvline(2.635, color=K.INK2, lw=0.8, ls="--")
+    ax.axvline(2.635, color=K.INK2, lw=0.8, ls="-.")
     ax.text(2.66, 0.76, u"梯度场算例\nF ≈ 2.6", fontsize=7, color=K.INK2)
     ax.text(1.03, 0.74, u"F = 1", fontsize=7, color=K.INK2)
-    ax.plot([], [], "--", color=K.INK2, lw=1.0, label=u"直射线估计（孔轴 51 点取最大，射线止于计算域边界）")
+    ax.plot([], [], "-.", color=K.INK2, lw=1.0, label=u"直射线估计（孔轴 51 点取最大，射线止于计算域边界）")
     ax.plot([], [], "o", mfc="white", mec=K.INK2, mew=1.1, ms=5, label=u"空心：可达域或定界射线触及计算域边界")
     ax.set_xlabel(u"翻转判据 F = γ$p_0$/(2ρg)")
     ax.set_ylabel(TERMS["rel_factor"])

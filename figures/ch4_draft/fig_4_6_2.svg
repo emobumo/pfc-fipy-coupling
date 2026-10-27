@@ -366,7 +366,7 @@ z
    <g id="line2d_26">
     <path clip-path="url(#p0566a1b9f6)" d="
 M470.496 213.56
-L470.496 19.94" style="fill:none;stroke:#52514e;stroke-dasharray:6.000000,6.000000;stroke-dashoffset:0.0;stroke-width:0.8;"/>
+L470.496 19.94" style="fill:none;stroke:#52514e;stroke-dasharray:3.000000,5.000000,1.000000,5.000000;stroke-dashoffset:0.0;stroke-width:0.8;"/>
    </g>
    <g id="line2d_27"/>
    <g id="line2d_28"/>

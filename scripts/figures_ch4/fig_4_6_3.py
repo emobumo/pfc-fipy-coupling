@@ -2,7 +2,7 @@
 """
 图 4.6-3 分段覆盖损失图：分段覆盖损失（理想整孔覆盖率 − 分段覆盖率，百分点）对 Δ/L_max（Δ = H − d₁），
 1.25 m，现行停注判据。算例代号按表 4.6-1：孔隙率组 S1～S6（圆点），S7（第 1 段孔深 5 m，三角），孔深组 S3、S8～S10
-（方块）；S3 两组共用，以左右两半着色的圆点单独画出；S2 为临界（菱形）。虚线为 c（19 个独立段过原点最小二乘，
+（方块）；S3 两组共用，以左右两半着色的圆点单独画出；S2 为临界（菱形）。点划线为 c（19 个独立段过原点最小二乘，
 ε = 0.1），灰带为 19 段 x_f/L_max 的范围 0.83～0.91（SG01），即 c 的区间在本轴上的位置。
 数据：outputs/rerun_rate/C/results.json（P2 + P3，两遍一致）；覆盖率 = Ω_reach^w 中被充填的单元比例
 （over_reach_filled），数值与 docs/check_4_6_prewrite.md 第 11 项一致。
@@ -43,7 +43,7 @@ def main():
     assert sorted(pts) == sorted(K.S_CODES.values())
     fig, ax = plt.subplots(figsize=(6.8, 4.2))
     ax.axvspan(0.833, 0.906, color="#e4e3dd", zorder=0)
-    ax.axvline(0.871, color=K.INK2, lw=0.8, ls="--")
+    ax.axvline(0.871, color=K.INK2, lw=0.8, ls="-.")
     style = dict(linestyle="none", mec="white", mew=1.2)
     groups = [(["S1", "S4", "S5", "S6"], dict(marker="o", color=K.C1, ms=8), u"孔隙率组（S1～S6）"),
               (["S8", "S9", "S10"], dict(marker="s", color=K.C2, ms=8), u"孔深组（S3、S8～S10）"),
@@ -75,7 +75,7 @@ def main():
     fig.text(0.01, 0.05, u"孔隙率组 S1～S6：终孔孔深 17 m、第 1 段孔深 7 m；S7：第 1 段孔深 5 m；孔深组 S3、S8～S10：n 0.14。"
              u"Δ 为新出浆段伸出第 1 段孔底的长度。", fontsize=7.5, color=K.INK2)
     fig.text(0.01, 0.015, u"灰带：19 个独立段 " + K.XF + u"/" + K.LMAX + u" 的范围 0.83～0.91，即段长系数 c 的区间在本轴上的位置；"
-             u"虚线：c ≈ 0.87", fontsize=7.5, color=K.INK2)
+             u"点划线：c ≈ 0.87", fontsize=7.5, color=K.INK2)
     K.save(fig, "fig_4_6_3")
     for c in sorted(pts, key=lambda c: int(c[1:])):
         p = pts[c]

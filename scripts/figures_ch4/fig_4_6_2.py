@@ -61,7 +61,7 @@ def main():
             ax.annotate(u"%s（终孔孔深 %g m）" % (code, r["H"]), (ratio, s2["v_in"]), xytext=(6, 2),
                         textcoords="offset points", fontsize=6.5)
         pts.append((code, ratio, s2["v_in"]))
-    ax.axvline(1.0, color=K.INK2, lw=0.8, ls="--")
+    ax.axvline(1.0, color=K.INK2, lw=0.8, ls="-.")
     ax.plot([], [], "o", color=K.C1, label=TERMS["stage_ok"])
     ax.plot([], [], "x", color=K.C2, mew=1.4, label=TERMS["stage_dead"])
     ax.plot([], [], "D", color=K.C3, label=u"临界")
