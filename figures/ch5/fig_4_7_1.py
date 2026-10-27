@@ -76,7 +76,7 @@ def main():
     ax.annotate(u"未采矿体", (xfw(-38) - 3.5, -38.5), xytext=(-30.0, -39.5), arrowprops=lk, va="center", **kw)
     ax.text(-30.0, 5.0, u"上盘", fontsize=8)
     ax.text(3.5, -10.0, u"下盘", fontsize=8)
-    ax.text(-30.0, ZBOT + 0.6, u"原岩与未采矿体：孔隙率 10$^{-3}$", fontsize=7)
+    ax.text(-30.0, ZBOT + 0.6, u"围岩与未采矿体：孔隙率 10$^{-3}$", fontsize=7)
     z = 6.0
     ax.annotate("", (xhw(z), z), xytext=(xfw(z), z), arrowprops=dict(arrowstyle="<->", lw=0.6, color=K.INK,
                                                                       shrinkA=0, shrinkB=0), zorder=8)

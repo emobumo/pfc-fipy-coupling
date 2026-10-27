@@ -87,9 +87,9 @@ def main():
     pf = np.linspace(0.15, 0.45, 100)
     lam = 6.0e4 * (1 - pf) / pf
     one_d = 42.7 * (lam - 1830 * 9.81 * math.sin(math.radians(70.0))) / Z.P0
-    ax.plot(pf, one_d, "--", color=K.INK2, lw=1.0, label=u"一维估算")
+    ax.plot(pf, one_d, "-.", color=K.INK2, lw=1.0, label=u"一维估算")
     nc_1d = 0.309333                     # R28: closed-form crossing of the 1D estimate with 1
-    ax.plot([nc_1d] * 2, [0.2, 1.0], "--", color=K.INK2, lw=0.9)
+    ax.plot([nc_1d] * 2, [0.2, 1.0], "-.", color=K.INK2, lw=0.9)
     ax.text(nc_1d + 0.005, 1.04, u"%.2f" % nc_1d, fontsize=7, color=K.INK2)
     ax.axhline(1.0, color="k", lw=0.8)
     ax.text(0.245, 0.24, u"与 1 的交点（二分）\nI 段 %.4f\nII 段 %.4f\nIII 段 %.4f"

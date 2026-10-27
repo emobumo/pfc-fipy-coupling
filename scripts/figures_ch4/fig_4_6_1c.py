@@ -74,7 +74,8 @@ def main():
     ax.set_title(u"(c) S3 的%s" % TERMS["shadow"], fontsize=9)
     handles = [Line2D([], [], color=K.INK, lw=1.3, label=u"理想整孔%s $\\Omega_{\\mathrm{reach}}^{w}$" % TERMS["reach"]),
                Line2D([], [], color=K.C1, lw=1.3, label=u"第 1 段%s $\\Omega_{\\mathrm{reach}}^{(1)}$" % TERMS["reach"]),
-               Patch(facecolor=K.C2, edgecolor="none", label=u"%s\n（%d 个单元，%.2f m²）" % (TERMS["shadow"], n_sh, n_sh * CELL * CELL)),
+               Patch(facecolor=K.C2, edgecolor="none", label=u"%s\n（%d 个单元，%.1f m²）" % (TERMS["shadow"], n_sh,
+                                                                       np.floor(n_sh * CELL * CELL * 10 + 0.5) / 10)),
                Patch(facecolor=K.SOLID, edgecolor="none", label=TERMS["cement"])]
     ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.02, 1.0), frameon=False, fontsize=7.5)
     K.style(ax)

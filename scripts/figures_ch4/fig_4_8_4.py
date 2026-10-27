@@ -6,9 +6,10 @@ computed once; the post-processing stage2.txt is two-pass identical).
     powershell -File scripts\\run_local.ps1 scripts\\figures_ch4\\fig_4_8_4.py
 
 (a)-(e) the five closed cases of K 1.25 scenario 1: saturation when the reach-domain fill first reaches 0.95
-        (snap_<case>_0.95.npz), reach-domain outline (summary.npz, same hole and p0, 0.5 m), outflow section (source
-        cells projected on the hole axis) and standpipe (collar to the first source cell), lower end of the rubble,
-        boundary of the lower-end corner (rubble down-dip of the lowest drift's collar, t < fan_collar_t[1]), cells
+        (snap_<case>_0.95.npz), reach-domain outline (summary.npz, same hole and p0, 0.5 m), hole drawn from its line
+        (base_geometry fan_line) with the actual standpipe (2 m; extended case s2_pipe = 5.375 m from the collar) and
+        the outflow section to the hole end, lower end of the rubble, boundary of the lower-end corner (rubble down-dip
+        of the lowest drift's collar, t < fan_collar_t[1]; orange dash-dot over the hole line, which it meets), cells
         filled outside the reach domain in neutral grey (not counted).
 (f)     drawpoint open, both holes: outflow / V_in against V_in / reach pore volume of the closed case, every 20-step
         record of final_O1 / O2.npz "series" (the outflow is recorded every 20 steps only); vertical lines at the
@@ -31,18 +32,11 @@ SOL = X.SOL
 CELL = 0.5
 VIEW = (-30.0, 53.0, -4.5, 33.0)
 ROCK, VOIDC, DRIFT, OUTSIDE = "#cdcdcd", X.VOIDC, "#3d3d3d", "#8c8c8c"
+CORNER_C = C2                 # lower-end corner boundary: dash-dot in its own colour, drawn over the hole line
+PIPE_LEN = 2.0                # standpipe of the fan holes, m (extended-standpipe case: base_geometry s2_pipe)
 # closed cases of K 1.25 scenario 1, panel order (a)-(e): case, panel title, fan hole index of the base geometry
 PANELS = [("S1", u"最低巷道法向孔", 1), ("S2", u"孔口管加长", 1), ("S3", u"降压至 1 MPa", 1),
           ("S4", u"最低巷道 −30° 孔", 0), ("S5", u"第二巷道 −30° 孔", 2)]
-
-
-def hole_parts(line, xs, zs):
-    """Standpipe (collar -> first source cell) and outflow section (first -> last source cell) along the hole axis."""
-    c = np.array(line[:2]); e = np.array(line[2:])
-    u = (e - c) / np.hypot(*(e - c))
-    d = (xs - c[0]) * u[0] + (zs - c[1]) * u[1]
-    a, b = d.min() - CELL / 2, d.max() + CELL / 2
-    return (c, c + a * u), (c + a * u, c + b * u)
 
 
 def map_panel(ax, Sm, G, B, ci, tag, title, fan):
@@ -65,15 +59,18 @@ def map_panel(ax, Sm, G, B, ci, tag, title, fan):
     j0, j1, i0, i1 = [int(v) for v in G["box"]]
     T = G["T"][j0:j1, i0:i1]
     tc = float(B["fan_collar_t"][1])
-    cs = ax.contour(Xg[0], Zg[:, 0], np.ma.masked_where(~rub, T), levels=[tc], colors=[INK], linewidths=0.6,
-                    linestyles="dashed")
+    cs = ax.contour(Xg[0], Zg[:, 0], np.ma.masked_where(~rub, T), levels=[tc], colors=[CORNER_C], linewidths=0.9,
+                    linestyles="dashdot")
     for c_ in cs.collections:
         c_.set_zorder(7)
     corner = rub & (T < tc)
     ax.text(float(Xg[corner].mean()) - 6.0, float(Zg[corner].mean()) + 4.0, u"下端角部", fontsize=6.5, color=INK,
             ha="center", va="center", zorder=8, bbox=dict(fc="w", ec="none", alpha=0.75, pad=0.8))
-    src = np.load(os.path.join(SOL, "final_%s.npz" % tag))["src"]
-    pipe, sec = hole_parts(B["fan_line"][fan], Xg.ravel()[src], Zg.ravel()[src])
+    line = np.asarray(B["fan_line"][fan], dtype=float)
+    c0, e0 = line[:2], line[2:]
+    u0 = (e0 - c0) / np.hypot(*(e0 - c0))
+    plen = float(B["s2_pipe"]) if tag == "S2" else PIPE_LEN       # actual standpipe length along the hole
+    pipe, sec = (c0, c0 + plen * u0), (c0 + plen * u0, e0)
     ax.plot([pipe[0][0], pipe[1][0]], [pipe[0][1], pipe[1][1]], "-", color="k", lw=3.0, solid_capstyle="butt", zorder=5)
     ax.plot([pipe[0][0], pipe[1][0]], [pipe[0][1], pipe[1][1]], "-", color="w", lw=1.4, solid_capstyle="butt", zorder=6)
     ax.plot([sec[0][0], sec[1][0]], [sec[0][1], sec[1][1]], "-", color="k", lw=1.8, solid_capstyle="butt", zorder=5)
@@ -94,9 +91,13 @@ def panel_f(ax, R):
             raise SystemExit("%s: reach pore volume differs from %s" % (tag, ref))
         ax.plot(ser[:, 3] / pore, ser[:, 7] / ser[:, 3], "-", color=col, lw=1.3, label=name)
         ax.axvline(R[ref]["arrival"], color=col, ls=":", lw=1.0, ymax=0.72)
-        ax.axvline(R[ref]["s95"], color=col, ls="--", lw=1.0, ymax=0.72)
+        ax.axvline(R[ref]["s95"], color=col, ls="-.", lw=1.0, ymax=0.72)
     hs, ls = ax.get_legend_handles_labels()
-    hs += [plt.Line2D([], [], color=INK, ls=":", lw=1.0), plt.Line2D([], [], color=INK, ls="--", lw=1.0)]
+    hs += [plt.Line2D([], [], color=INK, ls=":", lw=1.0), plt.Line2D([], [], color=INK, ls="-.", lw=1.0)]
+    # the two 0.95 lines almost coincide: label them on opposite sides at different heights
+    for ref, col, yy, ha, dx in (("S1", C1, 0.68, "left", 0.012), ("S4", C2, 0.58, "right", -0.012)):
+        ax.text(R[ref]["s95"] + dx, yy, u"0.95", color=col, fontsize=6.5, ha=ha, va="center",
+                transform=ax.get_xaxis_transform())
     ls += [u"封闭算例到达散体下端", u"封闭算例可达域充填 0.95"]
     ax.legend(hs, ls, loc="upper left", frameon=False, fontsize=6.5, ncol=2)
     ax.set_xlabel(u"注入量 ÷ 可达域孔隙体积")
@@ -148,7 +149,7 @@ def main():
     cb.ax.tick_params(labelsize=6.5)
     fig.legend([plt.Line2D([], [], color=INK, lw=1.0), plt.Rectangle((0, 0), 1, 1, fc=OUTSIDE),
                 plt.Line2D([], [], color="k", lw=1.8), plt.Line2D([], [], color="k", lw=3.0),
-                plt.Line2D([], [], color=INK, lw=0.6, ls="--"), plt.Line2D([], [], color=X.LOWC, lw=1.3),
+                plt.Line2D([], [], color=CORNER_C, lw=0.9, ls="-."), plt.Line2D([], [], color=X.LOWC, lw=1.3),
                 plt.Rectangle((0, 0), 1, 1, fc=ROCK), plt.Rectangle((0, 0), 1, 1, fc=VOIDC),
                 plt.Rectangle((0, 0), 1, 1, fc=DRIFT)],
                [u"可达域", u"可达域外（不计入）", u"出浆段", u"孔口管", u"下端角部边界", X.LOW_NAME, u"围岩与矿柱",

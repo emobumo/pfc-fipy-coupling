@@ -111,10 +111,10 @@ z
    </g>
    <g id="patch_12">
     <path clip-path="url(#pf526b213aa)" d="
-M73.2869 503.332
-L422.059 503.332
-L422.059 476.509
-L73.2869 476.509
+M73.2869 506.014
+L422.059 506.014
+L422.059 473.827
+L73.2869 473.827
 z
 " style="fill:#f1f1f1;stroke:#1a1a1a;stroke-linejoin:miter;stroke-width:0.8;"/>
    </g>
@@ -202,7 +202,7 @@ L163.709 409.453" style="fill:none;stroke:#1a1a1a;stroke-width:0.8;"/>
    <g id="line2d_10">
     <path clip-path="url(#pf526b213aa)" d="
 M163.709 441.64
-L163.709 476.509" style="fill:none;stroke:#1a1a1a;stroke-width:0.8;"/>
+L163.709 473.827" style="fill:none;stroke:#1a1a1a;stroke-width:0.8;"/>
    </g>
    <g id="line2d_11">
     <path clip-path="url(#pf526b213aa)" d="
@@ -248,7 +248,7 @@ L355.319 362.603" style="fill:none;stroke:#1a1a1a;stroke-width:0.8;"/>
    <g id="line2d_18">
     <path clip-path="url(#pf526b213aa)" d="
 M355.319 384.776
-L355.319 476.509" style="fill:none;stroke:#1a1a1a;stroke-width:0.8;"/>
+L355.319 473.827" style="fill:none;stroke:#1a1a1a;stroke-width:0.8;"/>
    </g>
    <g id="line2d_19">
     <path clip-path="url(#pf526b213aa)" d="
@@ -299,7 +299,7 @@ L269.202 107.253" style="fill:none;stroke:#9a9a9a;stroke-linecap:square;stroke-w
     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 163.709291, 295.489966)" x="163.709291339" y="295.489965753">饱和度显式更新、充填闭合</text>
    </g>
    <g id="text_8">
-    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 163.709291, 331.253253)" x="163.709291339" y="331.253253425">按库朗条件调整时间步</text>
+    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 163.709291, 331.253253)" x="163.709291339" y="331.253253425">按充填库朗条件调整时间步</text>
    </g>
    <g id="text_9">
     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(140.045541339 371.220613014)">满足停注判据</text>
@@ -309,7 +309,8 @@ L269.202 107.253" style="fill:none;stroke:#9a9a9a;stroke-linecap:square;stroke-w
     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 163.709291, 427.814130)" x="163.709291339" y="427.814130137">全部段结束？</text>
    </g>
    <g id="text_11">
-    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 247.672913, 492.188048)" x="247.672913386" y="492.188047945">后处理：三层评价域判定、拓扑细分、守恒统计</text>
+    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(210.437288386 487.451297945)">后处理：三层评价域、</text>
+    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;" transform="translate(211.972913386 496.924797945)">拓扑细分、守恒统计</text>
    </g>
    <g id="text_12">
     <!-- 各段开始时的 $\lambda$ 场 -->
@@ -321,7 +322,7 @@ L269.202 107.253" style="fill:none;stroke:#9a9a9a;stroke-linecap:square;stroke-w
     </g>
    </g>
    <g id="text_13">
-    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 355.318583, 204.293582)" x="355.318582677" y="204.293582192">16 邻域多源最短路</text>
+    <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:middle;" transform="rotate(-0.000000, 355.318583, 204.293582)" x="355.318582677" y="204.293582192">16 邻域多源最短路径</text>
    </g>
    <g id="text_14">
     <!-- 所需源压场 $p_{\mathrm{req}}$ -->
@@ -461,12 +462,12 @@ z
    <g id="patch_26">
     <path d="
 M163.709 441.64
-Q163.709 459.075 163.709 475.615" style="fill:none;stroke:#1a1a1a;stroke-linecap:round;stroke-width:0.8;"/>
+Q163.709 457.734 163.709 472.933" style="fill:none;stroke:#1a1a1a;stroke-linecap:round;stroke-width:0.8;"/>
     <path d="
-M165.309 472.415
-L163.709 475.615
-L162.109 472.415
-L165.309 472.415
+M165.309 469.733
+L163.709 472.933
+L162.109 469.733
+L165.309 469.733
 z
 " style="fill:#1a1a1a;stroke:#1a1a1a;stroke-linecap:round;stroke-width:0.8;"/>
    </g>
@@ -569,12 +570,12 @@ z
    <g id="patch_34">
     <path d="
 M355.319 384.776
-Q355.319 430.643 355.319 475.615" style="fill:none;stroke:#1a1a1a;stroke-linecap:round;stroke-width:0.8;"/>
+Q355.319 429.302 355.319 472.933" style="fill:none;stroke:#1a1a1a;stroke-linecap:round;stroke-width:0.8;"/>
     <path d="
-M356.919 472.415
-L355.319 475.615
-L353.719 472.415
-L356.919 472.415
+M356.919 469.733
+L355.319 472.933
+L353.719 469.733
+L356.919 469.733
 z
 " style="fill:#1a1a1a;stroke:#1a1a1a;stroke-linecap:round;stroke-width:0.8;"/>
    </g>

@@ -65,7 +65,7 @@ def main():
                       cmap=ListedColormap(ZCOL), vmin=-0.5, vmax=2.5, interpolation="nearest")
             sh = [100.0 * (z[rub] == q).mean() for q in (0, 1, 2)]
             frame(ax, D, ki, u"(%s) K = %.2f，情景%s" % (next(lab), K, SCEN[k]))
-            X.corner_note(ax, u"可靠 %.1f%%　条件 %.1f%%　难灌 %.1f%%" % tuple(sh))
+            X.corner_note(ax, u"可靠 %.2f　条件 %.2f　难灌 %.2f" % tuple(s_ / 100.0 for s_ in sh))
             print("K %.2f scenario %d: reliable / conditional / hard %.4f / %.4f / %.4f" % ((K, k + 1) + tuple(
                 s_ / 100.0 for s_ in sh)))
             if k == 0:
@@ -84,7 +84,7 @@ def main():
         ax.imshow(np.ma.masked_invalid(img), origin="lower", extent=PL.ext(V),
                   cmap=ListedColormap([COVER, LEFT, ZCOL[2]]), vmin=-0.5, vmax=2.5, interpolation="nearest")
         frame(ax, D, ki, u"(%s) %s" % (next(lab), name))
-        X.corner_note(ax, u"覆盖 %.1f%%" % (100.0 * cov[rub].mean()))
+        X.corner_note(ax, u"覆盖 %.3f" % cov[rub].mean())
         ax.set_xlabel(u"X/m", fontsize=8)
         if k == 0:
             ax.set_ylabel(u"Z/m", fontsize=8)
@@ -96,7 +96,7 @@ def main():
     fig.legend([plt.Rectangle((0, 0), 1, 1, fc=c) for c in ZCOL] + common, ZNAME + cname, loc="center",
                bbox_to_anchor=(0.5, 0.348), ncol=4, frameon=False, fontsize=7)
     fig.text(0.5, 0.300, u"(g)(h) K = 1.25，情景一，$p_0$ = 2 MPa，每注完一孔即视其可达域为不透浆；"
-             u"不计先后（6 孔可达域并集）覆盖 %.1f%%" % (100.0 * union[rub].mean()), ha="center", fontsize=7.5)
+             u"不计先后（6 孔可达域并集）覆盖 %.3f" % union[rub].mean(), ha="center", fontsize=7.5)
     fig.legend([plt.Rectangle((0, 0), 1, 1, fc=c) for c in (COVER, LEFT, ZCOL[2])],
                [u"覆盖", u"并集内、按顺序注浆后未覆盖", u"并集之外（难灌区）"], loc="center",
                bbox_to_anchor=(0.5, 0.022), ncol=3, frameon=False, fontsize=7)

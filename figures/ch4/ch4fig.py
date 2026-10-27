@@ -8,7 +8,9 @@ calling script: <name>.svg (vector) and <name>.png (600 dpi). Width = A4 text bl
 Drawing convention of both chapters (framework 1.6, fixed by fig. 4.3-3): design domain = dashed outline (the only
 dashed line); reach domain = solid outline; fill domain = saturation patches (SAT_CMAP); solids and cement = dark grey;
 hole = thin standpipe + thick outflow section (draw_hole); the five unfilled-zone classes = the light fills in CAT;
-relative elevations.
+relative elevations. Every unfilled-zone region drawn in a schematic carries its name as leader-line text: the CAT
+colours are auxiliary only, so the figures stay readable in black-and-white print. Fill patches in schematics use the
+chapter saturation scale K.SAT_CMAP (may be lightened, same hue).
 """
 from __future__ import print_function
 
@@ -49,13 +51,17 @@ def tag(ax, letter, dx=0.45, dy=0.08):
     fig.text(max(b.x0 - dx / w, 0.004), b.y1 + dy / h, u"(%s)" % letter, ha="left", va="bottom", fontsize=10)
 
 
-def draw_hole(ax, collar, end, pipe, section_from=None, zorder=6, lw_pipe=1.0, lw_section=2.6):
+def draw_hole(ax, collar, end, pipe, section_from=None, zorder=6, lw_pipe=1.0, lw_section=2.6, halo=False):
     """Hole: thin standpipe from the collar over length `pipe`, thick outflow section from `section_from` (default:
-    end of the standpipe) to `end`. Returns the unit direction."""
+    end of the standpipe) to `end`; halo = white underlay so the section stays visible on dark grey (cement).
+    Returns the unit direction."""
     c, e = np.asarray(collar, float), np.asarray(end, float)
     u = (e - c) / np.hypot(*(e - c))
     a = c + pipe * u
     s0 = a if section_from is None else c + section_from * u
+    if halo:
+        ax.plot([c[0], e[0]], [c[1], e[1]], "-", color="w", lw=lw_section + 1.8, solid_capstyle="butt",
+                zorder=zorder - 0.5)
     ax.plot([c[0], s0[0]], [c[1], s0[1]], "-", color="k", lw=lw_pipe, solid_capstyle="butt", zorder=zorder)
     ax.plot([s0[0], e[0]], [s0[1], e[1]], "-", color="k", lw=lw_section, solid_capstyle="butt", zorder=zorder)
     return u

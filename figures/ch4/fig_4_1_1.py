@@ -192,7 +192,7 @@ def inset(fig):
     ax.set_xscale("log")
     ax.set_xlim(0.05, 100); ax.set_ylim(0, 1)
     ax.axvspan(10, 40, color=K.C1, alpha=0.18, lw=0)
-    for x, t in ((0.15, u"块石 $d_{50}$\n约 0.15 m"), (2.5, u"REV\n约 2.5 m"), (20, u"扩散尺度\n10～40 m")):
+    for x, t in ((0.15, u"中值粒径 $d_{50}$\n约 0.15 m"), (2.5, u"REV\n约 2.5 m"), (20, u"扩散尺度\n10～40 m")):
         ax.plot([x], [0.25], "o", color=K.INK, ms=3.5)
         ax.text(x, 0.55, t, fontsize=6.5, ha="center", va="bottom")
     ax.text(0.5, 0.2, u"≪", fontsize=9, ha="center", va="center")

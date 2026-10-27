@@ -304,12 +304,12 @@ Q162.168 359.131 131.311 371.878" style="fill:none;stroke:#1a1a1a;stroke-linecap
     <text style="font-family:Noto Sans SC;font-size:8.0px;font-style:normal;text-anchor:start;" transform="rotate(-0.000000, 270.753024, 273.795520)" x="270.753023622" y="273.795519685">下盘</text>
    </g>
    <g id="text_21">
-    <!-- 原岩与未采矿体：孔隙率 10$^{-3}$ -->
+    <!-- 围岩与未采矿体：孔隙率 10$^{-3}$ -->
     <g transform="translate(50.8526929134 479.911053543)">
      <text>
       <tspan style="font-family:cmr10;font-size:4.9px;font-style:regular;" x="90.1445739746" y="-3.740625">3</tspan>
       <tspan style="font-family:cmsy10;font-size:4.9px;font-style:regular;" x="86.3379821777" y="-3.740625">¡</tspan>
-      <tspan style="font-family:Noto Sans SC;font-size:7.0px;font-style:regular;" x="0.0 7.0 14.0 21.0 28.0 35.0 42.0 49.0 56.0 63.0 70.0 77.0 78.5679931641 82.4529876709" y="-0.76453125">原岩与未采矿体：孔隙率 10</tspan>
+      <tspan style="font-family:Noto Sans SC;font-size:7.0px;font-style:regular;" x="0.0 7.0 14.0 21.0 28.0 35.0 42.0 49.0 56.0 63.0 70.0 77.0 78.5679931641 82.4529876709" y="-0.76453125">围岩与未采矿体：孔隙率 10</tspan>
      </text>
     </g>
    </g>

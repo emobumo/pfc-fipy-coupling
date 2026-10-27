@@ -84,7 +84,7 @@ def main():
     top = y[sol].max()
     ax.annotate(u"块石", (x[sol].mean() - x0, top - 0.2), xytext=(3.0, 13.5), fontsize=7.5,
                 arrowprops=dict(arrowstyle="-", lw=0.5, color=K.INK, shrinkA=1, shrinkB=1))
-    ax.annotate(u"出浆单元", (x[src].mean() - x0, y[src].mean()), xytext=(11.5, 14.0), fontsize=7.5,
+    ax.annotate(u"定压源", (x[src].mean() - x0, y[src].mean()), xytext=(11.5, 14.0), fontsize=7.5,
                 arrowprops=dict(arrowstyle="-", lw=0.5, color=K.INK, shrinkA=1, shrinkB=1))
     ax.set_xlim(0, 16); ax.set_ylim(0, 16)
     ax.set_xticks([0, 4, 8, 12, 16]); ax.set_yticks([0, 4, 8, 12, 16])

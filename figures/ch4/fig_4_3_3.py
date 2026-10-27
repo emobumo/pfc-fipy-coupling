@@ -27,7 +27,7 @@ from ch4fig import K, plt
 DX = 0.05
 XL, ZL = (-1.0, 16.0), (-1.5, 15.5)
 COLLAR, ANGLE, LENGTH, PIPE = (0.0, 4.0), 30.0, 12.0, 1.5
-D1 = 4.5                                   # (b) stage-1 hole depth along the hole
+D1, D1_ENCLOSED = 4.5, 8.5                 # (b) stage-1 hole depth: left half / right half (stage 2 enclosed)
 RHOG, P0, FILL = 0.08, 5.0, 0.8
 DESIGN = (0.0, 13.0, 1.0, 12.5)            # x0, x1, z0, z1
 LENS = ((4.6, 8.0), (1.0, 0.55), 40.0)     # centre, semi-axes, lambda
@@ -106,6 +106,49 @@ def centroid(m):
     return i, j
 
 
+def staged(ax, x, z, X, Z, d1):
+    """(b) halves: the same hole in plain rubble, stage 1 = outflow section PIPE..d1 (its fill cemented, impassable),
+    stage 2 = d1..LENGTH minus the cemented hole wall. Returns (shadow cells, stage-2 reach cells, exit point)."""
+    wall = X < 0
+    lam = np.where(wall, np.inf, 1.0)
+    D = design_mask(X, Z)
+    u = np.array([np.cos(np.radians(ANGLE)), np.sin(np.radians(ANGLE))])
+    c = np.array(COLLAR)
+    end = c + LENGTH * u
+    prw = p_req(lam, segment_mask(X, Z, PIPE, LENGTH), Z)
+    R = prw <= P0
+    pr1 = p_req(lam, segment_mask(X, Z, PIPE, d1), Z)
+    R1 = pr1 <= P0
+    cement = (pr1 <= FILL * P0) & ~wall
+    lam2 = lam.copy()
+    lam2[cement] = np.inf
+    src2 = segment_mask(X, Z, d1, LENGTH) & ~cement
+    pr2 = p_req(lam2, src2, Z) if src2.any() else np.full(X.shape, np.inf)
+    R2 = pr2 <= P0
+    shadow = D & R & ~R1 & ~R2 & ~cement & ~wall
+    F2 = (pr2 <= FILL * P0) & ~wall & ~cement
+    s2 = np.clip(1 - 0.45 * (pr2 / (FILL * P0)) ** 6, 0, 1)
+    show(ax, x, z, shadow, F.CAT["shadow"], 1)
+    if F2.any():
+        show_fill(ax, x, z, F2, s2)
+    show(ax, x, z, wall | cement, F.SOLID, 3)
+    ax.contour(x, z, np.ma.masked_where(wall, prw), levels=[P0], colors=[K.INK], linewidths=0.8, zorder=4)
+    if R2.any():
+        ax.contour(x, z, np.ma.masked_where(wall | cement, pr2), levels=[P0], colors=[K.INK], linewidths=2.0, zorder=4)
+    F.draw_hole(ax, COLLAR, end, PIPE, section_from=d1, halo=True)
+    frame(ax)
+    note(ax, u"前序段胶结体", tuple(c + 2.2 * u + np.array([0.4, -1.2])), (0.6, -0.9), ha="left")
+    note(ax, u"第 2 段出浆段", tuple(c + (0.5 * (d1 + LENGTH)) * u), (9.0, 14.6), ha="center")
+    nrm = (X - c[0]) * (-u[1]) + (Z - c[1]) * u[0]
+    for side, xy in ((1, (2.5, 14.6)), (-1, (13.4, 0.0))):
+        m = shadow & (side * nrm > 0)
+        if m.sum() > 0:
+            ii, jj = np.nonzero(m)
+            k = np.argmin(np.abs(z[ii] - z[ii].mean()) + np.abs(x[jj] - x[jj].mean()))
+            note(ax, F.CAT_NAME["shadow"], (x[jj][k], z[ii][k]), xy, ha="center")
+    return shadow.sum(), R2.sum()
+
+
 def main():
     x, z, (X, Z) = grid()
     wall, boulder, void, lens, lam = setting(X, Z)
@@ -113,7 +156,7 @@ def main():
     D = design_mask(X, Z)
     u = np.array([np.cos(np.radians(ANGLE)), np.sin(np.radians(ANGLE))])
     end = np.array(COLLAR) + LENGTH * u
-    fig = plt.figure(figsize=(F.WIDTH, 3.95))
+    fig = plt.figure(figsize=(F.WIDTH, 7.3))
     # ---- (a) single stage ----
     pr = p_req(lam, segment_mask(X, Z, PIPE, LENGTH), Z)
     R = pr <= P0
@@ -123,7 +166,7 @@ def main():
         raise SystemExit("part of the space under the boulder is unreachable: not a pure bypass void")
     cats = {"unreach": D & ~R & ~solid & ~lens, "dense": lens & D & ~R, "front": D & R & ~Fm & ~void & ~solid,
             "bypass": void}
-    ax = fig.add_axes([0.0, 0.2, 0.5, 0.74])
+    ax = fig.add_axes([0.0, 0.53, 0.5, 0.42])
     for k, m in cats.items():
         show(ax, x, z, m, F.CAT[k], 1)
     show_fill(ax, x, z, Fm, s)
@@ -131,59 +174,31 @@ def main():
     ax.contour(x, z, np.ma.masked_where(solid, pr), levels=[P0], colors=[K.INK], linewidths=F.LW_REACH, zorder=4)
     F.draw_hole(ax, COLLAR, end, PIPE)
     frame(ax)
+    ax.set_title(u"单段注浆", fontsize=8.5)
     outside = Fm & ~D
     ii, jj = np.nonzero(outside)
     note(ax, u"设计域外充填", (x[jj].mean(), z[ii].max() - 0.4), (13.6, 14.6), ha="center")
     note(ax, F.CAT_NAME["unreach"], (12.2, 1.8), (14.0, 0.0), ha="center")
-    note(ax, F.CAT_NAME["unreach"], (0.8, 11.6), (2.2, 14.6), ha="center")
-    note(ax, F.CAT_NAME["dense"], (LENS[0][0] - 0.6, LENS[0][1] + 0.2), (1.3, 13.3), ha="left")
+    note(ax, F.CAT_NAME["unreach"], (0.8, 11.6), (0.3, 13.3), ha="left")
+    note(ax, F.CAT_NAME["dense"], (LENS[0][0] - 0.6, LENS[0][1] + 0.2), (2.4, 14.6), ha="left")
     note(ax, F.CAT_NAME["bypass"], (7.1, 4.4), (7.1, -0.9), ha="center")
     ii, jj = np.nonzero(cats["front"] & (Z < 2.6) & (X > 1.0) & (X < 6))
     note(ax, F.CAT_NAME["front"], (x[jj].mean(), z[ii].mean()), (2.6, -0.9), ha="center")
     note(ax, u"块石", (8.1, 5.2), (10.6, 3.0), ha="left")
     F.tag(ax, "a", dx=0.05, dy=0.02)
-    # ---- (b) staged ----
-    lam = np.where(wall, np.inf, 1.0)          # (b): the same hole in plain rubble (no lens, no boulder)
-    solid = wall
-    D = design_mask(X, Z)
-    prw = p_req(lam, segment_mask(X, Z, PIPE, LENGTH), Z)
-    R = prw <= P0
-    pr1 = p_req(lam, segment_mask(X, Z, PIPE, D1), Z)
-    R1 = pr1 <= P0
-    cement = (pr1 <= FILL * P0) & ~solid
-    lam2 = lam.copy()
-    lam2[cement] = np.inf
-    src2 = segment_mask(X, Z, D1, LENGTH) & ~cement
-    pr2 = p_req(lam2, src2, Z)
-    R2 = pr2 <= P0
-    shadow = D & R & ~R1 & ~R2 & ~cement & ~solid
-    sd = np.linspace(0, LENGTH, 2401)
-    pts = np.array(COLLAR)[None, :] + sd[:, None] * u[None, :]
-    inc = cement[np.round((pts[:, 1] - z[0]) / DX).astype(int), np.round((pts[:, 0] - x[0]) / DX).astype(int)]
-    s_exit = sd[np.nonzero(inc)[0].max()] + DX
-    F2 = (pr2 <= FILL * P0) & ~solid & ~cement
-    s2 = np.clip(1 - 0.45 * (pr2 / (FILL * P0)) ** 6, 0, 1)
-    ax = fig.add_axes([0.5, 0.2, 0.5, 0.74])
-    show(ax, x, z, shadow, F.CAT["shadow"], 1)
-    show_fill(ax, x, z, F2, s2)
-    show(ax, x, z, solid | cement, F.SOLID, 3)
-    ax.contour(x, z, np.ma.masked_where(solid, prw), levels=[P0], colors=[K.INK], linewidths=0.8, zorder=4)
-    ax.contour(x, z, np.ma.masked_where(solid | cement, pr2), levels=[P0], colors=[K.INK], linewidths=2.0, zorder=4)
-    F.draw_hole(ax, COLLAR, end, PIPE, section_from=s_exit)
-    frame(ax)
-    c = np.array(COLLAR)
-    note(ax, u"前序段胶结体", tuple(c + 2.2 * u + np.array([0.4, -1.2])), (0.6, -0.9), ha="left")
-    mid = c + 0.5 * (s_exit + LENGTH) * u
-    note(ax, u"后续段出浆段", tuple(mid), (9.0, 14.6), ha="center")
-    for side in (1, -1):
-        m = shadow & (side * ((X - c[0]) * (-u[1]) + (Z - c[1]) * u[0]) > 0)
-        if m.sum() > 0:
-            ii, jj = np.nonzero(m)
-            k = np.argmin(np.abs(z[ii] - z[ii].mean()) + np.abs(x[jj] - x[jj].mean()))
-            note(ax, F.CAT_NAME["shadow"], (x[jj][k], z[ii][k]), (13.2 if side < 0 else 2.5, 0.0 if side < 0 else 14.6),
-                 ha="center")
+    # ---- (b) staged: left = stage-2 section beyond the cement, right = stage-2 section enclosed by it ----
+    ax = fig.add_axes([0.0, 0.04, 0.5, 0.42])
+    sh_l, r2_l = staged(ax, x, z, X, Z, D1)
+    ax.set_title(u"第 2 段出浆段越过胶结体", fontsize=8.5)
     F.tag(ax, "b", dx=0.05, dy=0.02)
-    # ---- legend ----
+    ax = fig.add_axes([0.5, 0.04, 0.5, 0.42])
+    sh_r, r2_r = staged(ax, x, z, X, Z, D1_ENCLOSED)
+    ax.set_title(u"第 2 段出浆段被胶结体包住", fontsize=8.5)
+    if r2_r > 0:
+        raise SystemExit("right half: stage-2 section not enclosed by the cement")
+    ax.text(9.6, 5.0, u"本段可达域几乎为空", fontsize=7.5, ha="center", va="center", zorder=9,
+            bbox=dict(fc="w", ec="none", alpha=0.85, pad=1.0))
+    # ---- legend (shared) ----
     hs = [Line2D([], [], color=K.INK, lw=F.LW_DESIGN, ls="--"), Line2D([], [], color=K.INK, lw=F.LW_REACH),
           Patch(fc=K.SAT_CMAP(0.9 / 1.7), ec="none"), Patch(fc=F.SOLID, ec="none"),
           Line2D([], [], color=K.INK, lw=0.8), Line2D([], [], color=K.INK, lw=2.0)]
@@ -191,11 +206,11 @@ def main():
           u"理想整孔可达域 $\\Omega_{\\mathrm{reach}}^{w}$", u"本段可达域"]
     hs += [Patch(fc=F.CAT[k], ec="none") for k in ("unreach", "dense", "front", "bypass", "shadow")]
     ls += [F.CAT_NAME[k] for k in ("unreach", "dense", "front", "bypass", "shadow")]
-    fig.legend(hs, ls, loc="lower center", bbox_to_anchor=(0.5, 0.0), ncol=4, frameon=False, fontsize=7,
-               handlelength=3.0, columnspacing=1.2)
+    fig.legend(hs, ls, loc="center left", bbox_to_anchor=(0.56, 0.74), ncol=1, frameon=False, fontsize=7.5,
+               handlelength=3.0)
     F.save(fig, "fig_4_3_3")
-    print("cells: unreach %d dense %d front %d bypass %d shadow %d; s_exit %.2f" %
-          tuple([cats[k].sum() for k in ("unreach", "dense", "front", "bypass")] + [shadow.sum(), s_exit]))
+    print("cells: unreach %d dense %d front %d bypass %d; shadow left %d right %d; stage-2 reach left %d right %d" %
+          tuple([cats[k].sum() for k in ("unreach", "dense", "front", "bypass")] + [sh_l, sh_r, r2_l, r2_r]))
 
 
 if __name__ == "__main__":
