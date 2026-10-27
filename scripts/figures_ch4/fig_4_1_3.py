@@ -352,7 +352,8 @@ def draw(numbering):
     P.fig.set_size_inches(W / 25.4, H / 25.4)
     name = "fig_4_1_3_%s" % numbering
     for ext in ("png", "svg"):
-        P.fig.savefig(os.path.join(K.OUT, "%s.%s" % (name, ext)), dpi=DPI)
+        P.fig.savefig(os.path.join(os.environ.get("FIG_OUT") or K.OUT, "%s.%s" % (name, ext)),
+                      dpi=int(os.environ.get("FIG_DPI", DPI)))
     print("wrote", os.path.join(K.OUT, name + ".png/.svg"), "%.1f x %.1f mm" % (W, H), "CJK font", CJK)
     plt.close(P.fig)
 

@@ -156,8 +156,11 @@ def style(ax):
 
 
 def save(fig, name):
-    if not os.path.isdir(OUT):
-        os.makedirs(OUT)
+    # FIG_OUT / FIG_DPI (optional): write elsewhere at another resolution, e.g. the 600 dpi draft package; unset = as before
+    out = os.environ.get("FIG_OUT") or OUT
+    dpi = int(os.environ.get("FIG_DPI", "300"))
+    if not os.path.isdir(out):
+        os.makedirs(out)
     for ext in ("png", "svg"):
-        fig.savefig(os.path.join(OUT, "%s.%s" % (name, ext)), dpi=300, bbox_inches="tight")
-    print("wrote", os.path.join(OUT, name + ".png/.svg"))
+        fig.savefig(os.path.join(out, "%s.%s" % (name, ext)), dpi=dpi, bbox_inches="tight")
+    print("wrote", os.path.join(out, name + ".png/.svg"))
